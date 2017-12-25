@@ -67,7 +67,7 @@ def check(request):
 
     # Write out the updated files to JSON
     def url_comp(x):
-        if global_file_names.contains(x):
+        if x in global_file_names:
             return x + '.txt'
         return semester_dir + '/' + x + '.txt'
     urls_to_update = list(map(url_comp, sorted(list(updated_files))))
