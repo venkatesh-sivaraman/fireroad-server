@@ -1,0 +1,10 @@
+spring#,#2018
+3
+courses
+condensed_2
+condensed_3
+condensed_1
+condensed_0
+21G
+5
+auto_condensed
