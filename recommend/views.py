@@ -1,10 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from .models import Rating, MAX_RATING_VALUE
-from .decorators import secure_required
 import json
 import random
 
@@ -13,15 +11,8 @@ def verify(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 def new_user(request):
-    password = request.POST.get('password', '')
-    if len(password) == 0:
-        return HttpResponseBadRequest('<h1>Need a password</h1>')
     new_id = random.getrandbits(32)
-    while User.objects.exists(username=str(new_id)):
-        print("Regenerating ID!")
-        new_id = random.getrandbits(32)
     resp = { 'u': new_id }
-    User.objects.create_user(username=str(new_id), password=password)
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 def update_rating(user_id, subject_id, value):
@@ -35,7 +26,6 @@ def update_rating(user_id, subject_id, value):
     r.save()
 
 @csrf_exempt
-@secure_required
 def rate(request):
     batch = request.body
     if len(batch) > 0:
