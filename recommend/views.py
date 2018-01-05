@@ -34,7 +34,6 @@ def get(request):
     resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
-
 @csrf_exempt
 def rate(request):
     batch = request.body
