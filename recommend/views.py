@@ -25,15 +25,14 @@ def get(request):
     if len(user_id) == 0:
         return HttpResponseBadRequest('<h1>Missing user ID</h1>')
     rec_type = request.GET.get('t', '')
-    try:
-        if len(rec_type) == 0:
-            recs = Recommendation.objects.filter(user_id=user_id)
-        else:
-            recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
-        resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
-        return HttpResponse(json.dumps(resp), content_type="application/json")
-    except:
+    if len(rec_type) == 0:
+        recs = Recommendation.objects.filter(user_id=user_id)
+    else:
+        recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
+    if recs.count() == 0:
         return HttpResponse('No recommendations yet. Try again tomorrow!')
+    resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
+    return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
 @csrf_exempt
