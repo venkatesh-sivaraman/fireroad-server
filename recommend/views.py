@@ -1,8 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
-from .models import Rating, MAX_RATING_VALUE
+from .models import *
 import json
 import random
 
@@ -16,14 +15,26 @@ def new_user(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 def update_rating(user_id, subject_id, value):
-    try:
-        old_rating = Rating.objects.get(Q(user_id=user_id), Q(subject_id=subject_id))
-        old_rating.delete()
-    except:
-        print("No existing rating!")
+    Rating.objects.filter(user_id=user_id, subject_id=subject_id).delete()
 
     r = Rating(user_id=user_id, subject_id=subject_id, value=value)
     r.save()
+
+def get(request):
+    user_id = request.GET.get('u', '')
+    if len(user_id) == 0:
+        return HttpResponseBadRequest('<h1>Missing user ID</h1>')
+    rec_type = request.GET.get('t', '')
+    try:
+        if len(rec_type) == 0:
+            recs = Recommendation.objects.filter(user_id=user_id)
+        else:
+            recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
+        resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
+        return HttpResponse(json.dumps(resp), content_type="application/json")
+    except:
+        return HttpResponse('No recommendations yet. Try again tomorrow!')
+
 
 @csrf_exempt
 def rate(request):
