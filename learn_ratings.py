@@ -5,6 +5,10 @@ import scipy.sparse
 from sklearn.linear_model import LinearRegression
 from scipy.spatial.distance import cosine
 import json
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
+django.setup()
+from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
 
 max_rating = 5
 
@@ -259,10 +263,6 @@ def generate_social_predictions(input_data, predicted_data, user_ids, similars, 
 
 
 if __name__ == '__main__':
-    import os
-    os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
-    django.setup()
-    from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
     #recommender_from_sqlite()
     if len(sys.argv) < 2:
         print("Not enough arguments.")
