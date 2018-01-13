@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <style type="text/css">
+    form > :not(button) {
+      display: none;
+    }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    }
+    p {
+      font-weight: 300;
+    }
+    </style>
+  </head>
+  <body>
+    <h2>FireRoad Recommendations</h2>
+    <p>Would you like to send your course selections to the MIT FireRoad server and receive
+      daily course recommendations?</p>
+    <form method="post" id="signup_form">
+      {% csrf_token %}
+      <input id="username_field" type="text" name="username" maxlength="150" autofocus required id="id_username" />
+      <input id="password_field" type="password" name="password" required />
+      <button type="submit">Allow</button>
+      <button type="button">Not Now</button>
+    </form>
+  </body>
+</html>

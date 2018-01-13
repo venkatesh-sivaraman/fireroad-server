@@ -1,4 +1,6 @@
 from django.db import models
+from django.forms import ModelForm
+from django.contrib.auth.models import User
 
 MAX_RATING_VALUE = 5
 DEFAULT_RECOMMENDATION_TYPE = "for-you"
@@ -19,3 +21,8 @@ class Recommendation(models.Model):
 
     def __str__(self):
         return "Recommendation ({}) for user {}: {}".format(self.rec_type, self.user_id, self.subjects)
+
+class UserForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'password']

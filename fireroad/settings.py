@@ -127,6 +127,10 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "catalog-files")
 ]
 
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 LOGGING = {
     'version': 1,
     'handlers': {
