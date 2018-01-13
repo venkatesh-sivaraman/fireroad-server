@@ -4,10 +4,13 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
 import random
+from django.contrib.auth import login, authenticate
+from django.core.exceptions import PermissionDenied
 
 def verify(request):
-    resp = { 'received': True }
-    return HttpResponse(json.dumps(resp), content_type="application/json")
+    user_id = request.GET.get('u', '')
+    count = Rating.objects.filter(user_id=user_id).count()
+    return HttpResponse(str(count), content_type="application/json")
 
 def new_user(request):
     new_id = random.getrandbits(32)
@@ -19,6 +22,39 @@ def update_rating(user_id, subject_id, value):
 
     r = Rating(user_id=user_id, subject_id=subject_id, value=value)
     r.save()
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=raw_password)
+            resp = { 'received': True }
+            return HttpResponse(json.dumps(resp), content_type="application/json")
+    else:
+        form = UserForm()
+    return render(request, 'recommend/signup.html', {'form': form})
+
+def get_secure(request):
+    if not request.user.is_authenticated():
+        return HttpResponseBadRequest('No authenticated user')
+        #raise PermissionDenied
+    user_id = request.GET.get('u', '')
+    if len(user_id) == 0:
+        return HttpResponseBadRequest('<h1>Missing user ID</h1>')
+    if request.user.username != user_id:
+        raise PermissionDenied
+    rec_type = request.GET.get('t', '')
+    if len(rec_type) == 0:
+        recs = Recommendation.objects.filter(user_id=user_id)
+    else:
+        recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
+    if recs.count() == 0:
+        return HttpResponse('No recommendations yet. Try again tomorrow!')
+    resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
+    return HttpResponse(json.dumps(resp), content_type="application/json")
 
 def get(request):
     user_id = request.GET.get('u', '')

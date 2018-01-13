@@ -6,6 +6,8 @@ from sklearn.linear_model import LinearRegression
 from scipy.spatial.distance import cosine
 import json
 import os
+import csv
+import re
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
@@ -226,11 +228,42 @@ class RankList(object):
     def items(self):
         return self.list
 
-def generate_predicted_experiences(user_regressions, subject_arrays, max_predictions=20):
+equiv_subject_keys = [
+    "Equivalent Subjects",
+    "Joint Subjects",
+    "Meets With Subjects"
+]
+
+def subject_already_taken(subject, course_data, user_data):
+    for other_subject, _ in user_data:
+        if other_subject == subject:
+            return True
+        if other_subject not in course_data: continue
+        for key in equiv_subject_keys:
+            if key not in course_data[other_subject]: continue
+            if subject in course_data[other_subject][key]:
+                return True
+    return False
+
+def subject_is_in_set(subject, course_data, other_subjects):
+    for key in equiv_subject_keys:
+        if key not in course_data[subject]: continue
+        for item in course_data[subject][key]:
+            if item in other_subjects:
+                return True
+    return False
+
+
+def generate_predicted_experiences(user_regressions, subject_arrays, course_data=None, input_data=None, max_predictions=20):
+    '''Pass course_data and input_data to check from the equivalent subjects lists to make sure none
+    of the predicted experiences overlap with the previously taken courses.'''
     predicted_data = []
-    for user in user_regressions:
+    for i, user in enumerate(user_regressions):
         predictions = RankList(max_predictions)
         for subject, vector in subject_arrays.items():
+            if course_data is not None and input_data is not None:
+                if subject_already_taken(subject, course_data, input_data[i]):
+                    continue
             predicted_rating = vector.dot(user.T).item()
             predictions.add(subject, predicted_rating)
         predicted_data.append([p for p in predictions.items() if p[1] > 0])
@@ -241,26 +274,70 @@ def store_social_prediction(user_id, predicted_courses, rec_type=DEFAULT_RECOMME
     r = Recommendation(user_id=user_id, rec_type=rec_type, subjects=json.dumps(predicted_courses))
     r.save()
 
+# A system-predicted course will be worth the approval of 25% of the user's neighbors
+system_prediction_weight = 0.25
 
-def generate_social_predictions(input_data, predicted_data, user_ids, similars, max_predictions=20):
+def generate_social_predictions(input_data, predicted_data, user_ids, similars, course_data=None, max_predictions=20):
+    '''Pass course_data to check from the equivalent subjects lists to make sure none
+    of the predicted experiences overlap with the previously taken courses.'''
+    total_preds = 0
     for id, user_index in user_ids.items():
         viewed_courses = set()
         for subj, _ in input_data[user_index]:
             viewed_courses.add(subj)
 
-        predictions = RankList(max_predictions)
+        neighbors = similars[user_index]
+        relevances = {}
+        system_weight = system_prediction_weight * sum(1.0 - x[1] for x in neighbors)
         for subj, value in predicted_data[user_index]:
             if subj in viewed_courses: continue
-            predictions.add(subj, value)
+            if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
+                continue
+            if subj in relevances:
+                relevances[subj] += value * system_weight
+            else:
+                relevances[subj] = value * system_weight
 
         # Use similar users' data as well
-        for similar_user_idx, distance in similars[user_index]:
+        for similar_user_idx, distance in neighbors:
             similarity = 1.0 - distance
             for subj, value in input_data[user_index] + predicted_data[user_index]:
                 if subj in viewed_courses: continue
-                predictions.add(subj, value * similarity)
-        store_social_prediction(id, {subj: (round(value * 2.0) / 2.0) for subj, value in predictions.items()})
+                if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
+                    continue
+                if subj in relevances:
+                    relevances[subj] += value * similarity
+                else:
+                    relevances[subj] = value * similarity
 
+        predictions = RankList(max_predictions)
+        for subject, relevance in relevances.items():
+            predictions.add(subject, relevance)
+        store_social_prediction(id, {subj: (round(value * 2.0) / 2.0) for subj, value in predictions.items()})
+        total_preds += len(predictions.items())
+    return total_preds
+
+def read_condensed_courses(source):
+    keys = {}
+    reverse_keys = {}
+    courses = {}
+    with open(source, "r") as file:
+        reader = csv.reader(file, delimiter=',', quotechar='"')
+        for line in reader:
+            if "Subject Id" in line:
+                key_list = line
+                for i, comp in enumerate(key_list):
+                    keys[comp] = i
+                    reverse_keys[i] = comp
+            else:
+                id = line[keys["Subject Id"]]
+                def course_dict_value(key):
+                    val = line[keys[key]].replace('[J]', '')
+                    if key in equiv_subject_keys:
+                        return re.findall(r'[A-z0-9.]+', val)
+                    return val
+                courses[id] = {key: course_dict_value(key) for key in keys}
+    return courses
 
 if __name__ == '__main__':
     #recommender_from_sqlite()
@@ -269,9 +346,20 @@ if __name__ == '__main__':
     else:
         features_path = sys.argv[1]
         subjects = generate_subject_features(features_path)
+        if len(sys.argv) > 2 and os.path.exists(sys.argv[2]):
+            condensed_path = sys.argv[2]
+            course_data = read_condensed_courses(condensed_path)
+        else:
+            course_data = None
         input_data, user_ids, _ = get_rating_data(coalesced=False)
+        if len(sys.argv) > 3 and sys.argv[3] == '-v':
+            for user_id in user_ids:
+                print(user_id, input_data[user_ids[user_id]])
         regressions = determine_user_regressions(subjects, input_data)
         similars = similar_users(regressions)
-        predicted_data = generate_predicted_experiences(regressions, subjects)
-        print(predicted_data)
-        generate_social_predictions(input_data, predicted_data, user_ids, similars)
+        if len(sys.argv) > 3 and sys.argv[3] == '-v':
+            for user_id in user_ids:
+                print(user_id, similars[user_ids[user_id]])
+        predicted_data = generate_predicted_experiences(regressions, subjects, course_data=course_data, input_data=input_data)
+        num_preds = generate_social_predictions(input_data, predicted_data, user_ids, similars, course_data=course_data)
+        print("Successfully generated {} predictions for {} users.".format(num_preds, len(user_ids)))
