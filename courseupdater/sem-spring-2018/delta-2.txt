@@ -34,7 +34,6 @@ condensed_0
 condensed_1
 condensed_2
 condensed_3
-condensed
 departments
 enrollment
 CSB
