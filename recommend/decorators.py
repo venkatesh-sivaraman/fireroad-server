@@ -16,8 +16,11 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
 
     # They are not logged in. See if they provided login credentials
     #
-    if 'HTTP_AUTHORIZATION' in request.META:
-        auth = request.META['HTTP_AUTHORIZATION'].split()
+    key = 'HTTP_AUTHORIZATION'
+    if key not in request.META:
+        key = 'REDIRECT_HTTP_AUTHORIZATION'
+    if key in request.META:
+        auth = request.META[key].split()
         if len(auth) == 2:
             # NOTE: We are only support basic authentication for now.
             #
@@ -29,7 +32,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
                         login(request, user)
                         request.user = user
                         return view(request, *args, **kwargs)
-    elif test_func(request.user):
+    if test_func(request.user):
         # Already logged in, just return the view.
         #
         return view(request, *args, **kwargs)
