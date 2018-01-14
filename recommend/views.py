@@ -4,8 +4,9 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import json
 import random
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import PermissionDenied
+from .decorators import logged_in_or_basicauth
 
 def verify(request):
     user_id = request.GET.get('u', '')
@@ -27,20 +28,18 @@ def signup(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
-            form.save()
             username = form.cleaned_data.get('username')
             raw_password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=raw_password)
+            user = User.objects.create_user(username=username, password=raw_password)
+            user.save()
             resp = { 'received': True }
             return HttpResponse(json.dumps(resp), content_type="application/json")
     else:
         form = UserForm()
     return render(request, 'recommend/signup.html', {'form': form})
 
-def get_secure(request):
-    if not request.user.is_authenticated():
-        return HttpResponseBadRequest('No authenticated user')
-        #raise PermissionDenied
+@logged_in_or_basicauth
+def get(request):
     user_id = request.GET.get('u', '')
     if len(user_id) == 0:
         return HttpResponseBadRequest('<h1>Missing user ID</h1>')
@@ -56,21 +55,8 @@ def get_secure(request):
     resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
-def get(request):
-    user_id = request.GET.get('u', '')
-    if len(user_id) == 0:
-        return HttpResponseBadRequest('<h1>Missing user ID</h1>')
-    rec_type = request.GET.get('t', '')
-    if len(rec_type) == 0:
-        recs = Recommendation.objects.filter(user_id=user_id)
-    else:
-        recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
-    if recs.count() == 0:
-        return HttpResponse('No recommendations yet. Try again tomorrow!')
-    resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
-    return HttpResponse(json.dumps(resp), content_type="application/json")
-
 @csrf_exempt
+@logged_in_or_basicauth
 def rate(request):
     batch = request.body
     if len(batch) > 0:
@@ -82,6 +68,8 @@ def rate(request):
                 return HttpResponseBadRequest('<h1>Missing subject ID</h1>')
             if item['v'] == None:
                 return HttpResponseBadRequest('<h1>Missing rating value</h1>')
+            if request.user.username != str(item['u']):
+                raise PermissionDenied
             update_rating(int(item['u']), item['s'], int(item['v']))
         resp = { 'received': True }
     else:
@@ -90,6 +78,8 @@ def rate(request):
         value = request.POST.get('v', '')
         if len(user_id) == 0 or int(user_id) < 0:
             return HttpResponseBadRequest('<h1>Invalid user ID</h1><br/><p>{}</p>'.format(user_id))
+        if request.user.username != user_id:
+            raise PermissionDenied
         if len(subject_id) == 0:
             return HttpResponseBadRequest('<h1>Invalid subject ID</h1><br/><p>{}</p>'.format(subject_id))
         if len(value) == 0 or int(value) > MAX_RATING_VALUE:
