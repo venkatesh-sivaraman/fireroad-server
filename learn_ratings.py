@@ -6,6 +6,7 @@ from sklearn.linear_model import LinearRegression
 from scipy.spatial.distance import cosine
 import json
 import os
+import time
 import csv
 import re
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
@@ -118,6 +119,7 @@ def get_rating_data(subjects=None, coalesced=True):
         subjects = {}   # Dictionary of subject IDs to label in input data
     subject_list = []   # List of subject IDs given their label in input data
     for entry in Rating.objects.all():
+        if entry.value is None or entry.subject_id is None or entry.user_id is None: continue
         if coalesced:
             if entry.subject_id not in subjects:
                 subj = len(subject_list)
@@ -191,7 +193,7 @@ def generate_subject_features(features_path):
 def determine_user_regressions(subject_arrays, input_data):
     ret = []
     for user_data in input_data:
-        X = scipy.sparse.vstack([subject_arrays[subj] for subj, value in user_data])
+        X = scipy.sparse.vstack([subject_arrays[subj] for subj, value in user_data if subj in subject_arrays])
         Y = np.array([[value for subj, value in user_data]]).T
         model = LinearRegression(fit_intercept=False)
         model.fit(X, Y)

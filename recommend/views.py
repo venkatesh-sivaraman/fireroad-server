@@ -62,11 +62,11 @@ def rate(request):
     if len(batch) > 0:
         batch_items = json.loads(batch)
         for item in batch_items:
-            if item['u'] == None:
+            if int(item['u']) == None:
                 return HttpResponseBadRequest('<h1>Missing user ID</h1>')
             if item['s'] == None:
                 return HttpResponseBadRequest('<h1>Missing subject ID</h1>')
-            if item['v'] == None:
+            if int(item['v']) == None:
                 return HttpResponseBadRequest('<h1>Missing rating value</h1>')
             if request.user.username != str(item['u']):
                 raise PermissionDenied
