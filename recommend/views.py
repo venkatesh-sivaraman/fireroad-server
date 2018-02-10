@@ -32,6 +32,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password')
             user = User.objects.create_user(username=username, password=raw_password)
             user.save()
+            Recommendation.objects.create(user_id=username, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
             resp = { 'received': True }
             return HttpResponse(json.dumps(resp), content_type="application/json")
     else:

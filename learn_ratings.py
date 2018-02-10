@@ -272,9 +272,15 @@ def generate_predicted_experiences(user_regressions, subject_arrays, course_data
     return predicted_data
 
 def store_social_prediction(user_id, predicted_courses, rec_type=DEFAULT_RECOMMENDATION_TYPE):
-    Recommendation.objects.filter(user_id=user_id, rec_type=rec_type).delete()
-    r = Recommendation(user_id=user_id, rec_type=rec_type, subjects=json.dumps(predicted_courses))
-    r.save()
+    existing = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
+    if existing.count() == 1:
+        first = existing.first()
+        first.subjects = json.dumps(predicted_courses)
+        first.save()
+    else:
+        if existing.count() > 1:
+            Recommendation.objects.filter(user_id=user_id, rec_type=rec_type).delete()
+        Recommendation.objects.create(user_id=user_id, rec_type=rec_type, subjects=json.dumps(predicted_courses))
 
 # A system-predicted course will be worth the approval of 25% of the user's neighbors
 system_prediction_weight = 0.25
