@@ -12,6 +12,7 @@ import re
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
+from django.db import DatabaseError, transaction
 
 max_rating = 5
 
@@ -289,40 +290,44 @@ def generate_social_predictions(input_data, predicted_data, user_ids, similars, 
     '''Pass course_data to check from the equivalent subjects lists to make sure none
     of the predicted experiences overlap with the previously taken courses.'''
     total_preds = 0
-    for id, user_index in user_ids.items():
-        viewed_courses = set()
-        for subj, _ in input_data[user_index]:
-            viewed_courses.add(subj)
+    try:
+        with transaction.atomic():
+            for id, user_index in user_ids.items():
+                viewed_courses = set()
+                for subj, _ in input_data[user_index]:
+                    viewed_courses.add(subj)
 
-        neighbors = similars[user_index]
-        relevances = {}
-        system_weight = system_prediction_weight * sum(1.0 - x[1] for x in neighbors)
-        for subj, value in predicted_data[user_index]:
-            if subj in viewed_courses: continue
-            if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
-                continue
-            if subj in relevances:
-                relevances[subj] += value * system_weight
-            else:
-                relevances[subj] = value * system_weight
+                neighbors = similars[user_index]
+                relevances = {}
+                system_weight = system_prediction_weight * sum(1.0 - x[1] for x in neighbors)
+                for subj, value in predicted_data[user_index]:
+                    if subj in viewed_courses: continue
+                    if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
+                        continue
+                    if subj in relevances:
+                        relevances[subj] += value * system_weight
+                    else:
+                        relevances[subj] = value * system_weight
 
-        # Use similar users' data as well
-        for similar_user_idx, distance in neighbors:
-            similarity = 1.0 - distance
-            for subj, value in input_data[user_index] + predicted_data[user_index]:
-                if subj in viewed_courses: continue
-                if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
-                    continue
-                if subj in relevances:
-                    relevances[subj] += value * similarity
-                else:
-                    relevances[subj] = value * similarity
+                # Use similar users' data as well
+                for similar_user_idx, distance in neighbors:
+                    similarity = 1.0 - distance
+                    for subj, value in input_data[user_index] + predicted_data[user_index]:
+                        if subj in viewed_courses: continue
+                        if course_data is not None and (subject_already_taken(subj, course_data, input_data[user_index]) or subject_is_in_set(subj, course_data, relevances)):
+                            continue
+                        if subj in relevances:
+                            relevances[subj] += value * similarity
+                        else:
+                            relevances[subj] = value * similarity
 
-        predictions = RankList(max_predictions)
-        for subject, relevance in relevances.items():
-            predictions.add(subject, relevance)
-        store_social_prediction(id, {subj: (round(value * 2.0) / 2.0) for subj, value in predictions.items()})
-        total_preds += len(predictions.items())
+                predictions = RankList(max_predictions)
+                for subject, relevance in relevances.items():
+                    predictions.add(subject, relevance)
+                store_social_prediction(id, {subj: (round(value * 2.0) / 2.0) for subj, value in predictions.items()})
+                total_preds += len(predictions.items())
+    except DatabaseError:
+        print("Database error while writing recommendations.")
     return total_preds
 
 def read_condensed_courses(source):
