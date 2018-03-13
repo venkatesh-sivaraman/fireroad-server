@@ -75,10 +75,22 @@ WSGI_APPLICATION = 'fireroad.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
+'''DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}'''
+import dbcreds
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': dbcreds.dbname, # For scripts: venkats+fireroad
+        'USER': dbcreds.username,
+        'PASSWORD': dbcreds.password,
+        'HOST': dbcreds.host, # For scripts: sql.mit.edu
+        'PORT': '',
     }
 }
 
@@ -123,9 +135,9 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-STATICFILES_DIRS = [
+'''STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "catalog-files")
-]
+]'''
 
 LOGGING = {
     'version': 1,

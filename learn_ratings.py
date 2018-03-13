@@ -176,7 +176,7 @@ def generate_subject_features(features_path):
             comps = line.split(',')
             if len(comps) == 0: continue
             subject_id = comps[0]
-            if next((x for x in exclusions if x.match(subject_id) is not None), None):
+            if next((x for x in exclusions if x.search(subject_id) is not None), None):
                 continue
             if comps[1] not in department_indexes:
                 department_indexes[comps[1]] = len(department_indexes)
@@ -205,7 +205,7 @@ def determine_user_regressions(subject_arrays, input_data):
     ret = []
     for user_data in input_data:
         X = scipy.sparse.vstack([subject_arrays[subj] for subj, value in user_data if subj in subject_arrays])
-        Y = np.array([[value for subj, value in user_data]]).T
+        Y = np.array([[value for subj, value in user_data if subj in subject_arrays]]).T
         model = LinearRegression(fit_intercept=False)
         model.fit(X, Y)
         ret.append(model.coef_)
