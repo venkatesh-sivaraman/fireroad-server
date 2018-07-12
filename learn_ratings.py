@@ -13,6 +13,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
 from django.db import DatabaseError, transaction
+from django import db
 
 max_rating = 5
 
@@ -259,6 +260,8 @@ def subject_already_taken(subject, course_data, user_data):
     return False
 
 def subject_is_in_set(subject, course_data, other_subjects):
+    if subject not in course_data:
+        return subject in other_subjects
     for key in equiv_subject_keys:
         if key not in course_data[subject]: continue
         for item in course_data[subject][key]:
@@ -375,6 +378,9 @@ if __name__ == '__main__':
         if len(sys.argv) > 3 and sys.argv[3] == '-v':
             for user_id in user_ids:
                 print(user_id, input_data[user_ids[user_id]])
+        # Close the connection because computation will take a while
+        db.close_connection()
+
         regressions = determine_user_regressions(subjects, input_data)
         similars = similar_users(regressions)
         if len(sys.argv) > 3 and sys.argv[3] == '-v':
