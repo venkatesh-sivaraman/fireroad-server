@@ -8,12 +8,25 @@ import urllib
 from .models import OAuthCache
 import random
 from django.utils import timezone
+from django.conf import settings
 
 module_path = os.path.dirname(__file__)
 
-REDIRECT_URI = 'http://lvh.me:8000/recommend/link_user'
+REDIRECT_URI = settings.MY_BASE_URL + '/recommend/login/'
 ISSUER = 'https://oidc.mit.edu/'
+AUTH_CODE_URL = 'https://oidc.mit.edu/authorize'
+AUTH_TOKEN_URL = 'https://oidc.mit.edu/token'
+AUTH_USER_INFO_URL = 'https://oidc.mit.edu/userinfo'
+
 LOGIN_TIMEOUT = 300
+AUTH_SCOPES = ['email', 'openid', 'profile', 'offline_access']
+AUTH_RESPONSE_TYPE = 'code'
+
+def get_client_info():
+    with open(os.path.join(module_path, 'oidc.txt'), 'r') as file:
+        contents = file.read().strip()
+        id, secret = contents.split('\n')
+    return id, secret
 
 def generate_random_string(length):
     choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
@@ -23,7 +36,14 @@ def oauth_code_url(request):
     # Create a state and nonce, and save them
     cache = OAuthCache(user=request.user, state=generate_random_string(32), nonce=generate_random_string(32))
     cache.save()
-    return "https://oidc.mit.edu/authorize?response_type=code&client_id=895914d8-fc42-4188-a67e-db1aee77fee0&redirect_uri={}&scope=email%20openid%20profile&state={}&nonce={}".format(urllib.quote(REDIRECT_URI), cache.state, cache.nonce)
+    return "{}?response_type={}&client_id={}&redirect_uri={}&scope={}&state={}&nonce={}".format(
+        AUTH_CODE_URL,
+        AUTH_RESPONSE_TYPE,
+        get_client_info()[0],
+        urllib.quote(REDIRECT_URI),
+        urllib.quote(' '.join(AUTH_SCOPES)),
+        cache.state,
+        cache.nonce)
 
 def get_user_info(request):
     code = request.GET.get('code', None)
@@ -38,25 +58,35 @@ def get_user_info(request):
     if not found:
         raise PermissionDenied
 
-    acc_token, status = get_oauth_id_token(request, code)
+    acc_token, all_json, status = get_oauth_id_token(request, code)
     if acc_token is None:
         return None, status
 
-    return get_user_info_with_token(request, acc_token)
+    result, status = get_user_info_with_token(request, acc_token)
+    if result is not None:
+        if "refresh_token" in all_json:
+            print(all_json["refresh_token"])
+            result[u'refresh_token'] = all_json["refresh_token"]
+    return result, status
 
-def get_oauth_id_token(request, code):
-    with open(os.path.join(module_path, 'oidc.txt'), 'r') as file:
-        contents = file.read().strip()
-        id, secret = contents.split('\n')
-
-    payload = {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': REDIRECT_URI
-    }
-    r = requests.post('https://oidc.mit.edu/token',auth=(id, secret), data=payload)
+def get_oauth_id_token(request, code, refresh=False):
+    id, secret = get_client_info()
+    
+    if refresh:
+        payload = {
+            'grant_type': 'refresh_token',
+            'refresh_token': code
+        }
+    else:
+        payload = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': REDIRECT_URI
+        }
+    r = requests.post(AUTH_TOKEN_URL, auth=(id, secret), data=payload)
+    print(r.text, r.status_code)
     if r.status_code != 200:
-        return None, r.status_code
+        return None, None, r.status_code
 
     # Parse token
     r_json = r.json()
@@ -77,7 +107,7 @@ def get_oauth_id_token(request, code):
         if cache.nonce == nonce:
             current_date = timezone.now()
             if (current_date - cache.date).total_seconds() > LOGIN_TIMEOUT:
-                return None, 408
+                return None, None, 408
             found = True
             break
     if not found:
@@ -85,9 +115,9 @@ def get_oauth_id_token(request, code):
     caches.delete()
 
     access_token = r_json["access_token"]
-    return access_token, r.status_code
+    return access_token, r_json, r.status_code
 
 def get_user_info_with_token(request, acc_token):
     headers = {"Authorization":"Bearer {}".format(acc_token)}
-    r = requests.get('https://oidc.mit.edu/userinfo', headers=headers)
+    r = requests.get(AUTH_USER_INFO_URL, headers=headers)
     return r.json(), r.status_code

@@ -2,16 +2,61 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
-import json
 import random
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import PermissionDenied
 from .decorators import logged_in_or_basicauth
 from .oauth_client import *
+import base64
+import json
+from token_gen import *
 
+# def user_data_identifier(user):
+#     if user.student_set.count() > 0:
+#         return user.student_set.all()[0].academic_id
+#     return user.username
+
+# One month
+TOKEN_EXPIRY_TIME = 2.6e6
+
+def login_oauth(request):
+    if request.GET.get('code', None) is None:
+        code = request.GET.get('code', None)
+        return redirect(oauth_code_url(request))
+
+    result, status = get_user_info(request)
+    if result is None or status != 200:
+        return HttpResponse(status=status if status != 200 else 500)
+    else:
+        # Save the user's profile, check if there are any other accounts
+        email = result.get(u'email', None)
+        if email is None:
+            return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
+
+        password = generate_random_string(32)
+        try:
+            student = Student.objects.get(academic_id=email)
+            if student.user is None:
+                user = User.objects.create_user(username=random.getrandbits(32), password=password)
+                user.save()
+                student.user = user
+                student.save()
+        except:
+            user = User.objects.create_user(username=random.getrandbits(32), password=password)
+            user.save()
+            Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
+            student = Student(user=user, academic_id=email, name=result.get(u'name', 'Anonymous'))
+            student.save()
+        student.user.backend = 'django.contrib.auth.backends.ModelBackend'
+        login(request, student.user)
+
+        token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
+        return HttpResponse(json.dumps({'success': True, 'username': student.user.username, 'academic_id': student.academic_id, 'access_token': token}), content_type="application/json")
+
+@logged_in_or_basicauth
 def verify(request):
-    user_id = request.GET.get('u', '')
-    count = Rating.objects.filter(user_id=user_id).count()
+    user_id = request.user
+    count = Rating.objects.filter(user=user).count()
     return HttpResponse(str(count), content_type="application/json")
 
 def new_user(request):
@@ -19,13 +64,14 @@ def new_user(request):
     resp = { 'u': new_id }
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
-def update_rating(user_id, subject_id, value):
-    Rating.objects.filter(user_id=user_id, subject_id=subject_id).delete()
+def update_rating(user, subject_id, value):
+    Rating.objects.filter(user=user, subject_id=subject_id).delete()
 
-    r = Rating(user_id=user_id, subject_id=subject_id, value=value)
+    r = Rating(user=user, subject_id=subject_id, value=value)
     r.save()
 
 def signup(request):
+    """DEPRECATED"""
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
@@ -42,16 +88,11 @@ def signup(request):
 
 @logged_in_or_basicauth
 def get(request):
-    user_id = request.GET.get('u', '')
-    if len(user_id) == 0:
-        return HttpResponseBadRequest('<h1>Missing user ID</h1>')
-    if request.user.username != user_id:
-        raise PermissionDenied
     rec_type = request.GET.get('t', '')
     if len(rec_type) == 0:
-        recs = Recommendation.objects.filter(user_id=user_id)
+        recs = Recommendation.objects.filter(user=request.user)
     else:
-        recs = Recommendation.objects.filter(user_id=user_id, rec_type=rec_type)
+        recs = Recommendation.objects.filter(user=request.user, rec_type=rec_type)
     if recs.count() == 0:
         return HttpResponse('No recommendations yet. Try again tomorrow!')
     resp = {rec.rec_type: json.loads(rec.subjects) for rec in recs}
@@ -65,40 +106,35 @@ def rate(request):
         batch_items = json.loads(batch)
         for item in batch_items:
             try:
-                user_id = int(item['u'])
                 value = int(item['v'])
-                if user_id is None or user_id < 0:
-                    return HttpResponseBadRequest('<h1>Missing user ID</h1>')
                 if item['s'] == None or len(item['s']) > 10:
                     return HttpResponseBadRequest('<h1>Missing subject ID</h1>')
                 if value is None:
                     return HttpResponseBadRequest('<h1>Missing rating value</h1>')
-                if request.user.username != str(user_id):
-                    raise PermissionDenied
-                update_rating(user_id, item['s'], value)
+                update_rating(request.user, item['s'], value)
             except:
                 return HttpResponseBadRequest('<h1>Bad input</h1>')
         resp = { 'received': True }
     else:
-        user_id = request.POST.get('u', '')
         subject_id = request.POST.get('s', '')
         value = request.POST.get('v', '')
         try:
-            user_id = int(user_id)
             value = int(value)
-            if user_id is None or user_id < 0:
-                return HttpResponseBadRequest('<h1>Missing user ID</h1>')
             if subject_id == None or len(subject_id) == 0 or len(subject_id) > 10:
                 return HttpResponseBadRequest('<h1>Missing subject ID</h1>')
             if value is None:
                 return HttpResponseBadRequest('<h1>Missing rating value</h1>')
             if request.user.username != str(user_id):
                 raise PermissionDenied
-            update_rating(user_id, subject_id, value)
-            resp = { 'u': user_id, 's': subject_id, 'v': value, 'received': True }
+            update_rating(request.user, subject_id, value)
+            resp = { 'u': request.user.username, 's': subject_id, 'v': value, 'received': True }
         except:
             return HttpResponseBadRequest('<h1>Bad input</h1>')
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
+@logged_in_or_basicauth
+def set_semester(request):
+    user = request.user
 
 @csrf_exempt
 @logged_in_or_basicauth
@@ -138,6 +174,7 @@ def roads(request):
         raise PermissionDenied
     road_name = request.GET.get('n', None)
     print(road_name)
+
     if road_name is None:
         result = {}
         roads = Road.objects.filter(user=request.user)
@@ -153,20 +190,34 @@ def roads(request):
 
 ### User Linking
 
-@logged_in_or_basicauth
-def link_user(request):
+def oauth_login_page(request):
     code = request.GET.get('code', None)
     if code is None:
-        return redirect(oauth_code_url(request))
+        return None, redirect(oauth_code_url(request))
     else:
         result, status = get_user_info(request)
         if result is None:
-            return HttpResponse(status=status if status != 200 else 500)
+            return None, HttpResponse(status=status if status != 200 else 500)
         else:
-            # Save the user's profile
+            # Save the user's profile, check if there are any other accounts
             email = result.get(u'email', None)
             if email is None:
-                return HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
-            student = Student(user=request.user, academic_id=email, name=result.get(u'name', 'Anonymous'))
-            student.save()
-            return HttpResponse(json.dumps({'success': True}))
+                return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
+            return email, None
+
+@logged_in_or_basicauth
+def link_user(request):
+    email, response = oauth_login_page(request)
+    if response is not None:
+        return response
+
+    try:
+        existing_student = Student.objects.get(academic_id=email)
+    except:
+        student = Student(academic_id=email, name=result.get(u'name', 'Anonymous'))
+        student.save()
+        student.users.add(request.user)
+        return HttpResponse(json.dumps({'success': True}))
+    else:
+        existing_student.users.add(request.user)
+        return HttpResponse(json.dumps({'success': True}))

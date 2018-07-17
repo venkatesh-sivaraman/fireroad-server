@@ -7,7 +7,8 @@ DEFAULT_RECOMMENDATION_TYPE = "for-you"
 
 # Create your models here.
 class Rating(models.Model):
-    user_id = models.BigIntegerField(default=0)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    #user_id = models.BigIntegerField(default=0) # DEPRECATED
     subject_id = models.CharField(max_length=50)
     value = models.IntegerField(default=0)
 
@@ -15,7 +16,8 @@ class Rating(models.Model):
         return "User {} rated {} as {}".format(self.user_id, self.subject_id, self.value)
 
 class Recommendation(models.Model):
-    user_id = models.BigIntegerField(default=0)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    #user_id = models.BigIntegerField(default=0) # DEPRECATED
     rec_type = models.CharField(max_length=20)
     subjects = models.CharField(max_length=500)
 
@@ -28,13 +30,13 @@ class UserForm(ModelForm):
         fields = ['username', 'password']
 
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, null=True, on_delete=models.CASCADE)
     academic_id = models.CharField(max_length=50)
     current_semester = models.CharField(max_length=25, default='0')
     name = models.CharField(max_length=40, default="")
 
     def __str__(self):
-        return "{}: ID {}, in {}".format(self.user.username, self.academic_id, self.current_semester)
+        return "ID {}, in {} ({} user)".format(self.academic_id, self.current_semester, self.user)
 
 road_compressions = {
     ('"overrideWarnings":', '"ow":'),
@@ -44,7 +46,7 @@ road_compressions = {
 }
 
 class Road(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     contents = models.CharField(max_length=5000)
 

@@ -13,5 +13,6 @@ urlpatterns = [
     url('upload_road/', views.upload_road, name='upload_road'),
     url('roads/', views.roads, name='roads'),
     url('link_user/', views.link_user, name='link_user'),
+    url('login/', views.login_oauth, name='login'),
     url('decline/', TemplateView.as_view(template_name='recommend/decline.html'), name='decline'),
 ]
