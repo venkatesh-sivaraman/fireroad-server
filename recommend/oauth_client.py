@@ -34,7 +34,7 @@ def generate_random_string(length):
 
 def oauth_code_url(request):
     # Create a state and nonce, and save them
-    cache = OAuthCache(user=request.user, state=generate_random_string(32), nonce=generate_random_string(32))
+    cache = OAuthCache(state=generate_random_string(48), nonce=generate_random_string(48))
     cache.save()
     return "{}?response_type={}&client_id={}&redirect_uri={}&scope={}&state={}&nonce={}".format(
         AUTH_CODE_URL,
@@ -49,16 +49,11 @@ def get_user_info(request):
     code = request.GET.get('code', None)
     state = request.GET.get('state', None)
 
-    caches = OAuthCache.objects.filter(user=request.user)
-    found = False
-    for cache in caches:
-        if cache.state == state:
-            found = True
-            break
-    if not found:
+    caches = OAuthCache.objects.filter(state=state)
+    if caches.count() == 0:
         raise PermissionDenied
 
-    acc_token, all_json, status = get_oauth_id_token(request, code)
+    acc_token, all_json, status = get_oauth_id_token(request, code, state)
     if acc_token is None:
         return None, status
 
@@ -69,9 +64,9 @@ def get_user_info(request):
             result[u'refresh_token'] = all_json["refresh_token"]
     return result, status
 
-def get_oauth_id_token(request, code, refresh=False):
+def get_oauth_id_token(request, code, state, refresh=False):
     id, secret = get_client_info()
-    
+
     if refresh:
         payload = {
             'grant_type': 'refresh_token',
@@ -101,7 +96,7 @@ def get_oauth_id_token(request, code, refresh=False):
     if body['iss'] != ISSUER:
         raise PermissionDenied
     nonce = body['nonce']
-    caches = OAuthCache.objects.filter(user=request.user)
+    caches = OAuthCache.objects.filter(state=state)
     found = False
     for cache in caches:
         if cache.nonce == nonce:

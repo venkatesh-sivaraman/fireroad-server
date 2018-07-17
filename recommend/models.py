@@ -74,7 +74,6 @@ class RoadForm(ModelForm):
         fields = ['name', 'contents']
 
 class OAuthCache(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
     state = models.CharField(max_length=50)
     nonce = models.CharField(max_length=50)
     date = models.DateTimeField(auto_now_add=True)
