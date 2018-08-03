@@ -142,34 +142,26 @@ def set_semester(request):
 @csrf_exempt
 @logged_in_or_basicauth
 def upload_road(request):
-    if request.method == 'POST':
-        form = RoadForm(request.POST)
-        if form.is_valid():
-            road_name = form.cleaned_data.get('name')
-            if road_name is None or len(road_name) == 0:
-                return HttpResponseBadRequest('<h1>Missing road name</h1>')
-            contents = form.cleaned_data.get('contents')
-            if contents is None or len(contents) == 0:
-                return HttpResponseBadRequest('<h1>Missing road contents</h1>')
+    road_name = request.POST.get('name', '')
+    if road_name is None or len(road_name) == 0:
+        return HttpResponseBadRequest('<h1>Missing road name</h1>')
+    contents = request.POST.get('contents', '')
+    if contents is None or len(contents) == 0:
+        return HttpResponseBadRequest('<h1>Missing road contents</h1>')
 
-            try:
-                j_contents = json.loads(contents)
-            except:
-                return HttpResponseBadRequest('<h1>Invalid JSON for road contents</h1>')
-            try:
-                r = Road.objects.get(user=request.user, name=road_name)
-                r.contents = Road.compress_road(contents)
-                r.save()
-            except:
-                r = Road(user=request.user, name=road_name, contents=Road.compress_road(contents))
-                r.save()
-            resp = { 'received': True }
-            return HttpResponse(json.dumps(resp), content_type="application/json")
-        else:
-            return HttpResponseBadRequest('<h1>Bad Form Input</h1>')
-    else:
-        form = RoadForm()
-    return render(request, 'recommend/upload_road.html', {'form': form})
+    try:
+        j_contents = json.loads(contents)
+    except:
+        return HttpResponseBadRequest('<h1>Invalid JSON for road contents</h1>')
+    try:
+        r = Road.objects.get(user=request.user, name=road_name)
+        r.contents = Road.compress_road(contents)
+        r.save()
+    except:
+        r = Road(user=request.user, name=road_name, contents=Road.compress_road(contents))
+        r.save()
+    resp = { 'received': True }
+    return HttpResponse(json.dumps(resp), content_type="application/json")
 
 @logged_in_or_basicauth
 def roads(request):
