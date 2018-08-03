@@ -51,11 +51,14 @@ def login_oauth(request):
         login(request, student.user)
 
         token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        return HttpResponse(json.dumps({'success': True, 'username': student.user.username, 'academic_id': student.academic_id, 'access_token': token}), content_type="application/json")
+        return render(request, 'recommend/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'academic_id': student.academic_id, 'access_token': token})})
 
 @logged_in_or_basicauth
 def verify(request):
-    user_id = request.user
+    """Verify that the given request has a user."""
+    user = request.user
+    if user is None:
+        raise PermissionDenied
     count = Rating.objects.filter(user=user).count()
     return HttpResponse(str(count), content_type="application/json")
 

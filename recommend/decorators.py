@@ -10,7 +10,7 @@ from models import Student
 import json
 from token_gen import *
 
-ALWAYS_LOGIN = True
+ALWAYS_LOGIN = False
 #############################################################################
 #
 def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
@@ -44,7 +44,8 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
                         login(request, user)
                         request.user = user
                         return view(request, *args, **kwargs)
-        return redirect('login')
+        raise PermissionDenied
+        #return redirect('login')
     else:
         return view(request, *args, **kwargs)
 
