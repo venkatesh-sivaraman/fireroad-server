@@ -35,6 +35,9 @@ def generate_random_string(length):
 def oauth_code_url(request):
     # Create a state and nonce, and save them
     cache = OAuthCache(state=generate_random_string(48), nonce=generate_random_string(48))
+    sem = request.GET.get('sem', '')
+    if len(sem) > 0:
+        cache.current_semester = sem
     cache.save()
     return "{}?response_type={}&client_id={}&redirect_uri={}&scope={}&state={}&nonce={}".format(
         AUTH_CODE_URL,
@@ -53,7 +56,7 @@ def get_user_info(request):
     if caches.count() == 0:
         raise PermissionDenied
 
-    acc_token, all_json, status = get_oauth_id_token(request, code, state)
+    acc_token, info, all_json, status = get_oauth_id_token(request, code, state)
     if acc_token is None:
         return None, status
 
@@ -62,7 +65,7 @@ def get_user_info(request):
         if "refresh_token" in all_json:
             print(all_json["refresh_token"])
             result[u'refresh_token'] = all_json["refresh_token"]
-    return result, status
+    return result, status, info
 
 def get_oauth_id_token(request, code, state, refresh=False):
     id, secret = get_client_info()
@@ -98,19 +101,21 @@ def get_oauth_id_token(request, code, state, refresh=False):
     nonce = body['nonce']
     caches = OAuthCache.objects.filter(state=state)
     found = False
+    info = {}
     for cache in caches:
         if cache.nonce == nonce:
             current_date = timezone.now()
             if (current_date - cache.date).total_seconds() > LOGIN_TIMEOUT:
                 return None, None, 408
             found = True
+            info["sem"] = cache.current_semester
             break
     if not found:
         raise PermissionDenied
     caches.delete()
 
     access_token = r_json["access_token"]
-    return access_token, r_json, r.status_code
+    return access_token, info, r_json, r.status_code
 
 def get_user_info_with_token(request, acc_token):
     headers = {"Authorization":"Bearer {}".format(acc_token)}

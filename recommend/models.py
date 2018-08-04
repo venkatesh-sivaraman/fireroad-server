@@ -76,4 +76,5 @@ class RoadForm(ModelForm):
 class OAuthCache(models.Model):
     state = models.CharField(max_length=50)
     nonce = models.CharField(max_length=50)
+    current_semester = models.CharField(max_length=25, default='0')
     date = models.DateTimeField(auto_now_add=True)

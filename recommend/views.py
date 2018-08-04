@@ -24,7 +24,7 @@ def login_oauth(request):
         code = request.GET.get('code', None)
         return redirect(oauth_code_url(request))
 
-    result, status = get_user_info(request)
+    result, status, info = get_user_info(request)
     if result is None or status != 200:
         return HttpResponse(status=status if status != 200 else 500)
     else:
@@ -36,6 +36,7 @@ def login_oauth(request):
         password = generate_random_string(32)
         try:
             student = Student.objects.get(academic_id=email)
+            student.current_semester = info.get('sem', '0')
             if student.user is None:
                 user = User.objects.create_user(username=random.getrandbits(32), password=password)
                 user.save()
@@ -46,12 +47,13 @@ def login_oauth(request):
             user.save()
             Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
             student = Student(user=user, academic_id=email, name=result.get(u'name', 'Anonymous'))
+            student.current_semester = info.get('sem', '0')
             student.save()
         student.user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, student.user)
 
         token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        return render(request, 'recommend/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'academic_id': student.academic_id, 'access_token': token})})
+        return render(request, 'recommend/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token})})
 
 @logged_in_or_basicauth
 def verify(request):
@@ -59,8 +61,7 @@ def verify(request):
     user = request.user
     if user is None:
         raise PermissionDenied
-    count = Rating.objects.filter(user=user).count()
-    return HttpResponse(str(count), content_type="application/json")
+    return HttpResponse(json.dumps({'success': True, 'current_semester': int(user.student.current_semester)}), content_type="application/json")
 
 def new_user(request):
     new_id = random.getrandbits(32)
@@ -135,9 +136,22 @@ def rate(request):
             return HttpResponseBadRequest('<h1>Bad input</h1>')
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
+@csrf_exempt
 @logged_in_or_basicauth
 def set_semester(request):
     user = request.user
+    info = json.loads(request.body)
+    sem = str(info.get('semester', ''))
+    if len(sem) == 0:
+        return HttpResponseBadRequest('<h1>Missing semester number</h1>')
+    try:
+        sem = int(sem)
+    except:
+        return HttpResponseBadRequest('<h1>Semester number is not an integer</h1>')
+    s = user.student
+    s.current_semester = str(sem)
+    s.save()
+    return HttpResponse(json.dumps({'success': True}), content_type="application/json")
 
 @csrf_exempt
 @logged_in_or_basicauth
@@ -187,37 +201,3 @@ def roads(request):
             return HttpResponse(Road.expand_road(road.contents), content_type="application/json")
         except:
             return HttpResponseBadRequest('<h1>No road named {}</h1>'.format(road_name))
-
-### User Linking
-
-def oauth_login_page(request):
-    code = request.GET.get('code', None)
-    if code is None:
-        return None, redirect(oauth_code_url(request))
-    else:
-        result, status = get_user_info(request)
-        if result is None:
-            return None, HttpResponse(status=status if status != 200 else 500)
-        else:
-            # Save the user's profile, check if there are any other accounts
-            email = result.get(u'email', None)
-            if email is None:
-                return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
-            return email, None
-
-@logged_in_or_basicauth
-def link_user(request):
-    email, response = oauth_login_page(request)
-    if response is not None:
-        return response
-
-    try:
-        existing_student = Student.objects.get(academic_id=email)
-    except:
-        student = Student(academic_id=email, name=result.get(u'name', 'Anonymous'))
-        student.save()
-        student.users.add(request.user)
-        return HttpResponse(json.dumps({'success': True}))
-    else:
-        existing_student.users.add(request.user)
-        return HttpResponse(json.dumps({'success': True}))
