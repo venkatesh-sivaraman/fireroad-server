@@ -10,6 +10,8 @@ from .oauth_client import *
 import base64
 import json
 from token_gen import *
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 # def user_data_identifier(user):
 #     if user.student_set.count() > 0:
@@ -61,6 +63,7 @@ def verify(request):
     user = request.user
     if user is None:
         raise PermissionDenied
+    auto_increment_semester(user)
     return HttpResponse(json.dumps({'success': True, 'current_semester': int(user.student.current_semester)}), content_type="application/json")
 
 def new_user(request):
@@ -201,3 +204,51 @@ def roads(request):
             return HttpResponse(Road.expand_road(road.contents), content_type="application/json")
         except:
             return HttpResponseBadRequest('<h1>No road named {}</h1>'.format(road_name))
+
+# Semester calculation
+
+def is_fall(date):
+    return date.month >= 5 and date.month <= 11
+
+def closest_semester_boundary(date):
+    """Rounds to the beginning of the most recent semester period (i.e. the closest
+    May 1 for fall or December 1 for spring)."""
+    def closest_past_date(delta):
+        new = date + delta
+        if new > date:
+            new += relativedelta(years=-1)
+        return new
+
+    return max(closest_past_date(relativedelta(month=12, day=1)), closest_past_date(relativedelta(month=5, day=1)))
+
+MAX_FALL = 13
+MAX_SPRING = 15
+
+def next_fall(semester, delta=1):
+    if semester >= MAX_FALL:
+        return semester
+    return min((((semester - 1) // 3) + delta) * 3 + 1, MAX_FALL)
+
+def next_spring(semester, delta=1):
+    if semester >= MAX_SPRING:
+        return semester
+    return min(((semester // 3) + delta) * 3, MAX_SPRING)
+
+def auto_increment_semester(user):
+    current = int(user.student.current_semester)
+    update_date = closest_semester_boundary(user.student.semester_update_date)
+    now = timezone.now()
+
+    difference_in_years = relativedelta(now, update_date).years
+    new = current
+
+    if (not is_fall(update_date) or difference_in_years > 0) and is_fall(now):
+        # Change to next fall
+        new = next_fall(current, delta=max(1, difference_in_years))
+    elif (is_fall(update_date) or difference_in_years > 0) and not is_fall(now):
+        # Change to next spring
+        new = next_spring(current, delta=max(1, difference_in_years))
+
+    if new != current:
+        user.student.current_semester = str(new)
+        user.student.save()
