@@ -142,10 +142,15 @@ def set_semester(request):
 @csrf_exempt
 @logged_in_or_basicauth
 def upload_road(request):
-    road_name = request.POST.get('name', '')
+    try:
+        form_contents = json.loads(request.body)
+    except:
+        return HttpResponseBadRequest('<h1>Invalid request</h1>')
+
+    road_name = form_contents.get('name', '')
     if road_name is None or len(road_name) == 0:
         return HttpResponseBadRequest('<h1>Missing road name</h1>')
-    contents = request.POST.get('contents', {})
+    contents = form_contents.get('contents', {})
     if contents is None or len(contents) == 0:
         return HttpResponseBadRequest('<h1>Missing road contents</h1>')
 
