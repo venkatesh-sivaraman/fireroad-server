@@ -457,7 +457,7 @@ if __name__ == '__main__':
                     print(majors_data[user_id])
 
         # Close the connection because computation will take a while
-        db.connections.close_all()
+        db.close_connection()
 
         # Build user profiles
         subject_ids = sorted(subject_arrays.keys())
