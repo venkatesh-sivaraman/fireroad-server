@@ -13,11 +13,6 @@ from token_gen import *
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
-# def user_data_identifier(user):
-#     if user.student_set.count() > 0:
-#         return user.student_set.all()[0].academic_id
-#     return user.username
-
 # One month
 TOKEN_EXPIRY_TIME = 2.6e6
 
