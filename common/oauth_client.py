@@ -12,7 +12,7 @@ from django.conf import settings
 
 module_path = os.path.dirname(__file__)
 
-REDIRECT_URI = settings.MY_BASE_URL + '/recommend/login/'
+REDIRECT_URI = settings.MY_BASE_URL + '/login/'
 ISSUER = 'https://oidc.mit.edu/'
 AUTH_CODE_URL = 'https://oidc.mit.edu/authorize'
 AUTH_TOKEN_URL = 'https://oidc.mit.edu/token'
@@ -63,7 +63,6 @@ def get_user_info(request):
     result, status = get_user_info_with_token(request, acc_token)
     if result is not None:
         if "refresh_token" in all_json:
-            print(all_json["refresh_token"])
             result[u'refresh_token'] = all_json["refresh_token"]
     return result, status, info
 

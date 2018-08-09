@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admindocs',
-    'recommend'
+    'recommend',
+    'common',
+    'sync'
 ]
 
 MIDDLEWARE_CLASSES = [

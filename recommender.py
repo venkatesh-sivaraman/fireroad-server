@@ -11,7 +11,8 @@ import csv
 import re
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
-from recommend.models import Rating, Recommendation, Road, DEFAULT_RECOMMENDATION_TYPE
+from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
+from sync.models import Road
 from django.contrib.auth.models import User
 from django.db import DatabaseError, transaction
 from django import db

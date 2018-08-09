@@ -5,10 +5,10 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
-from oauth_client import *
-from models import Student
+from .oauth_client import *
+from .models import Student
 import json
-from token_gen import *
+from .token_gen import *
 
 ALWAYS_LOGIN = False
 #############################################################################
@@ -21,7 +21,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     and returning the view if all goes well, otherwise responding with a 401.
     """
 
-    if request.user is None or ALWAYS_LOGIN:
+    if request.user is None or not request.user.is_authenticated() or ALWAYS_LOGIN:
         key = 'HTTP_AUTHORIZATION'
         if key not in request.META:
             key = 'REDIRECT_HTTP_AUTHORIZATION'
