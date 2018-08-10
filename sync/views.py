@@ -8,52 +8,90 @@ from common.decorators import logged_in_or_basicauth
 import json
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from dateutil.parser import parse
+from django.core.exceptions import ObjectDoesNotExist
+from .operations import *
 
-@csrf_exempt
-@logged_in_or_basicauth
-def upload_road(request):
+def get_datetime(form_contents, key):
+    raw = form_contents.get(key, '')
+    if len(raw) == 0:
+        return None
+    return parse(raw)
+
+def get_operation(request):
+    """Returns a SyncOperation from the given request and None, or None and an
+    HttpResponse error object."""
     try:
         form_contents = json.loads(request.body)
     except:
-        return HttpResponseBadRequest('<h1>Invalid request</h1>')
+        return None, HttpResponseBadRequest('<h1>Invalid request</h1>')
 
-    road_name = form_contents.get('name', '')
-    if road_name is None or len(road_name) == 0:
-        return HttpResponseBadRequest('<h1>Missing road name</h1>')
+    # Extract POST contents
+
+    id = form_contents.get('id', 0)
+    if id is None or id == 0:
+        id = NEW_FILE_ID
+    else:
+        try:
+            id = int(id)
+        except ValueError:
+            return HttpResponseBadRequest('<h1>Invalid ID</h1>')
+
     contents = form_contents.get('contents', {})
     if contents is None or len(contents) == 0:
-        return HttpResponseBadRequest('<h1>Missing road contents</h1>')
+        return None, HttpResponseBadRequest('<h1>Missing contents</h1>')
 
-    try:
-        j_contents = json.dumps(contents)
-    except:
-        return HttpResponseBadRequest('<h1>Invalid JSON for road contents</h1>')
-    try:
-        r = Road.objects.get(user=request.user, name=road_name)
-        r.contents = Road.compress_road(j_contents)
-        r.save()
-    except:
-        r = Road(user=request.user, name=road_name, contents=Road.compress_road(j_contents))
-        r.save()
-    resp = { 'received': True }
+    change_date = get_datetime(form_contents, 'changed')
+    if change_date is None:
+        return None, HttpResponseBadRequest('<h1>Missing or invalid changed date</h1>')
+
+    down_date = get_datetime(form_contents, 'downloaded')
+    name = form_contents.get('name', '')
+    agent = form_contents.get('agent', ANONYMOUS_AGENT)
+    override = form_contents.get('override', False)
+
+    return SyncOperation(id, name, contents, change_date, down_date, agent, override_conflict=override), None
+
+@csrf_exempt
+@logged_in_or_basicauth
+def sync_road(request):
+    operation, err_resp = get_operation(request)
+    if operation is None:
+        return err_resp
+
+    resp = sync(request, Road, operation)
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 @logged_in_or_basicauth
 def roads(request):
-    if request.user is None:
-        raise PermissionDenied
-    road_name = request.GET.get('n', None)
-    print(road_name)
+    road_id = request.GET.get('id', None)
 
-    if road_name is None:
-        result = {}
-        roads = Road.objects.filter(user=request.user)
-        for road in roads:
-            result[road.name] = json.loads(Road.expand_road(road.contents))
-        return HttpResponse(json.dumps(result), content_type="application/json")
-    else:
+    if road_id is not None:
         try:
-            road = Road.objects.get(user=request.user, name=road_name)
-            return HttpResponse(Road.expand_road(road.contents), content_type="application/json")
-        except:
-            return HttpResponseBadRequest('<h1>No road named {}</h1>'.format(road_name))
+            road_id = int(road_id)
+        except ValueError:
+            return HttpResponseBadRequest('<h1>Invalid road ID</h1>')
+
+    resp = browse(request, Road, road_id)
+    return HttpResponse(json.dumps(resp), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def delete_road(request):
+    try:
+        form_contents = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>Invalid request</h1>')
+
+    # Extract POST contents
+
+    id = form_contents.get('id', 0)
+    if id is None or id == 0:
+        return HttpResponseBadRequest('<h1>Missing file ID</h1>')
+    try:
+        id = int(id)
+    except ValueError:
+        return HttpResponseBadRequest('<h1>Invalid file ID</h1>')
+
+    resp = delete(request, Road, id)
+    return HttpResponse(json.dumps(resp), content_type="application/json")

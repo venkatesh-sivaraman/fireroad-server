@@ -142,7 +142,7 @@ def get_road_data():
             continue
 
         try:
-            contents = json.loads(Road.expand_road(road.contents))
+            contents = json.loads(Road.expand(road.contents))
             if road.user.username not in road_data:
                 road_data[road.user.username] = ({}, {})
 

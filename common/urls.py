@@ -10,5 +10,5 @@ urlpatterns = [
     url('signup/', views.signup, name='signup'),
     url('login/', views.login_oauth, name='login'),
     url('set_semester/', views.set_semester, name='set_semester'),
-    url('decline/', TemplateView.as_view(template_name='recommend/decline.html'), name='decline'),
+    url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
 ]

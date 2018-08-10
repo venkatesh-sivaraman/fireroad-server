@@ -10,7 +10,6 @@
       padding: 0;
       overflow: hidden;
       font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      text-align: center;
     }
     @media screen and (min-width: 480px) {
       #par {
@@ -27,7 +26,7 @@
     p {
       font-weight: 300;
     }
-    button[type=submit] {
+    a.submit {
       padding:5px 15px;
       margin-top: 15px;
       background: none;
@@ -37,28 +36,37 @@
       border-width: 2px;
       font-family: -apple-system, 'Helvetica Neue', sans-serif;
       font-weight: 600;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: #007aff;
       cursor:pointer;
       -webkit-border-radius: 5px;
       border-radius: 5px;
+      text-decoration: none;
+      padding: 6px 10px 6px 10px;
     }
-    button[type=submit]:hover {
+    a.submit:hover {
       background: #99caff;
     }
-    a {
+    a.cancel {
       color: gray;
       text-decoration: none;
     }
-    a:hover, a:active {
+    a.cancel:hover, a.cancel:active {
       color: #222;
     }
     #topbar {
       background: linear-gradient(#f14d50, #9b1e21);
       color: white;
+      text-align: center;
     }
     #heading {
       padding: 10px;
+    }
+    #buttons {
+      text-align: center;
+    }
+    .fineprint {
+      font-size: 0.7em;
     }
     </style>
   </head>
@@ -70,14 +78,15 @@
     <br/>
     <br/>
     <div id="par">
-      <p>Welcome to FireRoad! Would you like to send your course selections to the MIT FireRoad server and receive daily course recommendations?</p>
+      <p>FireRoad features a recommendation system that learns from your subject selections to provide you and other users with useful suggestions.</p>
+      <p>To enable this feature, tap <strong>Allow and Continue</strong> below and log in with your MIT credentials. You can also enable the feature later in the settings view.</p>
+      <p class="fineprint">By logging in, you are allowing FireRoad to upload your <strong>roads, schedules, and subject ratings</strong> to a secure server. Your data will be used as input to various machine learning algorithms to provide you with subject recommendations, and to improve other users' recommendations anonymously. No other users or third parties will be able to access the data (except anonymously, for the purpose of improving the recommendation system).</p>
     </div>
-    <form method="post" id="signup_form">
-      {% csrf_token %}
-      <input id="username_field" type="text" name="username" maxlength="150" autofocus required id="id_username" />
-      <input id="password_field" type="password" name="password" required />
-      <button type="submit">Allow</button>
-    </form>
-    <a href="{% url 'decline' %}">Not Now</a>
+    <div id="buttons">
+      <br/>
+      <a class="submit" href="{% url 'login' %}?sem={{ sem }}">Allow and Continue</a>
+      <br/><br/>
+      <a class="cancel" href="{% url 'decline' %}">Not Now</a>
+    </div>
   </body>
 </html>

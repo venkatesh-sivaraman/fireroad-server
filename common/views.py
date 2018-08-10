@@ -50,8 +50,7 @@ def login_oauth(request):
         login(request, student.user)
 
         token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        print(token)
-        return render(request, 'recommend/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token})})
+        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token})})
 
 @logged_in_or_basicauth
 def verify(request):
@@ -68,20 +67,10 @@ def new_user(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 def signup(request):
-    """DEPRECATED"""
-    if request.method == 'POST':
-        form = UserForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password')
-            user = User.objects.create_user(username=username, password=raw_password)
-            user.save()
-            #Recommendation.objects.create(user_id=username, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
-            resp = { 'received': True }
-            return HttpResponse(json.dumps(resp), content_type="application/json")
-    else:
-        form = UserForm()
-    return render(request, 'recommend/signup.html', {'form': form})
+    """Shows an HTML page that describes the purpose of allowing recommendations
+    for mobile users. If Yes is selected, continues to login. If No, goes to
+    decline."""
+    return render(request, 'common/signup.html', {'sem': request.GET.get('sem', '1')})
 
 @csrf_exempt
 @logged_in_or_basicauth

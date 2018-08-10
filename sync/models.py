@@ -13,12 +13,14 @@ class Road(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     contents = models.CharField(max_length=10000)
+    modified_date = models.DateTimeField(auto_now=True)
+    last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return "{}: {}".format(self.user.username, self.contents)
+        return "{}: last modified {}".format(self.user.username, self.modified_date)
 
     @staticmethod
-    def compress_road(road_text):
+    def compress(road_text):
         road_text = road_text.replace("\n", "")
         road_text = road_text.replace("\t", "")
         road_text = road_text.replace('" : ', '":')
@@ -27,7 +29,7 @@ class Road(models.Model):
         return road_text
 
     @staticmethod
-    def expand_road(road_text):
+    def expand(road_text):
         for expr, sub in road_compressions:
             road_text = road_text.replace(sub, expr)
         return road_text

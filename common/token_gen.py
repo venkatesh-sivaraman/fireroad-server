@@ -32,7 +32,10 @@ def get_user_for_token(request, token):
     """Decodes the given JWT token and determines if it is valid. If so, returns
     the user associated with that token and None. If not, returns None and a
     dictionary explaining the error."""
-    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+    except:
+        return None, {'error': 'decode_error', 'error_description': 'The token could not be decoded'}
     try:
         if payload['iss'] != FIREROAD_ISSUER:
             return None, {'error': 'invalid_issuer', 'error_description': 'The issuer of this token does not have the correct value'}
