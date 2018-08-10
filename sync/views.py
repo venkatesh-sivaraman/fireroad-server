@@ -52,6 +52,25 @@ def get_operation(request):
 
     return SyncOperation(id, name, contents, change_date, down_date, agent, override_conflict=override), None
 
+def delete_helper(request, model_cls):
+    try:
+        form_contents = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>Invalid request</h1>')
+
+    # Extract POST contents
+
+    id = form_contents.get('id', 0)
+    if id is None or id == 0:
+        return HttpResponseBadRequest('<h1>Missing file ID</h1>')
+    try:
+        id = int(id)
+    except ValueError:
+        return HttpResponseBadRequest('<h1>Invalid file ID</h1>')
+
+    resp = delete(request, model_cls, id)
+    return HttpResponse(json.dumps(resp), content_type="application/json")
+
 @csrf_exempt
 @logged_in_or_basicauth
 def sync_road(request):
@@ -78,20 +97,32 @@ def roads(request):
 @csrf_exempt
 @logged_in_or_basicauth
 def delete_road(request):
-    try:
-        form_contents = json.loads(request.body)
-    except:
-        return None, HttpResponseBadRequest('<h1>Invalid request</h1>')
+    return delete_helper(request, Road)
 
-    # Extract POST contents
+@csrf_exempt
+@logged_in_or_basicauth
+def sync_schedule(request):
+    operation, err_resp = get_operation(request)
+    if operation is None:
+        return err_resp
 
-    id = form_contents.get('id', 0)
-    if id is None or id == 0:
-        return HttpResponseBadRequest('<h1>Missing file ID</h1>')
-    try:
-        id = int(id)
-    except ValueError:
-        return HttpResponseBadRequest('<h1>Invalid file ID</h1>')
-
-    resp = delete(request, Road, id)
+    resp = sync(request, Schedule, operation)
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
+@logged_in_or_basicauth
+def schedules(request):
+    schedule_id = request.GET.get('id', None)
+
+    if schedule_id is not None:
+        try:
+            schedule_id = int(schedule_id)
+        except ValueError:
+            return HttpResponseBadRequest('<h1>Invalid schedule ID</h1>')
+
+    resp = browse(request, Schedule, schedule_id)
+    return HttpResponse(json.dumps(resp), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def delete_schedule(request):
+    return delete_helper(request, Schedule)

@@ -64,10 +64,10 @@ def sync(request, model_cls, operation):
 
     if operation.download_date > operation.change_date:
         return {'success': False, 'error': "The operation's change date should be after the download date."}
-    if remote_version.modified_date < operation.download_date:
+    if remote_version.modified_date <= operation.download_date:
         # Update the remote file
         return update_remote(model_cls, remote_version, operation)
-    elif remote_version.modified_date > operation.change_date:
+    elif remote_version.modified_date >= operation.change_date:
         # The local's version is stale, send back the updated version
         return update_local(model_cls, remote_version, operation)
     else:

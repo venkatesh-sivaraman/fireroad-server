@@ -9,6 +9,12 @@ road_compressions = {
     ('"units":', '"u":')
 }
 
+schedule_compressions = {
+    ('"selectedSubjects":', '"ssub":'),
+    ('"selectedSections":', '"ssec":'),
+    ('"allowedSections":', '"as":'),
+}
+
 class Road(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
@@ -38,3 +44,28 @@ class RoadForm(ModelForm):
     class Meta:
         model = Road
         fields = ['name', 'contents']
+
+class Schedule(models.Model):
+    user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    contents = models.CharField(max_length=10000)
+    modified_date = models.DateTimeField(auto_now=True)
+    last_agent = models.CharField(max_length=50, default="")
+
+    def __str__(self):
+        return "{}: last modified {}".format(self.user.username, self.modified_date)
+
+    @staticmethod
+    def compress(schedule_text):
+        schedule_text = schedule_text.replace("\n", "")
+        schedule_text = schedule_text.replace("\t", "")
+        schedule_text = schedule_text.replace('" : ', '":')
+        for expr, sub in schedule_compressions:
+            schedule_text = schedule_text.replace(expr, sub)
+        return schedule_text
+
+    @staticmethod
+    def expand(schedule_text):
+        for expr, sub in schedule_compressions:
+            schedule_text = schedule_text.replace(sub, expr)
+        return schedule_text

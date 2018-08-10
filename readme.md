@@ -67,3 +67,5 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
   * `other_name`, `other_agent`, `other_date`, `other_contents`, `this_agent`, `this_date`: Keys that are specified in the case of a conflict. In this case, the user should select whether to keep the local copy, the remote copy, or both. If keeping the local copy, the client should submit a new `sync_road` request with the `override` flag set to true.
 
 * `/sync/delete_road/` *(POST)*: Deletes the file specified by the `id` key in the body of the request.
+
+* `/sync/schedules`, `/sync/sync_schedule/`, `/sync/delete_schedule/`: Analogous to the above endpoints, but for schedules.
