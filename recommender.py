@@ -4,7 +4,7 @@ import django
 import scipy.sparse
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.linear_model import LinearRegression, Ridge, LogisticRegression, RidgeClassifier
 from scipy.spatial.distance import cosine
 import json
 import os
@@ -167,8 +167,8 @@ def get_road_data():
 
 RATING_SUPPLEMENT_DISTANCE_THRESHOLD = 0.7
 RATING_SUPPLEMENT_COUNT = 75
-RATING_SUPPLEMENT_NEGATIVE_VALUE = -5.0
-RATING_SUPPLEMENT_POSITIVE_VALUE = 3.0
+RATING_SUPPLEMENT_NEGATIVE_VALUE = -5
+RATING_SUPPLEMENT_POSITIVE_VALUE = 3
 
 class UserRecommenderProfile(object):
     """
@@ -191,13 +191,13 @@ class UserRecommenderProfile(object):
 
     def compute_regression_predictions(self, subject_arrays, all_subject_features):
         """
-        Computes regression predictions by running a random forest regressor
-        on the (subject, rating) pairs stored in self.ratings. Once finished, sets
-        the value of self.regression_predictions to a numpy array of predicted
-        ratings for every course, in the order specified by all_subject_features.
-        subject_arrays should be a dictionary or set keyed by subject IDs;
-        all_subject_features should be a matrix of subject features where each
-        row is a subject.
+        Computes regression predictions on the (subject, rating) pairs stored in
+        self.ratings. Once finished, sets the value of self.regression_predictions
+        to a numpy array of predicted ratings for every course, in the order
+        specified by all_subject_features. subject_arrays should be a dictionary
+        of feature vectors keyed by subject IDs; all_subject_features should be
+        a matrix of the same subject features where each row is a subject (in a
+        pre-specified order).
         """
         # Supplement ratings with some guessed values
         supplemented_ratings = { k: v for k, v in self.ratings.items() }
@@ -211,15 +211,16 @@ class UserRecommenderProfile(object):
             else:
                 supplemented_ratings[subject] = RATING_SUPPLEMENT_POSITIVE_VALUE
 
-        print(supplemented_ratings)
         ratings_keys = sorted(self.ratings.keys())
-        X = np.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays])
-        Y = np.array([self.ratings[subj] for subj in ratings_keys if subj in subject_arrays])
+        X = np.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays for i in range(int(self.ratings[subj]))])
+        Y = np.array([self.ratings[subj] for subj in ratings_keys if subj in subject_arrays for i in range(int(self.ratings[subj]))])
 
-        model = Ridge(alpha=0.5) #RandomForestRegressor()
+        model = RidgeClassifier() #Ridge(alpha=0.75) #RandomForestRegressor()
         model.fit(X, Y)
-        self.coefficients = (model.coef_, model.intercept_)
-        self.regression_predictions = model.predict(all_subject_features)
+        self.regression_predictions = model.decision_function(all_subject_features)
+        # For debugging (in Jupyter)
+        # self.X = X
+        # self.coefficients = (model.coef_, model.intercept_)
 
     @staticmethod
     def build(username, subject_arrays, all_subject_features, ratings, roads, courses_of_study, semester):
@@ -293,6 +294,7 @@ def user_similarities(profiles):
 REC_MIN_COUNT = 5 # Minimum number of recommendations required to save
 BASIC_RATING_SIMILARITY_CUTOFF = 0.7
 BASIC_RATING_REC_COUNT = 15
+RANDOM_PERTURBATION = 0.2   # Multiply by a random value from (1-x) to (1+x)
 
 def basic_rating_predictor(profiles, subject_ids, course_data=None):
     """
@@ -328,6 +330,10 @@ def basic_rating_predictor(profiles, subject_ids, course_data=None):
                 rating *= course_distributions[subject][profile.semester] / sum(course_distributions[subject].values())
             else:
                 rating *= 0.5
+
+            # Random salt
+            rating *= random.uniform(1.0 - RANDOM_PERTURBATION, 1.0 + RANDOM_PERTURBATION)
+            
             top_ratings.add(subject, rating)
 
         subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in top_ratings.items()}
@@ -504,7 +510,7 @@ if __name__ == '__main__':
 
         # Run various recommenders
         for recommender in RECOMMENDERS:
-            for rec in recommender(profiles, subject_id_dict, course_data):
+            for rec in recommender(profiles, subject_ids, course_data):
                 if rec is None: continue
                 print(rec)
                 store_recommendation(rec)
