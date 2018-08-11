@@ -72,7 +72,7 @@ def sync(request, model_cls, operation):
         return update_local(model_cls, remote_version, operation)
     else:
         # Conflict!
-        if operation.override_conflict:
+        if operation.override_conflict or operation.agent == remote_version.last_agent:
             return update_remote(model_cls, remote_version, operation)
         else:
             return conflict(model_cls, remote_version, operation)
