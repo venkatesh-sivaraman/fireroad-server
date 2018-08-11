@@ -178,6 +178,11 @@ class UserRecommenderProfile(object):
         self.roads = roads
         self.courses_of_study = courses_of_study
         self.semester = semester
+        self.departments = set(subj[:subj.find('.')] for subj in self.subjects_taken())
+
+    def subjects_taken(self):
+        """Returns a list of the subjects taken by this user."""
+        return list(self.roads[0].keys()) + list(self.ratings.keys())
 
     def compute_regression_predictions(self, subject_arrays, all_subject_features):
         """
@@ -234,6 +239,16 @@ class RankList(object):
             self.list.insert(i, (object, value))
             self.list.pop()
 
+    def replace(self, object, new_object):
+        """Replaces an equivalent object with another object."""
+        idx = next((i for i in range(len(self.list)) if self.list[i][0] == object), None)
+        if idx is None:
+            print("Didn't find {} in rank list.".format(object))
+        self.list[idx] = (new_object, self.list[idx][1])
+
+    def __contains__(self, object):
+        return next((x for x in self.list if x[0] == object), None) is not None
+
     def objects(self):
         """Returns the objects without their corresponding numerical values."""
         return [x[0] for x in self.list if x[0] is not None]
@@ -242,22 +257,18 @@ class RankList(object):
         """Returns the objects in tuples with their corresponding numerical values."""
         return [x for x in self.list if x[0] is not None]
 
-def subjects_taken(profile):
-    """Returns a list of the subjects taken by this user."""
-    return list(profile.roads[0].keys()) + list(profile.ratings.keys())
-
 def subject_in_list(subject, subject_list, course_data=None):
     """Determines whether the given subject (or one of its equivalent subjects)
     is already present in the given subject list."""
     for other_subject in subject_list:
         if other_subject == subject:
-            return True
+            return other_subject
         if course_data is None or other_subject not in course_data: continue
         for key in equiv_subject_keys:
             if key not in course_data[other_subject]: continue
             if subject in course_data[other_subject][key]:
-                return True
-    return False
+                return other_subject
+    return None
 
 def user_similarities(profiles):
     """Returns an nxn matrix, where n is the number of profiles, indicating the
@@ -270,6 +281,18 @@ def user_similarities(profiles):
             if val > BASIC_RATING_SIMILARITY_CUTOFF:
                 similarities[i, j] = val
     return similarities
+
+def update_by_equivalent_subjects(subject, rank_list, profile, course_data):
+    """Checks for equivalent subjects in the given rank list, and replaces it if
+    this subject is more closely related to the given profile than the existing
+    one. Returns True if the subject was existing, and False if not."""
+    existing = subject_in_list(subject, rank_list.objects(), course_data)
+    if not existing:
+        return False
+    if subject[:subject.find('.')] in profile.departments:
+        print("Replacing", existing, subject)
+        rank_list.replace(existing, subject)
+    return True
 
 ### Recommender Engines
 
@@ -305,9 +328,8 @@ def basic_rating_predictor(profiles, subject_ids, course_data=None):
         social_ratings = np.dot(similarities[i], all_user_ratings)
         top_ratings = RankList(BASIC_RATING_REC_COUNT)
         for subject, rating in zip(subject_ids, social_ratings):
-            if subject_in_list(subject, subjects_taken(profile), course_data) or subject_in_list(subject, top_ratings.objects(), course_data):
-                print(subject, "already taken", top_ratings.objects())
-                continue
+            if subject_in_list(subject, profile.subjects_taken(), course_data): continue
+            if update_by_equivalent_subjects(subject, top_ratings, profile, course_data): continue
 
             # Now weight rating by frequency in current semester
             if subject in course_distributions and profile.semester in course_distributions[subject]:
@@ -363,7 +385,10 @@ def by_major_predictor(profiles, subject_ids, course_data=None):
             for subj in course_distributions:
                 if sum(course_distributions[subj].values()) < BY_MAJOR_FREQ_CUTOFF:
                     continue
-                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, subjects_taken(prof), course_data) or subject_in_list(subj, recs.objects(), course_data): continue
+                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, prof.subjects_taken(), course_data):
+                    continue
+                if update_by_equivalent_subjects(subj, recs.objects(), prof, course_data):
+                    continue
                 relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in course_distributions[subj].items()) * avg_ratings.get(subj, -99999)
                 recs.add(subj, relevance)
 
@@ -412,7 +437,9 @@ def related_subjects_predictor(profiles, subject_ids, course_data=None):
             for subj in course_totals:
                 if course_totals[subj] < RELATED_SUBJECTS_FREQ_CUTOFF:
                     continue
-                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, subjects_taken(prof), course_data) or subject_in_list(subj, recs.objects(), course_data):
+                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, prof.subjects_taken(), course_data):
+                    continue
+                if update_by_equivalent_subjects(subj, recs.objects(), prof, course_data):
                     continue
                 relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in course_distributions[subj].items()) * avg_ratings.get(subj, -99999)
                 recs.add(subj, relevance)
