@@ -4,13 +4,14 @@ import django
 import scipy.sparse
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, Ridge
 from scipy.spatial.distance import cosine
 import json
 import os
 import time
 import csv
 import re
+import random
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
@@ -39,6 +40,8 @@ ROAD_SUBJECT_ID_KEY = u"id"
 ROAD_SEMESTER_KEY = u"semester"
 ROAD_COURSES_KEY = u"coursesOfStudy"
 
+keyword_indexes = {}
+
 ### Building input data
 
 def generate_subject_features(features_path):
@@ -47,12 +50,12 @@ def generate_subject_features(features_path):
     scrubber tool, and produces a dictionary that keys subject IDs to sparse
     matrices that describe each subject.
     """
+    global keyword_indexes
     subjects = {}
-    keyword_indexes = {}
     exclusions = [re.compile(x) for x in EXCLUDED_PATTERNS]
     with open(features_path, 'r') as file:
         for line in file:
-            comps = line.split(',')
+            comps = line.strip().split(',')
             if len(comps) == 0: continue
             subject_id = comps[0]
             if next((x for x in exclusions if x.search(subject_id) is not None), None):
@@ -69,9 +72,9 @@ def generate_subject_features(features_path):
     dim = len(keyword_indexes)
     print("Dimension of vectors: 1 by {}".format(dim))
     for subject_id, keywords in subjects.items():
-        mat = scipy.sparse.dok_matrix((1, dim))
+        mat = np.zeros((dim,))
         for k in keywords:
-            mat[0,k] = 1
+            mat[k] = 1
         subject_arrays[subject_id] = mat
     return subject_arrays
 
@@ -162,6 +165,11 @@ def get_road_data():
 
 ### Characterize user preferences
 
+RATING_SUPPLEMENT_DISTANCE_THRESHOLD = 0.7
+RATING_SUPPLEMENT_COUNT = 75
+RATING_SUPPLEMENT_NEGATIVE_VALUE = -5.0
+RATING_SUPPLEMENT_POSITIVE_VALUE = 3.0
+
 class UserRecommenderProfile(object):
     """
     Describes a user in the recommender system. Should be used to store any
@@ -176,6 +184,11 @@ class UserRecommenderProfile(object):
         self.courses_of_study = courses_of_study
         self.semester = semester
 
+    def supplement_is_different(self, subject_arrays, rating_departments, subject):
+        """Determines whether the given subject to use as a supplement rating is
+        sufficiently different from the existing ratings."""
+        return subject[:subject.find('.')] not in rating_departments # and np.mean(np.array([cosine(subject_arrays[other], subject_arrays[subject]) for other in self.ratings if other in subject_arrays])) > RATING_SUPPLEMENT_DISTANCE_THRESHOLD
+
     def compute_regression_predictions(self, subject_arrays, all_subject_features):
         """
         Computes regression predictions by running a random forest regressor
@@ -186,12 +199,26 @@ class UserRecommenderProfile(object):
         all_subject_features should be a matrix of subject features where each
         row is a subject.
         """
+        # Supplement ratings with some guessed values
+        supplemented_ratings = { k: v for k, v in self.ratings.items() }
+        rating_depts = set(subj[:subj.find('.')] for subj in self.ratings.keys())
+        for _ in range(min(len(self.ratings), RATING_SUPPLEMENT_COUNT)):
+            # Pick a random unrated subject that is fairly different from the subjects at hand
+            all_subjects = list(set(subject_arrays.keys()) - set(supplemented_ratings.keys()))
+            subject = random.choice(all_subjects)
+            if self.supplement_is_different(subject_arrays, rating_depts, subject):
+                supplemented_ratings[subject] = RATING_SUPPLEMENT_NEGATIVE_VALUE
+            else:
+                supplemented_ratings[subject] = RATING_SUPPLEMENT_POSITIVE_VALUE
+
+        print(supplemented_ratings)
         ratings_keys = sorted(self.ratings.keys())
-        X = scipy.sparse.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays])
+        X = np.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays])
         Y = np.array([self.ratings[subj] for subj in ratings_keys if subj in subject_arrays])
 
-        model = LinearRegression() #RandomForestRegressor()
+        model = Ridge(alpha=0.5) #RandomForestRegressor()
         model.fit(X, Y)
+        self.coefficients = (model.coef_, model.intercept_)
         self.regression_predictions = model.predict(all_subject_features)
 
     @staticmethod
@@ -454,12 +481,15 @@ if __name__ == '__main__':
                     print(majors_data[user_id])
 
         # Close the connection because computation will take a while
-        db.close_connection()
+        if django.VERSION[1] >= 10 or django.VERSION[0] >= 2:
+            db.connections.close_all()
+        else:
+            db.close_connection()
 
         # Build user profiles
         subject_ids = sorted(subject_arrays.keys())
         subject_id_dict = dict(zip(subject_ids, range(len(subject_ids))))
-        X_test = scipy.sparse.vstack([subject_arrays[id] for id in subject_ids])
+        X_test = np.vstack([subject_arrays[id] for id in subject_ids])
         profiles = [UserRecommenderProfile.build(user_id,
                                                  subject_arrays,
                                                  X_test,
@@ -476,4 +506,5 @@ if __name__ == '__main__':
         for recommender in RECOMMENDERS:
             for rec in recommender(profiles, subject_id_dict, course_data):
                 if rec is None: continue
+                print(rec)
                 store_recommendation(rec)
