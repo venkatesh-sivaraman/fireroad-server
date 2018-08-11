@@ -333,7 +333,7 @@ def basic_rating_predictor(profiles, subject_ids, course_data=None):
 
             # Random salt
             rating *= random.uniform(1.0 - RANDOM_PERTURBATION, 1.0 + RANDOM_PERTURBATION)
-            
+
             top_ratings.add(subject, rating)
 
         subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in top_ratings.items()}
@@ -512,5 +512,4 @@ if __name__ == '__main__':
         for recommender in RECOMMENDERS:
             for rec in recommender(profiles, subject_ids, course_data):
                 if rec is None: continue
-                print(rec)
                 store_recommendation(rec)
