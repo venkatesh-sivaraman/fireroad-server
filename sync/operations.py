@@ -122,7 +122,7 @@ def update_remote(model_cls, file, operation):
 def update_local(model_cls, file, operation):
     """Constructs and returns a JSON-style dictionary that indicates to the client
     to update its local version of the given file."""
-    return {'success': True, 'result': SyncResult.UPDATE_LOCAL, 'contents': json.loads(model_cls.expand(file.contents)), 'name': file.name, 'id': file.pk, 'downloaded': timezone.now().isoformat()}
+    return {'success': True, 'result': SyncResult.UPDATE_LOCAL, 'contents': json.loads(model_cls.expand(file.contents)), 'name': file.name, 'id': file.pk, 'downloaded': timezone.now().isoformat(), 'changed': file.modified_date.isoformat()}
 
 def has_conflict(model_cls, file, operation):
     """Returns whether or not the remote file is in conflict with the new

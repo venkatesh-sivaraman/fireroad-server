@@ -290,7 +290,6 @@ def update_by_equivalent_subjects(subject, rank_list, profile, course_data):
     if not existing:
         return False
     if subject[:subject.find('.')] in profile.departments:
-        print("Replacing", existing, subject)
         rank_list.replace(existing, subject)
     return True
 
