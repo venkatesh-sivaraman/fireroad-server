@@ -55,7 +55,7 @@ def sync(request, model_cls, operation):
             return conflict(model_cls, None, operation)
 
     if not has_conflict(model_cls, remote_version, operation):
-        return {'success': True, 'result': SyncResult.NO_CHANGE}
+        return {'success': True, 'result': SyncResult.NO_CHANGE, 'changed': remote_version.modified_date.isoformat()}
 
     # Compare the modification date of the remote version with the operation dates
     if operation.download_date is None:
