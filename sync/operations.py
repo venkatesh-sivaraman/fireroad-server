@@ -82,7 +82,7 @@ def delete(request, model_cls, id):
     given model class's database. Returns a JSON-style dictionary representing
     the result of the deletion."""
     try:
-        file = Road.objects.get(user=request.user, pk=id)
+        file = model_cls.objects.get(user=request.user, pk=id)
     except ObjectDoesNotExist:
         return {'success': False, 'error': 'The file does not exist on the server.'}
 
