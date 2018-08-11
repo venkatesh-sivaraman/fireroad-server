@@ -170,4 +170,4 @@ def browse(request, model_cls, id):
             resp = {'success': False, 'error': 'The remote version of the file was invalid.'}
             return resp
 
-        return {'success': True, 'file': {'name': file.name, 'downloaded': timezone.now().isoformat(), 'agent': file.last_agent, 'contents': contents}}
+        return {'success': True, 'file': {'name': file.name, 'changed': file.modified_date.isoformat(), 'downloaded': timezone.now().isoformat(), 'agent': file.last_agent, 'contents': contents}}
