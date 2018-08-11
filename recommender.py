@@ -30,7 +30,7 @@ EXCLUDED_PATTERNS = [
 ]
 
 equiv_subject_keys = [
-    "Equivalent Subjects",
+    #"Equivalent Subjects", # We might want to recommend equivalent versions of the same subject
     "Joint Subjects",
     "Meets With Subjects"
 ]
@@ -305,7 +305,9 @@ def basic_rating_predictor(profiles, subject_ids, course_data=None):
         social_ratings = np.dot(similarities[i], all_user_ratings)
         top_ratings = RankList(BASIC_RATING_REC_COUNT)
         for subject, rating in zip(subject_ids, social_ratings):
-            if subject_in_list(subject, subjects_taken(profile), course_data) or subject_in_list(subj, top_ratings.objects(), course_data): continue
+            if subject_in_list(subject, subjects_taken(profile), course_data) or subject_in_list(subject, top_ratings.objects(), course_data):
+                print(subject, "already taken", top_ratings.objects())
+                continue
 
             # Now weight rating by frequency in current semester
             if subject in course_distributions and profile.semester in course_distributions[subject]:
@@ -410,7 +412,7 @@ def related_subjects_predictor(profiles, subject_ids, course_data=None):
             for subj in course_totals:
                 if course_totals[subj] < RELATED_SUBJECTS_FREQ_CUTOFF:
                     continue
-                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, subjects_taken(prof), course_data) or subject_in_list(subj, recs, course_data):
+                if (subj in prof.ratings and prof.ratings[subj] < 1.0) or subject_in_list(subj, subjects_taken(prof), course_data) or subject_in_list(subj, recs.objects(), course_data):
                     continue
                 relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in course_distributions[subj].items()) * avg_ratings.get(subj, -99999)
                 recs.add(subj, relevance)
