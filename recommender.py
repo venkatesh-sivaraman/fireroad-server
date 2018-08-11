@@ -3,6 +3,8 @@ import sys
 import django
 import scipy.sparse
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
 from scipy.spatial.distance import cosine
 import json
 import os
@@ -46,7 +48,6 @@ def generate_subject_features(features_path):
     matrices that describe each subject.
     """
     subjects = {}
-    department_indexes = {}
     keyword_indexes = {}
     exclusions = [re.compile(x) for x in EXCLUDED_PATTERNS]
     with open(features_path, 'r') as file:
@@ -56,26 +57,21 @@ def generate_subject_features(features_path):
             subject_id = comps[0]
             if next((x for x in exclusions if x.search(subject_id) is not None), None):
                 continue
-            if comps[1] not in department_indexes:
-                department_indexes[comps[1]] = len(department_indexes)
-            department = department_indexes[comps[1]]
             keyword_set = set()
-            if len(comps) >= 3:
-                for keyword in comps[2:]:
+            if len(comps) >= 2:
+                for keyword in comps[1:]:
                     if keyword not in keyword_indexes:
                         keyword_indexes[keyword] = len(keyword_indexes)
                     keyword_set.add(keyword_indexes[keyword])
-            subjects[subject_id] = (department, keyword_set)
+            subjects[subject_id] = keyword_set
 
     subject_arrays = {}
-    dim = len(department_indexes) + len(keyword_indexes)
-    keywords_start = len(department_indexes)
+    dim = len(keyword_indexes)
     print("Dimension of vectors: 1 by {}".format(dim))
-    for subject_id, (department, keywords) in subjects.items():
+    for subject_id, keywords in subjects.items():
         mat = scipy.sparse.dok_matrix((1, dim))
-        mat[0,department] = 1
         for k in keywords:
-            mat[0,keywords_start + k] = 1
+            mat[0,k] = 1
         subject_arrays[subject_id] = mat
     return subject_arrays
 
@@ -194,7 +190,7 @@ class UserRecommenderProfile(object):
         X = scipy.sparse.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays])
         Y = np.array([self.ratings[subj] for subj in ratings_keys if subj in subject_arrays])
 
-        model = RandomForestRegressor()
+        model = LinearRegression() #RandomForestRegressor()
         model.fit(X, Y)
         self.regression_predictions = model.predict(all_subject_features)
 
