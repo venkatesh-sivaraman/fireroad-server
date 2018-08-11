@@ -165,11 +165,6 @@ def get_road_data():
 
 ### Characterize user preferences
 
-RATING_SUPPLEMENT_DISTANCE_THRESHOLD = 0.7
-RATING_SUPPLEMENT_COUNT = 75
-RATING_SUPPLEMENT_NEGATIVE_VALUE = -5
-RATING_SUPPLEMENT_POSITIVE_VALUE = 3
-
 class UserRecommenderProfile(object):
     """
     Describes a user in the recommender system. Should be used to store any
@@ -184,11 +179,6 @@ class UserRecommenderProfile(object):
         self.courses_of_study = courses_of_study
         self.semester = semester
 
-    def supplement_is_different(self, subject_arrays, rating_departments, subject):
-        """Determines whether the given subject to use as a supplement rating is
-        sufficiently different from the existing ratings."""
-        return subject[:subject.find('.')] not in rating_departments # and np.mean(np.array([cosine(subject_arrays[other], subject_arrays[subject]) for other in self.ratings if other in subject_arrays])) > RATING_SUPPLEMENT_DISTANCE_THRESHOLD
-
     def compute_regression_predictions(self, subject_arrays, all_subject_features):
         """
         Computes regression predictions on the (subject, rating) pairs stored in
@@ -199,25 +189,13 @@ class UserRecommenderProfile(object):
         a matrix of the same subject features where each row is a subject (in a
         pre-specified order).
         """
-        # Supplement ratings with some guessed values
-        supplemented_ratings = { k: v for k, v in self.ratings.items() }
-        rating_depts = set(subj[:subj.find('.')] for subj in self.ratings.keys())
-        for _ in range(min(len(self.ratings), RATING_SUPPLEMENT_COUNT)):
-            # Pick a random unrated subject that is fairly different from the subjects at hand
-            all_subjects = list(set(subject_arrays.keys()) - set(supplemented_ratings.keys()))
-            subject = random.choice(all_subjects)
-            if self.supplement_is_different(subject_arrays, rating_depts, subject):
-                supplemented_ratings[subject] = RATING_SUPPLEMENT_NEGATIVE_VALUE
-            else:
-                supplemented_ratings[subject] = RATING_SUPPLEMENT_POSITIVE_VALUE
+        ratings_keys = [subj for subj in sorted(self.ratings.keys()) if subj in subject_arrays]
+        X = np.vstack([subject_arrays[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
+        Y = np.array([self.ratings[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
 
-        ratings_keys = sorted(self.ratings.keys())
-        X = np.vstack([subject_arrays[subj] for subj in ratings_keys if subj in subject_arrays for i in range(int(self.ratings[subj]))])
-        Y = np.array([self.ratings[subj] for subj in ratings_keys if subj in subject_arrays for i in range(int(self.ratings[subj]))])
-
-        model = RidgeClassifier() #Ridge(alpha=0.75) #RandomForestRegressor()
+        model = Ridge(alpha=0.75) #RidgeClassifier() #Ridge(alpha=0.75) #RandomForestRegressor()
         model.fit(X, Y)
-        self.regression_predictions = model.decision_function(all_subject_features)
+        self.regression_predictions = model.predict(all_subject_features)
         # For debugging (in Jupyter)
         # self.X = X
         # self.coefficients = (model.coef_, model.intercept_)
@@ -472,11 +450,13 @@ if __name__ == '__main__':
         else:
             course_data = None
 
+        verbose = len(sys.argv) > 3 and sys.argv[3] == '-v'
+
         # Get rating and road information
         rating_data = get_rating_data()
         road_data, majors_data = get_road_data()
         all_user_ids = set(rating_data.keys()) & set(road_data.keys())
-        if len(sys.argv) > 3 and sys.argv[3] == '-v':
+        if verbose:
             for user_id in all_user_ids:
                 print(user_id + ":")
                 if user_id in rating_data:
@@ -512,4 +492,5 @@ if __name__ == '__main__':
         for recommender in RECOMMENDERS:
             for rec in recommender(profiles, subject_ids, course_data):
                 if rec is None: continue
+                if verbose: print(rec)
                 store_recommendation(rec)
