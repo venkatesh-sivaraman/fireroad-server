@@ -156,7 +156,9 @@ def set_favorites(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.favorites = json.dumps(favorites)
+        student = request.user.student
+        student.favorites = json.dumps(favorites)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set favorites"}), content_type="application/json")
@@ -165,7 +167,7 @@ def set_favorites(request):
 def progress_overrides(request):
     value = request.user.student.progress_overrides
     try:
-        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+        return HttpResponse(json.dumps({'success': True, 'progress_overrides': json.loads(value) if len(value) else {}}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve progress_overrides"}), content_type="application/json")
 
@@ -178,7 +180,9 @@ def set_progress_overrides(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.progress_overrides = json.dumps(progress_overrides)
+        student = request.user.student
+        student.progress_overrides = json.dumps(progress_overrides)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set progress_overrides"}), content_type="application/json")
@@ -187,7 +191,7 @@ def set_progress_overrides(request):
 def notes(request):
     value = request.user.student.notes
     try:
-        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+        return HttpResponse(json.dumps({'success': True, 'notes': json.loads(value) if len(value) else {}}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve notes"}), content_type="application/json")
 
@@ -200,7 +204,9 @@ def set_notes(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.notes = json.dumps(notes)
+        student = request.user.student
+        student.notes = json.dumps(notes)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")
