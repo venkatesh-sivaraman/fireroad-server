@@ -30,6 +30,9 @@ def login_oauth(request):
         if email is None:
             return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
 
+        sub = result.get(u'sub', None)
+        if sub is None:
+            return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your OpenID information.'}))
         password = generate_random_string(32)
         try:
             student = Student.objects.get(academic_id=email)
@@ -50,7 +53,7 @@ def login_oauth(request):
         login(request, student.user)
 
         token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token})})
+        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token, 'sub': sub})})
 
 @logged_in_or_basicauth
 def verify(request):
