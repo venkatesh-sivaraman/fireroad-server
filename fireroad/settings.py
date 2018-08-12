@@ -23,9 +23,9 @@ with open(os.path.join(os.path.dirname(__file__), 'secret.txt')) as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['venkats.scripts.mit.edu']
 
 
 # Application definition
@@ -131,7 +131,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/fireroad/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
