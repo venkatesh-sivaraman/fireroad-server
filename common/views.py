@@ -136,3 +136,71 @@ def auto_increment_semester(user):
     if new != current:
         user.student.current_semester = str(new)
         user.student.save()
+
+### Preference Syncing
+
+@logged_in_or_basicauth
+def favorites(request):
+    value = request.user.student.favorites
+    try:
+        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else []}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve favorites"}), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def set_favorites(request):
+    try:
+        favorites = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>JSON error</h1>')
+
+    try:
+        request.user.student.favorites = json.dumps(favorites)
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set favorites"}), content_type="application/json")
+
+@logged_in_or_basicauth
+def progress_overrides(request):
+    value = request.user.student.progress_overrides
+    try:
+        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve progress_overrides"}), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def set_progress_overrides(request):
+    try:
+        progress_overrides = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>JSON error</h1>')
+
+    try:
+        request.user.student.progress_overrides = json.dumps(progress_overrides)
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set progress_overrides"}), content_type="application/json")
+
+@logged_in_or_basicauth
+def notes(request):
+    value = request.user.student.notes
+    try:
+        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve notes"}), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def set_notes(request):
+    try:
+        notes = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>JSON error</h1>')
+
+    try:
+        request.user.student.notes = json.dumps(notes)
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")

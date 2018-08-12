@@ -14,6 +14,10 @@ class Student(models.Model):
     name = models.CharField(max_length=40, default="")
     semester_update_date = models.DateTimeField(auto_now=True)
 
+    favorites = models.CharField(max_length=2000, default="")
+    progress_overrides = models.CharField(max_length=3000, default="")
+    notes = models.CharField(max_length=40000, default="")
+
     def __str__(self):
         return "ID {}, in {} ({} user)".format(self.academic_id, self.current_semester, self.user)
 
