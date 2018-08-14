@@ -1,0 +1,10 @@
+<html>
+  <body>
+    <form method="post" id="road_form">
+      {% csrf_token %}
+      <input id="name_field" type="text" name="name" maxlength="250" required />
+      <input id="contents_field" type="text" name="contents" required />
+      <button type="submit">Submit</button>
+    </form>
+  </body>
+</html>

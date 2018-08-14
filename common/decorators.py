@@ -3,9 +3,22 @@ import base64
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
 
-#############################################################################
-#
+from .oauth_client import *
+from .models import Student
+import json
+from .token_gen import *
+
+ALWAYS_LOGIN = False
+
+def user_has_student(user):
+    try:
+        s = user.student
+        return s is not None
+    except:
+        return False
+
 def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     """
     This is a helper function used by both 'logged_in_or_basicauth' and
@@ -14,38 +27,33 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     and returning the view if all goes well, otherwise responding with a 401.
     """
 
-    # They are not logged in. See if they provided login credentials
-    #
-    key = 'HTTP_AUTHORIZATION'
-    if key not in request.META:
-        key = 'REDIRECT_HTTP_AUTHORIZATION'
-    if key in request.META:
-        auth = request.META[key].split()
-        if len(auth) == 2:
-            # NOTE: We are only support basic authentication for now.
-            #
-            if auth[0].lower() == "basic":
-                uname, passwd = base64.b64decode(auth[1]).split(':')
-                user = authenticate(username=uname, password=passwd)
+    if request.user is None or not request.user.is_authenticated() or not user_has_student(request.user) or ALWAYS_LOGIN:
+        key = 'HTTP_AUTHORIZATION'
+        if key not in request.META:
+            key = 'REDIRECT_HTTP_AUTHORIZATION'
+        if key in request.META:
+            auth = request.META[key].split()
+            if len(auth) == 2:
+                if auth[0].lower() == "basic":
+                    # Basic authentication
+                    uname, passwd = base64.b64decode(auth[1]).split(':')
+                    user = authenticate(username=uname, password=passwd)
+                elif auth[0].lower() == "bearer":
+                    # The client bears a FireRoad-issued token
+                    user, error = get_user_for_token(request, auth[1])
+                    if error is not None:
+                        return HttpResponse(json.dumps(error), status=401, content_type="application/json")
+                    user.backend = 'django.contrib.auth.backends.ModelBackend'
+
                 if user is not None:
                     if user.is_active:
                         login(request, user)
                         request.user = user
                         return view(request, *args, **kwargs)
-    if test_func(request.user):
-        # Already logged in, just return the view.
-        #
+        raise PermissionDenied
+        #return redirect('login')
+    else:
         return view(request, *args, **kwargs)
-
-
-    # Either they did not provide an authorization header or
-    # something in the authorization attempt failed. Send a 401
-    # back to them to ask them to authenticate.
-    #
-    response = HttpResponse()
-    response.status_code = 401
-    response['WWW-Authenticate'] = 'Basic realm="%s"' % realm
-    return response
 
 #############################################################################
 #

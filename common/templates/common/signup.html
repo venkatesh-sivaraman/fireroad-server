@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <style type="text/css">
+    form > :not(button) {
+      display: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    }
+    @media screen and (min-width: 480px) {
+      #par {
+        width: 60%;
+        margin: auto;
+      }
+    }
+    @media screen and (max-width: 480px) {
+      #par {
+        padding-left: 25px;
+        padding-right: 25px;
+      }
+    }
+    p {
+      font-weight: 300;
+    }
+    a.submit {
+      padding:5px 15px;
+      margin-top: 15px;
+      background: none;
+      box-shadow: none;
+      border-style: solid;
+      border-color: #007aff;
+      border-width: 2px;
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      font-weight: 600;
+      font-size: 1.1em;
+      color: #007aff;
+      cursor:pointer;
+      -webkit-border-radius: 5px;
+      border-radius: 5px;
+      text-decoration: none;
+      padding: 6px 10px 6px 10px;
+    }
+    a.submit:hover {
+      background: #99caff;
+    }
+    a.cancel {
+      color: gray;
+      text-decoration: none;
+    }
+    a.cancel:hover, a.cancel:active {
+      color: #222;
+    }
+    #topbar {
+      background: linear-gradient(#f14d50, #9b1e21);
+      color: white;
+      text-align: center;
+    }
+    #heading {
+      padding: 10px;
+    }
+    #buttons {
+      text-align: center;
+    }
+    .fineprint {
+      font-size: 0.7em;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="topbar">
+      <h2 id="heading"><br/><br/>FireRoad Recommendations</h2>
+    </div>
+    <br/>
+    <br/>
+    <div id="par">
+      <p>FireRoad features a recommendation system that learns from your subject selections to provide you and other users with useful suggestions.</p>
+      <p>To enable this feature, tap <strong>Allow and Continue</strong> below and log in with your MIT credentials. You can also enable the feature later in the settings view.</p>
+      <p class="fineprint">By logging in, you are allowing FireRoad to upload your <strong>roads, schedules, and subject ratings</strong> to a secure server. Your data will be used as input to various machine learning algorithms to provide you with subject recommendations, and to improve other users' recommendations anonymously. No other users or third parties will be able to access the data (except anonymously, for the purpose of improving the recommendation system).</p>
+    </div>
+    <div id="buttons">
+      <br/>
+      <a class="submit" href="{% url 'login' %}?sem={{ sem }}">Allow and Continue</a>
+      <br/><br/>
+      <a class="cancel" href="{% url 'decline' %}">Not Now</a>
+    </div>
+  </body>
+</html>

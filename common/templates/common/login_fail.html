@@ -1,6 +1,7 @@
 <html>
   <head>
     <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <script type="application/json" id="access_info">{{access_info|safe}}</script>
     <style type="text/css">
     form > :not(button) {
       display: none;
@@ -27,7 +28,7 @@
     p {
       font-weight: 300;
     }
-    button[type=submit] {
+    a.submit {
       padding:5px 15px;
       margin-top: 15px;
       background: none;
@@ -37,20 +38,22 @@
       border-width: 2px;
       font-family: -apple-system, 'Helvetica Neue', sans-serif;
       font-weight: 600;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: #007aff;
       cursor:pointer;
       -webkit-border-radius: 5px;
       border-radius: 5px;
+      text-decoration: none;
+      padding: 6px 10px 6px 10px;
     }
-    button[type=submit]:hover {
+    a.submit:hover {
       background: #99caff;
     }
-    a {
+    a.cancel {
       color: gray;
       text-decoration: none;
     }
-    a:hover, a:active {
+    a.cancel:hover, a.cancel:active {
       color: #222;
     }
     #topbar {
@@ -70,14 +73,11 @@
     <br/>
     <br/>
     <div id="par">
-      <p>Welcome to FireRoad! Would you like to send your course selections to the MIT FireRoad server and receive daily course recommendations?</p>
+      <p>Login failed: {{ message }}</p>
+      <br/>
+      <a class="submit" href="{% url 'login' %}?sem={{ sem }}">Try Again</a>
+      <br/><br/>
+      <a class="cancel" href="{% url 'decline' %}">Not Now</a>
     </div>
-    <form method="post" id="signup_form">
-      {% csrf_token %}
-      <input id="username_field" type="text" name="username" maxlength="150" autofocus required id="id_username" />
-      <input id="password_field" type="password" name="password" required />
-      <button type="submit">Allow</button>
-    </form>
-    <a href="{% url 'decline' %}">Not Now</a>
   </body>
 </html>
