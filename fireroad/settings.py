@@ -25,7 +25,7 @@ with open(os.path.join(os.path.dirname(__file__), 'secret.txt')) as f:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False #True
 
-ALLOWED_HOSTS = ['localhost', 'lvh.me']
+ALLOWED_HOSTS = ['venkats.scripts.mit.edu']
 
 MY_BASE_URL = 'https://venkats.scripts.mit.edu/fireroad'
 
@@ -82,13 +82,13 @@ WSGI_APPLICATION = 'fireroad.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
+'''DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
-}
-'''import dbcreds
+}'''
+import dbcreds
 
 DATABASES = {
     'default': {
@@ -99,7 +99,7 @@ DATABASES = {
         'HOST': dbcreds.host, # For scripts: sql.mit.edu
         'PORT': '',
     }
-}'''
+}
 
 
 # Password validation
