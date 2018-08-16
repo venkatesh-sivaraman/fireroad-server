@@ -276,8 +276,16 @@ def user_similarities(profiles):
     # Assemble pairwise user similarities
     similarities = np.zeros((len(profiles), len(profiles)))
     for i, prof1 in enumerate(profiles):
+        my_sims = np.zeros((len(profiles),))
         for j, prof2 in enumerate(profiles):
             val = (1.0 - cosine(prof1.regression_predictions, prof2.regression_predictions)) ** 4
+            val *= 1.0 - (np.tanh(abs(prof1.semester - prof2.semester) / 4.0) ** 2)
+            my_sims[j] = val
+
+        baseline = np.max(my_sims)
+        for j, prof2 in enumerate(profiles):
+            # Weight by similarity of semester
+            val = my_sims[j] / baseline
             if val > BASIC_RATING_SIMILARITY_CUTOFF:
                 similarities[i, j] = val
     return similarities
@@ -296,7 +304,7 @@ def update_by_equivalent_subjects(subject, rank_list, profile, course_data):
 ### Recommender Engines
 
 REC_MIN_COUNT = 5 # Minimum number of recommendations required to save
-BASIC_RATING_SIMILARITY_CUTOFF = 0.7
+BASIC_RATING_SIMILARITY_CUTOFF = 0.5
 BASIC_RATING_REC_COUNT = 15
 RANDOM_PERTURBATION = 0.2   # Multiply by a random value from (1-x) to (1+x)
 
@@ -332,9 +340,10 @@ def basic_rating_predictor(profiles, subject_ids, course_data=None):
 
             # Now weight rating by frequency in current semester
             if subject in course_distributions and profile.semester in course_distributions[subject]:
-                rating *= course_distributions[subject][profile.semester] / sum(course_distributions[subject].values())
+                num_occurrences = float(sum(course_distributions[subject].values()))
+                rating *= float(course_distributions[subject][profile.semester]) / num_occurrences * np.log(max(num_occurrences, 2.0))
             else:
-                rating *= 0.5
+                rating *= 0.25
 
             # Random salt
             rating *= random.uniform(1.0 - RANDOM_PERTURBATION, 1.0 + RANDOM_PERTURBATION)
@@ -518,7 +527,7 @@ if __name__ == '__main__':
 
         # Clear recommendations
         for prof in profiles:
-            Recommendation.objects.filter(user=User.objects.get(username=prof.username)).delete()
+           Recommendation.objects.filter(user=User.objects.get(username=prof.username)).delete()
 
         # Run various recommenders
         for recommender in RECOMMENDERS:
