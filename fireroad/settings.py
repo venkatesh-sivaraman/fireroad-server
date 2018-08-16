@@ -27,7 +27,7 @@ DEBUG = False #True
 
 ALLOWED_HOSTS = ['venkats.scripts.mit.edu']
 
-MY_BASE_URL = 'http://lvh.me:8000'
+MY_BASE_URL = 'https://venkats.scripts.mit.edu/fireroad'
 
 # Application definition
 
