@@ -13,6 +13,7 @@ class Student(models.Model):
     current_semester = models.CharField(max_length=25, default='0')
     name = models.CharField(max_length=40, default="")
     semester_update_date = models.DateTimeField(auto_now=True)
+    unique_id = models.CharField(max_length=50, default="")
 
     favorites = models.CharField(max_length=2000, default="")
     progress_overrides = models.CharField(max_length=3000, default="")

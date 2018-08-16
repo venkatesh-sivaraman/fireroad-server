@@ -23,34 +23,46 @@ def login_oauth(request):
 
     result, status, info = get_user_info(request)
     if result is None or status != 200:
-        return HttpResponse(status=status if status != 200 else 500)
+        return login_error_response(request, 'Please try again later.')
     else:
         # Save the user's profile, check if there are any other accounts
         email = result.get(u'email', None)
         if email is None:
-            return None, HttpResponse(json.dumps({'success': False, 'reason': 'Please try again and allow FireRoad to access your email address.'}))
+            return login_error_response(request, 'Please try again and allow FireRoad to access your email address.')
 
+        sub = result.get(u'sub', None)
+        if sub is None:
+            return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
         password = generate_random_string(32)
         try:
-            student = Student.objects.get(academic_id=email)
+            student = Student.objects.get(unique_id=sub)
+        except:
+            user = User.objects.create_user(username=random.getrandbits(32), password=password)
+            user.save()
+            #Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
+            student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
+            student.current_semester = info.get('sem', '0')
+            student.save()
+        else:
             student.current_semester = info.get('sem', '0')
             if student.user is None:
                 user = User.objects.create_user(username=random.getrandbits(32), password=password)
                 user.save()
                 student.user = user
-                student.save()
-        except:
-            user = User.objects.create_user(username=random.getrandbits(32), password=password)
-            user.save()
-            #Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
-            student = Student(user=user, academic_id=email, name=result.get(u'name', 'Anonymous'))
-            student.current_semester = info.get('sem', '0')
             student.save()
+
         student.user.backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, student.user)
 
         token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token})})
+        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token, 'sub': sub})})
+
+def login_error_response(request, message):
+    params = {'message': message}
+    sem = request.GET.get('sem', None)
+    if sem is not None:
+        params["sem"] = sem
+    return render(request, 'common/login_fail.html', params)
 
 @logged_in_or_basicauth
 def verify(request):
@@ -156,7 +168,9 @@ def set_favorites(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.favorites = json.dumps(favorites)
+        student = request.user.student
+        student.favorites = json.dumps(favorites)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set favorites"}), content_type="application/json")
@@ -165,7 +179,7 @@ def set_favorites(request):
 def progress_overrides(request):
     value = request.user.student.progress_overrides
     try:
-        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+        return HttpResponse(json.dumps({'success': True, 'progress_overrides': json.loads(value) if len(value) else {}}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve progress_overrides"}), content_type="application/json")
 
@@ -178,7 +192,9 @@ def set_progress_overrides(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.progress_overrides = json.dumps(progress_overrides)
+        student = request.user.student
+        student.progress_overrides = json.dumps(progress_overrides)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set progress_overrides"}), content_type="application/json")
@@ -187,7 +203,7 @@ def set_progress_overrides(request):
 def notes(request):
     value = request.user.student.notes
     try:
-        return HttpResponse(json.dumps({'success': True, 'favorites': json.loads(value) if len(value) else {}}), content_type="application/json")
+        return HttpResponse(json.dumps({'success': True, 'notes': json.loads(value) if len(value) else {}}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve notes"}), content_type="application/json")
 
@@ -200,7 +216,9 @@ def set_notes(request):
         return None, HttpResponseBadRequest('<h1>JSON error</h1>')
 
     try:
-        request.user.student.notes = json.dumps(notes)
+        student = request.user.student
+        student.notes = json.dumps(notes)
+        student.save()
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")

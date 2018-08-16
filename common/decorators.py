@@ -11,8 +11,14 @@ import json
 from .token_gen import *
 
 ALWAYS_LOGIN = False
-#############################################################################
-#
+
+def user_has_student(user):
+    try:
+        s = user.student
+        return s is not None
+    except:
+        return False
+
 def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     """
     This is a helper function used by both 'logged_in_or_basicauth' and
@@ -21,7 +27,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     and returning the view if all goes well, otherwise responding with a 401.
     """
 
-    if request.user is None or not request.user.is_authenticated() or ALWAYS_LOGIN:
+    if request.user is None or not request.user.is_authenticated() or not user_has_student(request.user) or ALWAYS_LOGIN:
         key = 'HTTP_AUTHORIZATION'
         if key not in request.META:
             key = 'REDIRECT_HTTP_AUTHORIZATION'
