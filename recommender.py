@@ -539,12 +539,12 @@ if __name__ == '__main__':
                                                  int(User.objects.get(username=user_id).student.current_semester)) for user_id in all_user_ids]
 
         # Clear recommendations
-        #for prof in profiles:
-        #   Recommendation.objects.filter(user=User.objects.get(username=prof.username)).delete()
+        for prof in profiles:
+           Recommendation.objects.filter(user=User.objects.get(username=prof.username)).delete()
 
         # Run various recommenders
         for recommender in RECOMMENDERS:
             for rec in recommender(profiles, subject_ids, course_data):
                 if rec is None: continue
                 if verbose: print(rec)
-                #store_recommendation(rec)
+                store_recommendation(rec)
