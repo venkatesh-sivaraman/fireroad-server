@@ -44,6 +44,7 @@ class EditRequest(models.Model):
     reason = models.CharField(max_length=2000)
     contents = models.CharField(max_length=10000)
     timestamp = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
 
     def __str__(self):
-        return "{} request by {} at {}: {}".format(self.type, self.email_address, self.timestamp, self.reason)
+        return "{}{} request by {} at {}: {}".format("(Resolved) " if self.resolved else "", self.type, self.email_address, self.timestamp, self.reason)
