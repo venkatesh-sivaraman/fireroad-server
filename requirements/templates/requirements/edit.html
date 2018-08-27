@@ -1,4 +1,7 @@
 {% extends "requirements/base.html" %}
+{% block title %}
+<title>{{ action }} {{ req.medium_title }}</title>
+{% endblock %}
 {% block content %}
 <div class="row edit-head">
   <div class="col s12 red-text text-darken-4">

@@ -2,19 +2,23 @@
 {% block content %}
 <div class="row edit-head">
   <div class="col s12">
-    <h2 class="red-text text-darken-4">FireRoad Requirements Format</h2>
-    <p>Overall, the requirements list format is built on <em>logical statements</em> that define whether or not a user has satisfied given requirements. These are always in the form of a list of courses (or course characteristics) with optional modifications. Follow the below spec to produce accurate and visually comprehensible requirements lists in FireRoad.</p>
+    <h2 class="red-text text-darken-4">FireRoad Requirements Editor</h2>
+    <p>The FireRoad Requirements Editor allows you to browse the source code behind the major and minor requirements used in the app, as well as to submit your own modifications. Use the navigation menu to find a course to edit, or create a new set of requirements.</p>
   </div>
 </div>
 <div class="row">
   <div class="col s12">
     <div class="section">
-      <h3>Comments</h3>
+      <h3>Format Specification</h3>
+      <p>Overall, the requirements list format is built on <em>logical statements</em> that define whether or not a user has satisfied given requirements. These are always in the form of a list of courses (or course characteristics) with optional modifications. Follow the below spec to produce accurate and visually comprehensible requirements lists in FireRoad.</p>
+    </div>
+    <div class="section">
+      <h4>Comments</h4>
       <p>Use the '%%' symbol for comments.</p>
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Metadata</h3>
+      <h4>Metadata</h4>
       <p>The first line of the document is devoted to metadata about the major, minor, or set of course requirements. The metadata should be separated by the special <span class="code">#,#</span> delimiter for easy parsing.</p>
       <div class="card hoverable">
         <div class="card-content">
@@ -51,7 +55,7 @@
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Top-Level Declarations</h3>
+      <h4>Top-Level Declarations</h4>
       <p>Subsequent lines should contain the top-level sections of the course requirements list. Each section definition should consist of one line for the statement that corresponds to that requirement (defined later in the document), and one line (possibly empty) for a more verbose description of the section.</p>
       <p>The top-level sections should be terminated by an <strong>empty line</strong>.</p>
 
@@ -71,7 +75,7 @@
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Variable Declarations</h3>
+      <h4>Variable Declarations</h4>
       <p>Variables can be assigned using the syntax <span class="code">variable_name := statement</span> or <span class="code">variable_name, "title" := statement</span>, where the statement follows the logical syntax described below. The title of the statement, if provided, should be human-readable and wrapped in quotes. Statements can contain other variables as part of their definitions.</p>
       <div class="card hoverable">
         <div class="card-content">
@@ -86,7 +90,7 @@
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Statement Syntax</h3>
+      <h4>Statement Syntax</h4>
       <p>In general, "<span class="code">,</span>"-separated lists are ALL. "<span class="code">/</span>"-separated lists are ANY. All and any statements may be nested, but they must be parenthesized.</p>
       <div class="card hoverable">
         <div class="card-content">
@@ -105,7 +109,7 @@
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>List Modifications</h3>
+      <h4>List Modifications</h4>
       <p>A list of courses succeeded by <span class="code">{&gt;=x}</span>, where x is an integer, denotes that the given criterion must apply to at least x courses. A similar rule holds true for <span class="code">{&gt;x}</span>, <span class="code">{&lt;=x}</span>, and <span class="code">{&lt;x}</span>.<p>
       <p>If the number x is followed by the character <span class="code">u</span>, then the given criterion must apply to that number of <em>units</em>.</p>
       <div class="card hoverable">
@@ -134,13 +138,13 @@
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Special Syntax</h3>
+      <h4>Special Syntax</h4>
       <p>Some requirements cannot be simply encoded in the above format (e.g. take 3 subjects in math or economics). In these cases, enclose the text in two sets of quotes: ""text"". After that, use a list modification describing how many courses are required: <span class="code">""3 math or economics subjects""{&gt;=3}</span>.</p>
 
     </div>
     <div class="divider"></div>
     <div class="section">
-      <h3>Questions</h3>
+      <h4>Questions</h4>
       <p>For clarification on any of the above rules, please refer to the existing requirements lists, or <a href="mailto:base12apps@gmail.com?subject=FireRoad%20Requirements">contact me</a>.
     </div>
   </div>
