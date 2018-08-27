@@ -49,6 +49,10 @@
   list-style-type: square !important;
 }
 
+::selection {
+  background-color: #f46565;
+}
+
 body, html, .content {
   height: 100%;
 }

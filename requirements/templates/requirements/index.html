@@ -16,7 +16,7 @@
     <div class="section">
       <h3>Metadata</h3>
       <p>The first line of the document is devoted to metadata about the major, minor, or set of course requirements. The metadata should be separated by the special <span class="code">#,#</span> delimiter for easy parsing.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <p>The first line may contain the following items:</p>
           <ul class="real-ul">
@@ -36,7 +36,7 @@
     <div class="section">
       <p>The second line of the document may contain a <strong>description</strong> of the course requirements list (paragraph breaks may be specified with "<span class="code">\n\n</span>").</p>
       <p>The third line of the document must be <strong>empty</strong>.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <div class="code">
@@ -55,7 +55,7 @@
       <p>Subsequent lines should contain the top-level sections of the course requirements list. Each section definition should consist of one line for the statement that corresponds to that requirement (defined later in the document), and one line (possibly empty) for a more verbose description of the section.</p>
       <p>The top-level sections should be terminated by an <strong>empty line</strong>.</p>
 
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <div class="code">
@@ -73,7 +73,7 @@
     <div class="section">
       <h3>Variable Declarations</h3>
       <p>Variables can be assigned using the syntax <span class="code">variable_name := statement</span> or <span class="code">variable_name, "title" := statement</span>, where the statement follows the logical syntax described below. The title of the statement, if provided, should be human-readable and wrapped in quotes. Statements can contain other variables as part of their definitions.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <div class="code">
@@ -88,7 +88,7 @@
     <div class="section">
       <h3>Statement Syntax</h3>
       <p>In general, "<span class="code">,</span>"-separated lists are ALL. "<span class="code">/</span>"-separated lists are ANY. All and any statements may be nested, but they must be parenthesized.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <p><span class="code">5.12,(5.60/20.110)</span> matches the following sets of courses:</p>
@@ -108,7 +108,7 @@
       <h3>List Modifications</h3>
       <p>A list of courses succeeded by <span class="code">{&gt;=x}</span>, where x is an integer, denotes that the given criterion must apply to at least x courses. A similar rule holds true for <span class="code">{&gt;x}</span>, <span class="code">{&lt;=x}</span>, and <span class="code">{&lt;x}</span>.<p>
       <p>If the number x is followed by the character <span class="code">u</span>, then the given criterion must apply to that number of <em>units</em>.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <p>The statement</p>
@@ -118,7 +118,7 @@
       </div>
       <p><strong>Note: </strong>List modifications may only be applied to the top level of an expression, not to parenthetical sub-expressions.</p>
       <p>In an <em>or</em> statement, you can specify that the satisfying classes must come from a thresholded number of <strong>distinct substituents</strong> of the statement. To do so, enter a list modification with a vertical bar (<span class="code">|</span>), followed by the distinct threshold.</p>
-      <div class="card">
+      <div class="card hoverable">
         <div class="card-content">
           <div class="card-title">Example</div>
           <div class="code">
