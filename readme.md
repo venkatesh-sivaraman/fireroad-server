@@ -19,7 +19,7 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 
 ## API Endpoints
 
-*(Up-to-date as of 8/10/2018)* All endpoints in `recommend` and `sync` require login.
+*(Up-to-date as of 8/27/2018)* All endpoints in `recommend`, `prefs`, and `sync` require login.
 
 ### Authentication
 
@@ -43,6 +43,14 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 * `/recommend/rate/` *(POST)*: The body of the request should be a JSON list of dictionaries, each containing `s` (subject ID) and `v` (rating value). Updates the ratings for each item.
 
 * `/recommend/get/` *(GET)*: Takes an optional parameter `t` indicating the type of recommendation to return. Returns a dictionary of recommendation types mapped to JSON strings indicating the recommended subjects and their rating values.
+
+### User Preferences
+
+* `/prefs/notes/` *(GET)*, `/prefs/set_notes/` *(POST)*: These endpoints handle read-write of notes, which the user can enter for any subject in the catalog. The format of the returned notes is a dictionary with the `success` key, and if that is true, a `notes` key containing a dictionary keyed by subject IDs.
+
+* `/prefs/favorites/` *(GET)*, `/prefs/set_favorites/` *(POST)*: These endpoints handle read-write of favorite subjects. The format of the returned data is a dictionary with the `success` key, and if that is true, a `favorites` key containing a list of subject IDs.
+
+* `/prefs/progress_overrides/` *(GET)*, `/prefs/set_progress_overrides/` *(POST)*: These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the `success` key, and if that is true, a `progress_overrides` key containing a dictionary keyed by requirements list key-paths (see the `RequirementsListStatement` implementation in the mobile app for more information).
 
 ### Sync
 

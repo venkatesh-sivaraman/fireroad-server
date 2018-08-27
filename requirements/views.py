@@ -11,8 +11,6 @@ import requests
 from courseupdater.views import *
 import re
 
-REQUIREMENTS_BASE_DIR = "/Users/venkatesh-sivaraman/Documents/Websites/catalog-update"
-REQUIREMENTS_INFO_KEY = "r_delta"
 REQUIREMENTS_EXT = ".reql"
 NEW_DOC_ID = "new_doc"
 NEW_DOC_NAME = "new requirements list"
@@ -110,20 +108,3 @@ def edit(request, list_id):
 def success(request):
     params = build_sidebar_info()
     return render(request, "requirements/success.html", params)
-
-#@logged_in_or_basicauth
-def update_db(request):
-    #if not request.user.is_admin:
-    #    raise PermissionDenied
-
-    RequirementsList.objects.all().delete()
-
-    req_urls = compute_semester_delta(list_semesters()[-1].split('-'), 0, 0)
-    print req_urls[REQUIREMENTS_INFO_KEY]
-    for path_name in req_urls[REQUIREMENTS_INFO_KEY]:
-        new_req = RequirementsList.objects.create(list_id=os.path.basename(path_name))
-        with open(os.path.join(REQUIREMENTS_BASE_DIR, path_name), 'rb') as file:
-            new_req.parse(file.read().decode('utf-8'))
-        new_req.save()
-
-    return HttpResponse("<p>The database was successfully updated.</p>")
