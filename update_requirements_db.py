@@ -25,5 +25,14 @@ def update_db():
 
     print("The database was successfully updated with {} requirements files.".format(len(req_urls[REQUIREMENTS_INFO_KEY])))
 
+def check_for_edits():
+    edit_requests = EditRequest.objects.filter(resolved=False)
+    if edit_requests.count() > 0:
+        print("You have {} unresolved edit requests:".format(edit_requests.count()))
+        for req in edit_requests:
+            print(req)
+
 if __name__ == '__main__':
+    check_for_edits()
+    print("\n")
     update_db()
