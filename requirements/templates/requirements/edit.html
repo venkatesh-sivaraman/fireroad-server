@@ -1,0 +1,44 @@
+{% extends "requirements/base.html" %}
+{% block content %}
+<div class="row edit-head">
+  <div class="col s12 red-text text-darken-4">
+    <h4>{{ action }} {{ req.medium_title }}</h4>
+  </div>
+</div>
+<div class="card hoverable editor-card">
+  <textarea class="editor" id="contents">{{ req.contents }}</textarea>
+</div>
+<div class="row">
+  <div class="col s12"><p>{% if action == "Create" %}To submit a new requirements list, please enter the requirements in the box above{% else %}To submit a modification request, please modify the requirements list source displayed above{% endif %}, following the rules described in the Format Specification. Then provide your email address (in case of any clarifications) and a brief message explaining the change, and press Submit.</p></div>
+  <form class="col s12" id="form" method="post">
+    {% csrf_token %}
+      <div class="col s12 m4">
+        {{ form.email_address }}
+        <!--<input type="text" class="input-field" id="email" placeholder="Email address"/>-->
+        {{ form.email_address.errors }}
+      </div>
+      <div class="col s12 m8">
+        <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Submit
+          <i class="material-icons right">send</i>
+        </button>
+        <div style="overflow: hidden; padding-right: 16px;">
+          {{ form.reason }}
+          {{ form.reason.errors }}
+          <!--<input type="text" class="input-field" id="comment" placeholder="Reason for submission..."/>-->
+
+        </div>
+    </div>
+    {{ form.non_field_errors }}
+    {{ form.contents }}
+  </form>
+  <!--<a class="col s12 m4 waves-effect waves-light mbtn red">Submit</a>-->
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+$("#form").submit( function(eventObj) {
+  $('#id_contents').val($('textarea#contents').val());
+  return true;
+});
+</script>
+{% endblock %}

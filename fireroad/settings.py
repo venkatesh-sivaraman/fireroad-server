@@ -15,6 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+CATALOG_BASE_DIR = "/mit/venkats/web_scripts/catalogs"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
@@ -41,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.admindocs',
     'recommend',
     'common',
-    'sync'
+    'sync',
+    'requirements'
 ]
 
 MIDDLEWARE_CLASSES = [

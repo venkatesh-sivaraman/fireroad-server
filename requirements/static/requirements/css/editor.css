@@ -1,0 +1,58 @@
+.editor {
+  resize: none;
+  border: none;
+  display: table-cell;
+  flex: 1; /* same as flex: 1 1 auto; */
+}
+.code, .editor {
+  font-family: 'Inconsolata', Menlo, Monaco, Courier, monospace;
+}
+.code {
+  padding: 2px;
+}
+.editor-card {
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.editor-card {
+  flex-grow: 1;
+  margin-bottom: 32px !important;
+}
+.content {
+  margin-left: 32px;
+  margin-right: 32px;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 767px) {
+  .edit-head {
+    margin-top: 12px;
+  }
+}
+.mbtn:hover {
+  color: #940404;
+  text-decoration: none;
+}
+.input-field:focus {
+     border-bottom: 1px solid #a10000 !important;
+     box-shadow: 0 1px 0 0 #a10000 !important;
+}
+::-webkit-input-placeholder {    color: #996767 !important;  }
+:-moz-placeholder { /* Firefox 18- */ color: #996767 !important; }
+::-moz-placeholder { /* Firefox 19+ */ color: #996767 !important; }
+:-ms-input-placeholder { color: #996767 !important; }
+
+.real-ul li {
+  margin-left: 20px !important;
+  list-style-type: square !important;
+}
+
+::selection {
+  background-color: #f46565;
+}
+
+body, html, .content {
+  height: 100%;
+}

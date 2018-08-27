@@ -1,0 +1,148 @@
+{% extends "requirements/base.html" %}
+{% block content %}
+<div class="row edit-head">
+  <div class="col s12">
+    <h2 class="red-text text-darken-4">FireRoad Requirements Format</h2>
+    <p>Overall, the requirements list format is built on <em>logical statements</em> that define whether or not a user has satisfied given requirements. These are always in the form of a list of courses (or course characteristics) with optional modifications. Follow the below spec to produce accurate and visually comprehensible requirements lists in FireRoad.</p>
+  </div>
+</div>
+<div class="row">
+  <div class="col s12">
+    <div class="section">
+      <h3>Comments</h3>
+      <p>Use the '%%' symbol for comments.</p>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Metadata</h3>
+      <p>The first line of the document is devoted to metadata about the major, minor, or set of course requirements. The metadata should be separated by the special <span class="code">#,#</span> delimiter for easy parsing.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <p>The first line may contain the following items:</p>
+          <ul class="real-ul">
+            <li>Department code or short title (e.g. "21M")</li>
+            <li>Medium title (e.g. "Music Minor")</li>
+            <li>Title with no degree (e.g. "Mechanical and Ocean Engineering")</li>
+            <li>Long title (e.g. "Bachelor of Science in Computer Science and Molecular Biology")</li>
+            <li>Threshold for the entire requirements list (e.g. <span class="code">threshold=6</span> to signify that at least 6 courses must be taken to satisfy the requirements list)</li>
+          </ul>
+
+          <p>Each item is technically optional, but if an item is included, the preceding components must be indicated by the presence of the <span class="code">#,#</span> delimiter, even if those components are empty. For example:</p><br/>
+          <p><span class="code"><span class="red-text">Incorrect: </span>Medium title#,#Title no degree#,#Long title</span></p>
+          <p><span class="code"><span class="green-text">Correct: </span>#,#Medium title#,#Title no degree#,#Long title</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <p>The second line of the document may contain a <strong>description</strong> of the course requirements list (paragraph breaks may be specified with "<span class="code">\n\n</span>").</p>
+      <p>The third line of the document must be <strong>empty</strong>.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <div class="code">
+            2#,#2 Major#,#Mechanical Engineering#,#Bachelor of Science in Mechanical Engineering
+            <br/>
+            The program in mechanical engineering provides a broad intellectual foundation in the field of mechanical engineering.\n\nThe program develops the relevant engineering fundamentals, includes various experiences in their application, and introduces the important methods and techniques of engineering practice.
+            <br/>
+            <p class="grey-text">(Empty line)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Top-Level Declarations</h3>
+      <p>Subsequent lines should contain the top-level sections of the course requirements list. Each section definition should consist of one line for the statement that corresponds to that requirement (defined later in the document), and one line (possibly empty) for a more verbose description of the section.</p>
+      <p>The top-level sections should be terminated by an <strong>empty line</strong>.</p>
+
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <div class="code">
+            required_subjects<br/>
+            These subjects are required for the major.\n\nConsult the department for allowed substitutions.
+            <br/>
+            <br/>
+            ...<br/>
+            required_subjects, "Required Subjects" := ...
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Variable Declarations</h3>
+      <p>Variables can be assigned using the syntax <span class="code">variable_name := statement</span> or <span class="code">variable_name, "title" := statement</span>, where the statement follows the logical syntax described below. The title of the statement, if provided, should be human-readable and wrapped in quotes. Statements can contain other variables as part of their definitions.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <div class="code">
+            gir_chem := 3.091/5.111/5.112 <span class="grey-text">%% or statement</span><br/>
+            gir_bio := 7.012/7.013/7.014/7.015/7.016<br/>
+            some_girs, "Example GIRs" := gir_chem, gir_bio <span class="grey-text">%% and statement</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Statement Syntax</h3>
+      <p>In general, "<span class="code">,</span>"-separated lists are ALL. "<span class="code">/</span>"-separated lists are ANY. All and any statements may be nested, but they must be parenthesized.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <p><span class="code">5.12,(5.60/20.110)</span> matches the following sets of courses:</p>
+          <ul class="real-ul">
+            <li>5.12 and 5.60</li>
+            <li>5.12 and 20.110</li>
+          </ul>
+          <p>Nested statements must be parenthesized:</p>
+          <br/>
+          <p><span class="code"><span class="red-text">Incorrect: </span>6.00/6.0001,6.0002</span></p>
+          <p><span class="code"><span class="green-text">Correct: </span>6.00/(6.0001, 6.0002)</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>List Modifications</h3>
+      <p>A list of courses succeeded by <span class="code">{&gt;=x}</span>, where x is an integer, denotes that the given criterion must apply to at least x courses. A similar rule holds true for <span class="code">{&gt;x}</span>, <span class="code">{&lt;=x}</span>, and <span class="code">{&lt;x}</span>.<p>
+      <p>If the number x is followed by the character <span class="code">u</span>, then the given criterion must apply to that number of <em>units</em>.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <p>The statement</p>
+          <span class="code">mech_mat, "Mechanics/Materials" := 1.035/1.050/1.060A/1.036/1.101/1.102{&gt;=54u}</span>
+          <p>will be satisfied when the user has taken a combination of those courses that totals at least 54 units.</p>
+        </div>
+      </div>
+      <p><strong>Note: </strong>List modifications may only be applied to the top level of an expression, not to parenthetical sub-expressions.</p>
+      <p>In an <em>or</em> statement, you can specify that the satisfying classes must come from a thresholded number of <strong>distinct substituents</strong> of the statement. To do so, enter a list modification with a vertical bar (<span class="code">|</span>), followed by the distinct threshold.</p>
+      <div class="card hoverable">
+        <div class="card-content">
+          <div class="card-title">Example</div>
+          <div class="code">
+            <p><span class="grey-text">%% Each subsection is optional (&gt;=0)</span></p><br/>
+            <p>area2, "Area II: Humanities and the Arts" := 21G.011/21G.027/21G.030/21G.036/21G.038{&gt;=0}<br/>
+            area3, "Area III: Social Sciences" := 17.407/17.433/17.486/17.53/17.537/21A.140/21A.141{&gt;=0}<br/>
+            area4, "Area IV: Historical Studies" := 21G.043/21G.045/21G.075/21H.151/21H.152{&gt;=0}</p><br/>
+            <p><span class="grey-text">%% At least 7 subjects from at least two areas</span></p><br/>
+            <p>other_elect := area2/area3/area4 {&gt;=7|&gt;=2}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Special Syntax</h3>
+      <p>Some requirements cannot be simply encoded in the above format (e.g. take 3 subjects in math or economics). In these cases, enclose the text in two sets of quotes: ""text"". After that, use a list modification describing how many courses are required: <span class="code">""3 math or economics subjects""{&gt;=3}</span>.</p>
+
+    </div>
+    <div class="divider"></div>
+    <div class="section">
+      <h3>Questions</h3>
+      <p>For clarification on any of the above rules, please refer to the existing requirements lists, or <a href="mailto:base12apps@gmail.com?subject=FireRoad%20Requirements">contact me</a>.
+    </div>
+  </div>
+</div>
+{% endblock %}
