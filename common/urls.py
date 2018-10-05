@@ -17,4 +17,5 @@ urlpatterns = [
     url('prefs/notes/', views.notes, name='notes'),
     url('prefs/set_notes/', views.set_notes, name='set_notes'),
     url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
+    #url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),
 ]
