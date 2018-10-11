@@ -25,19 +25,22 @@ class RequirementsList(models.Model):
     def __str__(self):
         return self.short_title + " - " + self.title
 
-    def to_json_object(self):
+    def to_json_object(self, full=True):
         """Encodes this requirements list into a dictionary that can be sent
-        as JSON."""
+        as JSON. If full is False, only returns the metadata about the requirements
+        list."""
         base = {
             JSONConstants.list_id: self.list_id,
-            JSONConstants.title: self.title,
             JSONConstants.short_title: self.short_title,
             JSONConstants.medium_title: self.medium_title,
-            JSONConstants.title_no_degree: self.title_no_degree,
-            JSONConstants.description: self.description if self.description is not None else "",
+            JSONConstants.title: self.title
         }
-        if self.requirements.exists():
-            base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+        if full:
+            if self.requirements.exists():
+                base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+            base[JSONConstants.title_no_degree] = self.title_no_degree
+            base[JSONConstants.description] = self.description if self.description is not None else ""
+
         return base
 
     def parse(self, contents_str, full=True):

@@ -227,7 +227,7 @@ class RequirementsStatement(models.Model):
 
         trimmed = text.strip(" \t\n\r")
         if len(trimmed) >= 4 and trimmed[:2] == '""' and trimmed[-2:] == '""':
-            return (undecorated_component(trimmed), CONNECTION_TYPE_NONE)
+            return ([undecorated_component(trimmed)], CONNECTION_TYPE_NONE)
 
         components = []
         connection_type = CONNECTION_TYPE_ALL

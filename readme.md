@@ -19,7 +19,7 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 
 ## API Endpoints
 
-*(Up-to-date as of 8/27/2018)* All endpoints in `recommend`, `prefs`, and `sync` require login.
+*(Up-to-date as of 10/11/2018)* All endpoints in `recommend`, `prefs`, and `sync` require login. To log in programmatically, pass the 'HTTP_AUTHORIZATION' header using either basic authentication or a bearer token issued by the FireRoad server upon OAuth login. Note that even if authentication is performed using HTTP basic authentication, it is always protected by HTTPS.
 
 ### Authentication
 
@@ -51,6 +51,29 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 * `/prefs/favorites/` *(GET)*, `/prefs/set_favorites/` *(POST)*: These endpoints handle read-write of favorite subjects. The format of the returned data is a dictionary with the `success` key, and if that is true, a `favorites` key containing a list of subject IDs.
 
 * `/prefs/progress_overrides/` *(GET)*, `/prefs/set_progress_overrides/` *(POST)*: These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the `success` key, and if that is true, a `progress_overrides` key containing a dictionary keyed by requirements list key-paths (see the `RequirementsListStatement` implementation in the mobile app for more information).
+
+### Requirements
+
+* `/requirements/list_reqs/` *(GET)*: Returns a dictionary where the keys are list IDs of requirements lists, and the values are metadata dictionaries containing various titles for the corresponding lists.
+
+* `/requirements/get_json/<list_id>` *(GET)*: Use this endpoint to get a JSON representation of a course requirements list. The list_id should be one of the keys returned by `/requirements/list_reqs/`, or else a bad request error is thrown. The return value of this endpoint is a JSON representation which may contain the following keys:
+
+  * `list-id` - the requirements list ID
+  * `short-title` - a short title, e.g. "6-7"
+  * `medium-title` - a medium title, e.g. "WGS Minor"
+  * `title-no-degree` - a title without the degree name (e.g. "Computer Science and Engineering")
+  * `title` - the full title (e.g. "Bachelor of Science in Computer Science and Engineering")
+  * `desc` - an optional description of the statement or requirements list
+  * `req` - string requirement, such as "6.009" or "24 units in 8.200-8.299" (if not present, see `reqs`)
+  * `plain-string` - whether to interpret `req` as a parseable requirement ("6.009") or as a plain string ("24 units in 8.200-8.299"). Note that plain strings may have `(distinct-)threshold` keys attached, allowing the user to manually control progress.
+  * `reqs` - a list of nested requirements statements (if not present, see req)
+  * `connection-type` - logical connection type between the reqs (`all` or `any`, or `none` if it is a plain string)
+  * `threshold` - optional dictionary describing the threshold to satisfy this statement. Keys are:
+    * `type` - the type of inequality to apply (`LT`, `GT`, `LTE`, or `GTE`)
+    * `cutoff` - the numerical cutoff
+    * `criterion` - either `subjects` or `units`
+  * `distinct-threshold` - optional dictionary describing the number of distinct child requirements of this statement that must be satisfied. Keys are the same as `threshold`.
+  * `threshold-desc` - user-facing string describing the thresholds (if applicable)
 
 ### Sync
 

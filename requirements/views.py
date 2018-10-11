@@ -117,6 +117,16 @@ def get_json(request, list_id):
     except ObjectDoesNotExist:
         return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
 
+def list_reqs(request):
+    """Return a JSON dictionary of all available requirements lists, with the
+    basic metadata for those lists."""
+    list_ids = { }
+    for req in RequirementsList.objects.all():
+        req_metadata = req.to_json_object(full=False)
+        del req_metadata[JSONConstants.list_id]
+        list_ids[req.list_id.replace(REQUIREMENTS_EXT, "")] = req_metadata
+    return HttpResponse(json.dumps(list_ids), content_type="application/json")
+
 def success(request):
     params = build_sidebar_info()
     return render(request, "requirements/success.html", params)
