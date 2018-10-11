@@ -51,10 +51,37 @@ class SyntaxConstants:
     threshold_parameter = "threshold="
     url_parameter = "url="
 
+class JSONConstants:
+    """Static constants for use in output to JSON."""
+    # Common keys
+    title = "title"
+    description = "desc"
+
+    # Top level keys in a RequirementsList JSON dictionary
+    list_id = "list-id"
+    short_title = "short-title"
+    medium_title = "medium-title"
+    title_no_degree = "title-no-degree"
+    # And requirements
+
+    # Top level keys in a RequirementsStatement JSON dictionary
+    requirement = "req" # string requirement (if not present, see reqs)
+    is_plain_string = "plain-string" # optional boolean
+    requirements = "reqs" # list of RequirementsStatement objects (if not present, see req)
+    connection_type = "connection-type" # is "all", "any", or "none"
+    threshold = "threshold" # optional dictionary (see below)
+    distinct_threshold = "distinct-threshold" # optional dictionary (see below)
+    thresh_description = "threshold-desc" # User-facing string describing the thresholds (if applicable)
+
+    # Keys within the threshold or distinct-threshold dictionaries
+    thresh_type = "type"
+    thresh_cutoff = "cutoff"
+    thresh_criterion = "criterion"
+
 class RequirementsStatement(models.Model):
     """Represents a single requirements statement, encompassing a series of
     subjects or other requirements statements connected by AND or OR."""
-    
+
     list = models.ForeignKey("RequirementsList", on_delete=models.CASCADE, related_name="requirements", null=True)
 
     title = models.CharField(max_length=250, null=True)
@@ -98,6 +125,9 @@ class RequirementsStatement(models.Model):
     def threshold_description(self):
         """Returns a string description of this statement's threshold."""
         ret = ""
+        if self.requirement is not None and self.connection_type == CONNECTION_TYPE_ALL and self.threshold_type is None:
+            return ret
+
         if self.threshold_type is not None and self.threshold_cutoff != 1:
             if self.threshold_cutoff > 1:
                 if self.threshold_type == THRESHOLD_TYPE_LTE:
@@ -152,6 +182,38 @@ class RequirementsStatement(models.Model):
             return "{}{} of \n".format(self.title + ": " if self.title is not None else "", connection_string) + "\n".join([str(r) for r in self.requirements.all()])
 
         return self.title if self.title is not None else "No title"
+
+    def to_json_object(self):
+        """Encodes this requirements statement into a serializable object that can
+        be dumped to JSON."""
+        base = {
+            JSONConstants.title: self.title if self.title is not None else "",
+            JSONConstants.description: self.description if self.description is not None else "",
+        }
+        if self.threshold_type is not None:
+            base[JSONConstants.threshold] = {
+                JSONConstants.thresh_type: self.threshold_type,
+                JSONConstants.thresh_cutoff: self.threshold_cutoff,
+                JSONConstants.thresh_criterion: self.threshold_criterion,
+            }
+        if self.distinct_threshold_type is not None:
+            base[JSONConstants.distinct_threshold] = {
+                JSONConstants.thresh_type: self.distinct_threshold_type,
+                JSONConstants.thresh_cutoff: self.distinct_threshold_cutoff,
+                JSONConstants.thresh_criterion: self.distinct_threshold_criterion,
+            }
+        desc = self.threshold_description()
+        if len(desc) > 0:
+            base[JSONConstants.thresh_description] = desc
+        if self.is_plain_string:
+            base[JSONConstants.is_plain_string] = self.is_plain_string
+
+        if self.requirement is not None:
+            base[JSONConstants.requirement] = self.requirement
+        elif self.requirements.exists():
+            base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+
+        return base
 
     ### Parsing methods
 
@@ -249,7 +311,7 @@ class RequirementsStatement(models.Model):
                 sub_req.parent = self
                 sub_req.substitute_variables(dictionary)
                 self.requirement = None
-        elif self.requirements.all().exists():
+        elif self.requirements.exists():
             reqs_to_delete = set()
             for i, statement in enumerate(self.requirements.all()):
                 if statement.requirement is not None and statement.requirement in dictionary:
@@ -299,13 +361,10 @@ class RequirementsStatement(models.Model):
             self.connection_type = CONNECTION_TYPE_ANY
         else:
             self.connection_type = connection_type
-        self.is_plain_string = (connection_type != CONNECTION_TYPE_NONE)
+        self.is_plain_string = (connection_type == CONNECTION_TYPE_NONE)
 
         if len(components) == 1:
-            print("requirement", components[0])
             self.requirement = components[0]
         else:
-            print(components)
             for c in components:
                 RequirementsStatement.from_string(unwrapped_component(c), parent=self)
-            print(self.requirements.all())

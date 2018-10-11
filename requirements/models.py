@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django import forms
-from .reqlist import RequirementsStatement, undecorated_component, unwrapped_component, SyntaxConstants
+from .reqlist import JSONConstants, RequirementsStatement, undecorated_component, unwrapped_component, SyntaxConstants
 
 # Create your models here.
 class RequirementsList(models.Model):
@@ -11,7 +11,7 @@ class RequirementsList(models.Model):
     as well as raw string contents in the requirements list format. It can also
     parse the raw contents and store its requirements statements as
     RequirementsStatement objects."""
-    
+
     list_id = models.CharField(max_length=25)
     short_title = models.CharField(max_length=50, default="")
     medium_title = models.CharField(max_length=100, default="")
@@ -24,6 +24,21 @@ class RequirementsList(models.Model):
 
     def __str__(self):
         return self.short_title + " - " + self.title
+
+    def to_json_object(self):
+        """Encodes this requirements list into a dictionary that can be sent
+        as JSON."""
+        base = {
+            JSONConstants.list_id: self.list_id,
+            JSONConstants.title: self.title,
+            JSONConstants.short_title: self.short_title,
+            JSONConstants.medium_title: self.medium_title,
+            JSONConstants.title_no_degree: self.title_no_degree,
+            JSONConstants.description: self.description,
+        }
+        if self.requirements.exists():
+            base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+        return base
 
     def parse(self, contents_str, full=True):
         """Parses the given contents string, using only the header if full is
@@ -49,6 +64,8 @@ class RequirementsList(models.Model):
             self.title = header_comps.pop(0)
         elif len(header_comps) > 0:
             self.title = header_comps.pop(0)
+
+        # TODO: Requirements lists with an overall threshold
 
         self.contents = contents_str
 
