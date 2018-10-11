@@ -68,7 +68,7 @@ class JSONConstants:
     requirement = "req" # string requirement (if not present, see reqs)
     is_plain_string = "plain-string" # optional boolean
     requirements = "reqs" # list of RequirementsStatement objects (if not present, see req)
-    connection_type = "connection-type" # is "all", "any", or "none"
+    connection_type = "connection-type" # exists if requirements exists, and is "all", "any", or "none"
     threshold = "threshold" # optional dictionary (see below)
     distinct_threshold = "distinct-threshold" # optional dictionary (see below)
     thresh_description = "threshold-desc" # User-facing string describing the thresholds (if applicable)
@@ -186,10 +186,12 @@ class RequirementsStatement(models.Model):
     def to_json_object(self):
         """Encodes this requirements statement into a serializable object that can
         be dumped to JSON."""
-        base = {
-            JSONConstants.title: self.title if self.title is not None else "",
-            JSONConstants.description: self.description if self.description is not None else "",
-        }
+        base = {}
+        if self.title is not None and len(self.title) > 0:
+            base[JSONConstants.title] = self.title
+        if self.description is not None and len(self.description) > 0:
+            base[JSONConstants.description] = self.description
+
         if self.threshold_type is not None:
             base[JSONConstants.threshold] = {
                 JSONConstants.thresh_type: self.threshold_type,
@@ -202,6 +204,7 @@ class RequirementsStatement(models.Model):
                 JSONConstants.thresh_cutoff: self.distinct_threshold_cutoff,
                 JSONConstants.thresh_criterion: self.distinct_threshold_criterion,
             }
+
         desc = self.threshold_description()
         if len(desc) > 0:
             base[JSONConstants.thresh_description] = desc
@@ -212,6 +215,7 @@ class RequirementsStatement(models.Model):
             base[JSONConstants.requirement] = self.requirement
         elif self.requirements.exists():
             base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+            base[JSONConstants.connection_type] = self.connection_type
 
         return base
 
@@ -363,7 +367,7 @@ class RequirementsStatement(models.Model):
             self.connection_type = connection_type
         self.is_plain_string = (connection_type == CONNECTION_TYPE_NONE)
 
-        if len(components) == 1:
+        if len(components) == 1 or self.is_plain_string:
             self.requirement = components[0]
         else:
             for c in components:

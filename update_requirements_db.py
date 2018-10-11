@@ -20,7 +20,7 @@ def update_db():
     for path_name in req_urls[REQUIREMENTS_INFO_KEY]:
         new_req = RequirementsList.objects.create(list_id=os.path.basename(path_name))
         with open(os.path.join(CATALOG_BASE_DIR, path_name), 'rb') as file:
-            new_req.parse(file.read().decode('utf-8'), full=False)
+            new_req.parse(file.read().decode('utf-8'))
         new_req.save()
 
     print("The database was successfully updated with {} requirements files.".format(len(req_urls[REQUIREMENTS_INFO_KEY])))

@@ -34,7 +34,7 @@ class RequirementsList(models.Model):
             JSONConstants.short_title: self.short_title,
             JSONConstants.medium_title: self.medium_title,
             JSONConstants.title_no_degree: self.title_no_degree,
-            JSONConstants.description: self.description,
+            JSONConstants.description: self.description if self.description is not None else "",
         }
         if self.requirements.exists():
             base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
@@ -47,8 +47,8 @@ class RequirementsList(models.Model):
         have already been saved prior to calling this method."""
 
         lines = contents_str.split('\n')
-        # Remove full-line comments
-        lines = [l for l in lines if l.find(SyntaxConstants.comment_character) != 0]
+        # Remove full-line comments and strip newlines
+        lines = [l.strip() for l in lines if l.find(SyntaxConstants.comment_character) != 0]
         # Remove partial-line comments
         lines = [l[:l.find(SyntaxConstants.comment_character)] if SyntaxConstants.comment_character in l else l for l in lines]
 
