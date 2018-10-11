@@ -88,7 +88,10 @@ def signup(request):
 @logged_in_or_basicauth
 def set_semester(request):
     user = request.user
-    info = json.loads(request.body)
+    try:
+        info = json.loads(request.body)
+    except:
+        return HttpResponseBadRequest('<h1>Invalid JSON {}</h1>'.format(request.body))
     sem = str(info.get('semester', ''))
     if len(sem) == 0:
         return HttpResponseBadRequest('<h1>Missing semester number</h1>')

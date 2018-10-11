@@ -17,7 +17,7 @@ class Student(models.Model):
 
     favorites = models.CharField(max_length=2000, default="")
     progress_overrides = models.CharField(max_length=3000, default="")
-    notes = models.CharField(max_length=40000, default="")
+    notes = models.TextField(default="")
 
     def __str__(self):
         return "ID {}, in {} ({} user)".format(self.academic_id, self.current_semester, self.user)

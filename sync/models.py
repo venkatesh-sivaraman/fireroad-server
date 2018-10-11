@@ -18,7 +18,7 @@ schedule_compressions = {
 class Road(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    contents = models.CharField(max_length=10000)
+    contents = models.TextField()
     modified_date = models.DateTimeField(auto_now=True)
     last_agent = models.CharField(max_length=50, default="")
 
@@ -48,7 +48,7 @@ class RoadForm(ModelForm):
 class Schedule(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    contents = models.CharField(max_length=10000)
+    contents = models.TextField()
     modified_date = models.DateTimeField(auto_now=True)
     last_agent = models.CharField(max_length=50, default="")
 
