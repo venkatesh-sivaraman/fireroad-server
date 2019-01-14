@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.conf.urls import url, include
 
 urlpatterns = [
+    url(r'catalog/', include('catalog.urls')),
     url(r'courseupdater/', include('courseupdater.urls')),
     url(r'recommend/', include('recommend.urls')),
     url(r'admin/', admin.site.urls),
