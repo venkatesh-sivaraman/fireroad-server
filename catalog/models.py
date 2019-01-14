@@ -104,6 +104,23 @@ CSV_HEADERS = {
     "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter)
 }
 
+'''
+The first item is the requirement, the second is the subject ID required to
+satisfy the requirement.
+'''
+EQUIVALENCE_PAIRS = [
+    ("6.0001", "6.00"),
+    ("6.0002", "6.00")
+]
+
+"""
+The first item is a list of subject IDs of courses, and the second item is
+the requirement string.
+"""
+EQUIVALENCE_SETS = [
+    (["6.0001", "6.0002"], "6.00")
+]
+
 # Create your models here.
 class Course(models.Model):
     subject_id = models.CharField(max_length=20, null=True)
@@ -191,16 +208,24 @@ class Course(models.Model):
             CourseFields.title:                 self.title,
             CourseFields.level:                 self.level,
             CourseFields.total_units:           self.total_units,
-            CourseFields.joint_subjects:        self.joint_subjects.split(","),
-            CourseFields.equivalent_subjects:   self.equivalent_subjects.split(","),
-            CourseFields.meets_with_subjects:   self.meets_with_subjects.split(","),
-            CourseFields.not_offered_year:      self.not_offered_year,
             CourseFields.offered_fall:          self.offered_fall,
             CourseFields.offered_IAP:           self.offered_IAP,
             CourseFields.offered_spring:        self.offered_spring,
             CourseFields.offered_summer:        self.offered_summer,
-            CourseFields.quarter_information:   self.quarter_information,
         }
+
+        if self.joint_subjects is not None and len(self.joint_subjects) > 0:
+            data[CourseFields.joint_subjects] = self.joint_subjects.split(",")
+        if self.equivalent_subjects is not None and len(self.equivalent_subjects) > 0:
+            data[CourseFields.equivalent_subjects] = self.equivalent_subjects.split(",")
+        if self.meets_with_subjects is not None and len(self.meets_with_subjects) > 0:
+            data[CourseFields.meets_with_subjects] = self.meets_with_subjects.split(",")
+
+        if self.quarter_information is not None and len(self.quarter_information) > 0:
+            data[CourseFields.quarter_information] = self.quarter_information
+        if self.not_offered_year is not None and len(self.not_offered_year) > 0:
+            data[CourseFields.not_offered_year] = self.not_offered_year
+
         if self.instructors is not None and len(self.instructors) > 0:
             data[CourseFields.instructors] = self.instructors.split(",")
         if self.communication_requirement is not None and len(self.communication_requirement) > 0:
@@ -243,3 +268,26 @@ class Course(models.Model):
             data[CourseFields.out_of_class_hours] = self.out_of_class_hours
 
         return data
+
+    def satisfies(self, requirement, all_courses=None):
+        """
+        If `allCourses` is not nil, it may be a list of course objects that can
+        potentially satisfy the requirement. If a combination of courses
+        satisfies the requirement, this method will return true.
+        """
+
+        req = requirement.replace("GIR:", "")
+        # TODO: GIR/HASS/CI
+        if self.subject_id == req or req in self.joint_subjects.split(","):
+            return True
+        for item_1, item_2 in EQUIVALENCE_PAIRS:
+            if req == item_1 and self.subject_id == item_2:
+                return True
+
+        if all_courses is not None:
+            ids = set(c.subject_id for c in all_courses)
+            for eq_reqs, eq_req in EQUIVALENCE_SETS:
+                if eq_req == req and all(subreq in ids for subreq in eq_reqs):
+                    return True
+
+        return False
