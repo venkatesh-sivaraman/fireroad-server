@@ -124,7 +124,7 @@ EQUIVALENCE_SETS = [
 # Create your models here.
 class Course(models.Model):
     subject_id = models.CharField(max_length=20, null=True)
-    title = models.CharField(max_length=100, null=True)
+    title = models.CharField(max_length=200, null=True)
 
     # Used to keep multiple semesters' worth of courses in the database
     catalog_semester = models.CharField(max_length=15)
