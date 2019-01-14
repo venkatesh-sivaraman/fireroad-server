@@ -18,7 +18,7 @@ CATALOG_FILES_INFO_KEY = "delta"
 # Filenames that contain these words will be skipped
 EXCLUDED_FILENAMES = ["condensed", "courses", "features", "enrollment", "departments"]
 
-def update_with_file(path):
+def update_with_file(path, semester):
     """Updates the catalog database using the given CSV file path."""
     with open(path, 'r') as file:
         reader = csv.reader(file)
@@ -35,6 +35,7 @@ def update_with_file(path):
             except ObjectDoesNotExist:
                 course = Course.objects.create(subject_id=info["Subject Id"])
             finally:
+                course.catalog_semester = semester
                 for key, val in info.items():
                     if key not in CSV_HEADERS: continue
                     prop, converter = CSV_HEADERS[key]
@@ -56,7 +57,8 @@ def parse_related_file(path):
 def update_db():
     Course.objects.all().delete()
 
-    catalog_files = compute_semester_delta(list_semesters()[-1].split("-"), 0, 0)[CATALOG_FILES_INFO_KEY]
+    semester = list_semesters()[-1]
+    catalog_files = compute_semester_delta(semester.split("-"), 0, 0)[CATALOG_FILES_INFO_KEY]
     print(catalog_files)
     related_path = None
     for path in catalog_files:
@@ -67,7 +69,7 @@ def update_db():
             # Save this for last
             related_path = path
         else:
-            update_with_file(os.path.join(CATALOG_BASE_DIR, path))
+            update_with_file(os.path.join(CATALOG_BASE_DIR, path), semester)
     if related_path is not None:
         parse_related_file(os.path.join(CATALOG_BASE_DIR, related_path))
 

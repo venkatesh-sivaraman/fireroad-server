@@ -257,6 +257,9 @@ class Course(models.Model):
             data[CourseFields.schedule] = self.schedule
         if self.url is not None and len(self.url) > 0:
             data[CourseFields.url] = self.url
+        if self.related_subjects is not None and len(self.related_subjects) > 0:
+            comps = self.related_subjects.split(',')
+            data[CourseFields.related_subjects] = [comps[i] for i in range(0, len(comps), 2)]
 
         if self.rating != 0.0:
             data[CourseFields.rating] = self.rating
