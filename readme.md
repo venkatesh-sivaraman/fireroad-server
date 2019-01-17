@@ -19,7 +19,7 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 
 ## API Endpoints
 
-*(Up-to-date as of 10/11/2018)* All endpoints in `recommend`, `prefs`, and `sync` require login. To log in programmatically, pass the 'HTTP_AUTHORIZATION' header using either basic authentication or a bearer token issued by the FireRoad server upon OAuth login. Note that even if authentication is performed using HTTP basic authentication, it is always protected by HTTPS.
+*(Up-to-date as of 1/17/2019)* All endpoints in `recommend`, `prefs`, and `sync` require login. To log in programmatically, pass the 'HTTP_AUTHORIZATION' header using either basic authentication or a bearer token issued by the FireRoad server upon OAuth login. Note that even if authentication is performed using HTTP basic authentication, it is always protected by HTTPS.
 
 ### Authentication
 
@@ -37,6 +37,23 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 
   * `sem`, a comma-separated specification of the semester (e.g. "fall,2018")
   * `v`, the local version number of the catalog
+
+### Course Catalog
+
+* `/courses/lookup/<subject ID>` *(GET)*: Returns a JSON description of the course with the given subject ID, or a 401 error if the course is not present.
+
+* `/courses/dept/<dept code>` *(GET)*: Returns a JSON list containing all subjects in the given department (the subject ID prefix, such as "6", "WGS"), in numerically sorted order. If the department does not exist, returns an empty list. Takes Boolean query parameter `full`, indicating whether to return the full set of information for each subject or an abbreviated version.
+
+* `/courses/all` *(GET)*: Returns a JSON list of all courses in the current version of the catalog, in numerically sorted order. Takes Boolean query parameter `full`, indicating whether to return the full set of information for each subject or an abbreviated version.
+
+* `/courses/search/<search term>` *(GET)*: Returns a JSON list of courses for the given search term. Currently only the subject ID and subject title are searched. Takes Boolean query parameter `full`, indicating whether to return the full set of information for each subject or an abbreviated version. Also takes query parameters to filter the results:
+
+  * `type`: The match type to use with the search term. Possible values: "contains" (default), "matches", "starts", "ends"
+  * `gir`: Filter by GIR requirement. Possible values: "off" (default), "any", "lab", "rest"
+  * `hass`: Filter by HASS requirement. Possible values: "off" (default), "any", "a", "s", "h"
+  * `ci`: Filter by communication requirement. Possible values: "off" (default), "cih", "cihw", "not-ci"
+  * `offered`: Filter by semester offered. Possible values: "off" (default), "fall", "spring", "IAP", "summer"
+  * `level`: Filter by course level. Possible values: "off" (default), "undergrad", "grad"
 
 ### Recommender
 
