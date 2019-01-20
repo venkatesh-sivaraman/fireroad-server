@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.db import models
+from common.models import Student
 
 class CourseFields:
     subject_id = "subject_id"
@@ -42,6 +43,7 @@ class CourseFields:
     enrollment_number = "enrollment_number"
     enrollment_number = "enrollment_number"
     either_prereq_or_coreq = "either_prereq_or_coreq"
+    public = "public"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -126,6 +128,14 @@ class Course(models.Model):
     subject_id = models.CharField(max_length=20, null=True)
     title = models.CharField(max_length=200, null=True)
 
+    # Differentiates users' custom subjects from catalog subjects
+    public = models.BooleanField(default=False)
+    creator = models.ForeignKey("common.Student", null=True, on_delete=models.CASCADE, related_name="custom_courses")
+
+    @classmethod
+    def public_courses(cls):
+        return Course.objects.filter(public=True)
+
     # Used to keep multiple semesters' worth of courses in the database
     catalog_semester = models.CharField(max_length=15)
 
@@ -144,7 +154,7 @@ class Course(models.Model):
         result = []
         for comp in comps:
             try:
-                course = Course.objects.get(subject_id=comp)
+                course = Course.public_courses().get(subject_id=comp)
                 result.append(course)
             except ObjectDoesNotExist:
                 continue
@@ -212,6 +222,7 @@ class Course(models.Model):
             CourseFields.offered_IAP:           self.offered_IAP,
             CourseFields.offered_spring:        self.offered_spring,
             CourseFields.offered_summer:        self.offered_summer,
+            CourseFields.public:                self.public
         }
 
         if self.joint_subjects is not None and len(self.joint_subjects) > 0:

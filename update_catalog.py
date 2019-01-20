@@ -31,9 +31,9 @@ def update_with_file(path, semester):
                 print("Can't read CSV file {} - no headers".format(path))
             info = dict(zip(headers, comps))
             try:
-                course = Course.objects.get(subject_id=info["Subject Id"])
+                course = Course.public_courses().get(subject_id=info["Subject Id"])
             except ObjectDoesNotExist:
-                course = Course.objects.create(subject_id=info["Subject Id"])
+                course = Course.objects.create(public=True, subject_id=info["Subject Id"])
             finally:
                 course.catalog_semester = semester
                 for key, val in info.items():
@@ -48,14 +48,14 @@ def parse_related_file(path):
         for line in file:
             comps = line.strip().replace("[J]", "").split(",")
             try:
-                course = Course.objects.get(subject_id=comps[0])
+                course = Course.public_courses().get(subject_id=comps[0])
                 course.related_subjects = ",".join(comps[1:])
                 course.save()
             except ObjectDoesNotExist:
                 continue
 
 def update_db():
-    Course.objects.all().delete()
+    Course.public_courses().delete()
 
     semester = list_semesters()[-1]
     catalog_files = compute_semester_delta(semester.split("-"), 0, 0)[CATALOG_FILES_INFO_KEY]

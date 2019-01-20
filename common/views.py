@@ -12,6 +12,8 @@ import json
 from token_gen import *
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from catalog.models import Course, CourseFields
+from django.core.exceptions import ObjectDoesNotExist
 
 # One month
 TOKEN_EXPIRY_TIME = 2.6e6
@@ -225,3 +227,62 @@ def set_notes(request):
         return HttpResponse(json.dumps({'success': True}), content_type="application/json")
     except:
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")
+
+@logged_in_or_basicauth
+def custom_courses(request):
+    value = request.user.student.custom_courses.all()
+    try:
+        return HttpResponse(json.dumps({'success': True, 'custom_courses': [c.to_json_object() for c in value]}), content_type="application/json")
+    except:
+        return HttpResponse(json.dumps({'success': False, 'error': "Couldn't retrieve custom courses"}), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def set_custom_course(request):
+    try:
+        course_json = json.loads(request.body)
+    except:
+        return HttpResponseBadRequest('<h1>JSON error</h1>')
+
+    subject_id = course_json.get(CourseFields.subject_id, '')
+    if len(subject_id) == 0:
+        return HttpResponseBadRequest('Nonempty subject ID required')
+
+    try:
+        course = Course.objects.get(creator=request.user.student, subject_id=subject_id)
+    except ObjectDoesNotExist:
+        course = Course.objects.create(creator=request.user.student, subject_id=subject_id)
+
+    course.title = course_json.get(CourseFields.title, '')
+    course.description = course_json.get(CourseFields.description, '')
+    course.total_units = course_json.get(CourseFields.total_units, 0)
+    course.in_class_hours = course_json.get(CourseFields.in_class_hours, 0)
+    course.out_of_class_hours = course_json.get(CourseFields.out_of_class_hours, 0)
+    course.schedule = course_json.get(CourseFields.schedule, None)
+    course.public = course_json.get(CourseFields.public, False)
+    course.offered_fall = course_json.get(CourseFields.offered_fall, True)
+    course.offered_IAP = course_json.get(CourseFields.offered_IAP, True)
+    course.offered_spring = course_json.get(CourseFields.offered_spring, True)
+    course.offered_summer = course_json.get(CourseFields.offered_summer, True)
+
+    course.save()
+    return HttpResponse(json.dumps({'success': True}), content_type="application/json")
+
+@csrf_exempt
+@logged_in_or_basicauth
+def remove_custom_course(request):
+    try:
+        course_json = json.loads(request.body)
+    except:
+        return None, HttpResponseBadRequest('<h1>JSON error</h1>')
+
+    subject_id = course_json.get(CourseFields.subject_id, '')
+    if len(subject_id) == 0:
+        return HttpResponseBadRequest('Nonempty subject ID required')
+
+    try:
+        course = Course.objects.get(creator=request.user.student, subject_id=subject_id)
+        course.delete()
+        return HttpResponse(json.dumps({'success': True}), content_type="application/json")
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("Can't find custom course {}".format(subject_id))

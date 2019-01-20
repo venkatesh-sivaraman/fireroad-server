@@ -40,7 +40,7 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 
 ### Course Catalog
 
-* `/courses/lookup/<subject ID>` *(GET)*: Returns a JSON description of the course with the given subject ID, or a 401 error if the course is not present.
+* `/courses/lookup/<subject ID>` *(GET)*: Returns a JSON description of the course with the given subject ID, or a 404 error if the course is not present.
 
 * `/courses/dept/<dept code>` *(GET)*: Returns a JSON list containing all subjects in the given department (the subject ID prefix, such as "6", "WGS"), in numerically sorted order. If the department does not exist, returns an empty list. Takes Boolean query parameter `full`, indicating whether to return the full set of information for each subject or an abbreviated version.
 
@@ -68,6 +68,12 @@ Finally, you will need a file at `recommend/oidc.txt` that contains two lines: o
 * `/prefs/favorites/` *(GET)*, `/prefs/set_favorites/` *(POST)*: These endpoints handle read-write of favorite subjects. The format of the returned data is a dictionary with the `success` key, and if that is true, a `favorites` key containing a list of subject IDs.
 
 * `/prefs/progress_overrides/` *(GET)*, `/prefs/set_progress_overrides/` *(POST)*: These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the `success` key, and if that is true, a `progress_overrides` key containing a dictionary keyed by requirements list key-paths (see the `RequirementsListStatement` implementation in the mobile app for more information).
+
+* `/prefs/custom_courses/` *(GET)*, `/prefs/set_custom_course/` *(POST)*, and `/prefs/remove_custom_course/` *(POST)*: Endpoints to manage custom courses created by the user. The input and output JSON formats are as follows:
+
+  * `custom_courses`: no input, output is `{"success": <bool>, "custom_courses": <list of custom courses in standard JSON course format>}`.
+  * `set_custom_course`: input is a JSON dictionary containing the full description of a course to add or update (`subject_id` is required). By default, the course is set to `"public": false`. Output is `{"success": <bool>}`.
+  * `remove_custom_course`: input is a JSON dictionary specifying the course to remove (`subject_id` is required). Output is `{"success": <bool>}`.
 
 ### Requirements
 

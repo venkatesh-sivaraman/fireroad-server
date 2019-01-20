@@ -17,7 +17,7 @@ def lookup(request, subject_id=None):
     if subject_id is None:
         return HttpResponseBadRequest("Provide a subject ID to look up a course.")
     try:
-        c = Course.objects.get(subject_id=subject_id)
+        c = Course.public_courses().get(subject_id=subject_id)
         return HttpResponse(json.dumps(c.to_json_object()), content_type="application/json")
     except ObjectDoesNotExist:
         return HttpResponseNotFound("No subject found with the given ID")
@@ -34,7 +34,7 @@ def department(request, dept=None):
         full = request.GET["full"].lower() in TRUE_SET
     else:
         full = False
-    courses = Course.objects.filter(subject_id__startswith=dept + ".").order_by("subject_id")
+    courses = Course.public_courses().filter(subject_id__startswith=dept + ".").order_by("subject_id")
     return HttpResponse(json.dumps([c.to_json_object(full=full) for c in courses]), content_type="application/json")
 
 def list_all(request):
@@ -47,7 +47,7 @@ def list_all(request):
         full = request.GET["full"].lower() in TRUE_SET
     else:
         full = False
-    return HttpResponse(json.dumps([c.to_json_object(full=full) for c in Course.objects.order_by("subject_id")]), content_type="application/json")
+    return HttpResponse(json.dumps([c.to_json_object(full=full) for c in Course.public_courses().order_by("subject_id")]), content_type="application/json")
 
 def offered_filter(offered_value):
     """Constructs a Q filter based on the given offered value, or throws a
@@ -182,7 +182,7 @@ def search(request, search_term=None):
         return HttpResponseBadRequest("Invalid filter value")
 
     # Search by query
-    results = Course.objects.filter(query)
+    results = Course.public_courses().filter(query)
     if "full" in request.GET:
         full = request.GET["full"].lower() in TRUE_SET
     else:
