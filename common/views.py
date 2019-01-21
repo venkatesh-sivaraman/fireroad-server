@@ -264,6 +264,7 @@ def set_custom_course(request):
     course.offered_IAP = course_json.get(CourseFields.offered_IAP, True)
     course.offered_spring = course_json.get(CourseFields.offered_spring, True)
     course.offered_summer = course_json.get(CourseFields.offered_summer, True)
+    course.custom_color = course_json.get(CourseFields.custom_color, None)
 
     course.save()
     return HttpResponse(json.dumps({'success': True}), content_type="application/json")

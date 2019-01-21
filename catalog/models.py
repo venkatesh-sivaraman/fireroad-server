@@ -44,6 +44,8 @@ class CourseFields:
     enrollment_number = "enrollment_number"
     either_prereq_or_coreq = "either_prereq_or_coreq"
     public = "public"
+    creator = "creator"
+    custom_color = "custom_color"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -103,7 +105,8 @@ CSV_HEADERS = {
     "Out-of-Class Hours":       (CourseFields.out_of_class_hours, float_converter),
     "Enrollment Number":        (CourseFields.enrollment_number, float_converter),
     "Enrollment":               (CourseFields.enrollment_number, float_converter),
-    "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter)
+    "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter),
+    "Custom Color":             (CourseFields.custom_color, string_converter)
 }
 
 '''
@@ -131,6 +134,7 @@ class Course(models.Model):
     # Differentiates users' custom subjects from catalog subjects
     public = models.BooleanField(default=False)
     creator = models.ForeignKey("common.Student", null=True, on_delete=models.CASCADE, related_name="custom_courses")
+    custom_color = models.CharField(max_length=15, null=True)
 
     @classmethod
     def public_courses(cls):
@@ -224,6 +228,11 @@ class Course(models.Model):
             CourseFields.offered_summer:        self.offered_summer,
             CourseFields.public:                self.public
         }
+
+        if self.custom_color is not None and len(self.custom_color) > 0:
+            data[CourseFields.custom_color] = self.custom_color
+        if self.creator is not None:
+            data[CourseFields.creator] = self.creator.unique_id
 
         if self.joint_subjects is not None and len(self.joint_subjects) > 0:
             data[CourseFields.joint_subjects] = self.joint_subjects.split(",")
