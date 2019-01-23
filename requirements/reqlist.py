@@ -82,7 +82,7 @@ class RequirementsStatement(models.Model):
     """Represents a single requirements statement, encompassing a series of
     subjects or other requirements statements connected by AND or OR."""
 
-    list = models.ForeignKey("RequirementsList", on_delete=models.CASCADE, related_name="requirements", null=True)
+    #list = models.ForeignKey("RequirementsList", on_delete=models.CASCADE, related_name="requirements", null=True)
 
     title = models.CharField(max_length=250, null=True)
     description = models.TextField(null=True)
@@ -331,10 +331,10 @@ class RequirementsStatement(models.Model):
         self.save()
 
     @staticmethod
-    def initialize(title, contents, list=None):
+    def initialize(title, contents, parent=None):
         """Initializes a new requirements statement with the given title and
         requirement string. Parses the requirements statement."""
-        statement = RequirementsStatement.objects.create(title=title, list=list)
+        statement = RequirementsStatement.objects.create(title=title, parent=parent)
         statement.list = list
         statement.parse_string(contents)
         statement.save()
@@ -346,7 +346,6 @@ class RequirementsStatement(models.Model):
         given string."""
         statement = RequirementsStatement.objects.create()
         statement.parent = parent
-        statement.list = parent.list
         statement.parse_string(string)
         statement.save()
         return statement
