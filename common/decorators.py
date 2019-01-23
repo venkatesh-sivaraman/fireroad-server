@@ -31,6 +31,8 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
         key = 'HTTP_AUTHORIZATION'
         if key not in request.META:
             key = 'REDIRECT_HTTP_AUTHORIZATION'
+        if key not in request.META:
+            key = 'HTTP_X_AUTHORIZATION'
         if key in request.META:
             auth = request.META[key].split()
             if len(auth) == 2:

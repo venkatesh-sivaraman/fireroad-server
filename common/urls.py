@@ -16,5 +16,9 @@ urlpatterns = [
     url('prefs/set_progress_overrides/', views.set_progress_overrides, name='set_progress_overrides'),
     url('prefs/notes/', views.notes, name='notes'),
     url('prefs/set_notes/', views.set_notes, name='set_notes'),
+    url('prefs/custom_courses/', views.custom_courses, name='custom_courses'),
+    url('prefs/set_custom_course/', views.set_custom_course, name='set_custom_course'),
+    url('prefs/remove_custom_course/', views.remove_custom_course, name='remove_custom_course'),
     url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
+    #url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),
 ]

@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
 from django.contrib.auth import login, authenticate, logout
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from common.decorators import logged_in_or_basicauth
 import json
 import os
@@ -104,6 +104,28 @@ def edit(request, list_id):
     params['form'] = form
     params['exists'] = True
     return render(request, "requirements/edit.html", params)
+
+def get_json(request, list_id):
+    """Returns the raw JSON for a given requirements list, without user
+    course progress."""
+
+    try:
+        req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
+        # to pretty-print, use these keyword arguments to json.dumps:
+        # sort_keys=True, indent=4, separators=(',', ': ')
+        return HttpResponse(json.dumps(req.to_json_object()), content_type="application/json")
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
+
+def list_reqs(request):
+    """Return a JSON dictionary of all available requirements lists, with the
+    basic metadata for those lists."""
+    list_ids = { }
+    for req in RequirementsList.objects.all():
+        req_metadata = req.to_json_object(full=False)
+        del req_metadata[JSONConstants.list_id]
+        list_ids[req.list_id.replace(REQUIREMENTS_EXT, "")] = req_metadata
+    return HttpResponse(json.dumps(list_ids), content_type="application/json")
 
 def success(request):
     params = build_sidebar_info()
