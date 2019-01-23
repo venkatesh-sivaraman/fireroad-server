@@ -220,7 +220,6 @@ class Course(models.Model):
         data = {
             CourseFields.subject_id:            self.subject_id,
             CourseFields.title:                 self.title,
-            CourseFields.level:                 self.level,
             CourseFields.total_units:           self.total_units,
             CourseFields.offered_fall:          self.offered_fall,
             CourseFields.offered_IAP:           self.offered_IAP,
@@ -228,6 +227,8 @@ class Course(models.Model):
             CourseFields.offered_summer:        self.offered_summer,
             CourseFields.public:                self.public
         }
+        if self.level is not None and len(self.level) > 0:
+            data[CourseFields.level] = self.level
 
         if self.custom_color is not None and len(self.custom_color) > 0:
             data[CourseFields.custom_color] = self.custom_color
