@@ -4,18 +4,32 @@ FireRoad is an iOS (and hopefully soon, web) application providing MIT students 
 
 The `master` branch of this repo is intended to be checked out and run by the production server. All changes not ready for `master` should be kept in the `develop` branch.
 
-## Setup
+## Cloning and Setup
+
+Follow these instructions to set up and run your own instance of the FireRoad server. *This repo is currently designed to work with Python 2.7 and Django 1.7.10.*
 
 Once you have checked out the repo, you will need to generate a secret key, for example:
 
 ```
-$ cd fireroad
+$ cd fireroad-server
 $ openssl rand -base64 80 > fireroad/secret.txt
 ```
 
-You will then need to create a file called `dbcreds.py` within the (inner) `fireroad` directory that defines the following variables: `dbname`, `username`, `password`, and `host`. These are used to initialize the MySQL database in `settings.py`.
+**For development (develop branch):** Checkout the develop branch with `git checkout develop`. Then, using an environment with the appropriate Python/Django versions, run `python manage.py migrate` to build the SQLite database.
 
-Finally, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
+**For production (master branch):** You will need to create a file called `dbcreds.py` within the (inner) `fireroad` directory that defines the following variables: `dbname`, `username`, `password`, and `host`. These are used to initialize the MySQL database in `settings.py`. To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
+
+### Merging Notes
+
+**Read this before you merge into master.** The develop and master branches contain different versions of `fireroad/settings.py`, which are critical for the different server behaviors in local development and production. To merge into master, try using the following to merge without modifying the settings file:
+
+```
+git merge --no-ff --no-commit <merge-branch>
+git reset HEAD fireroad/settings.py
+git checkout -- fireroad/settings.py
+```
+
+If you made any changes you want to keep in the settings file for production, you would need to redo those changes before committing the merge.
 
 ## API Endpoints
 
