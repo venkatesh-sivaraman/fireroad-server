@@ -43,7 +43,9 @@ INSTALLED_APPS = [
     'recommend',
     'common',
     'sync',
-    'requirements'
+    'requirements',
+    'courseupdater',
+    'catalog'
 ]
 
 MIDDLEWARE_CLASSES = [
