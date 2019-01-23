@@ -183,9 +183,17 @@ class RequirementsStatement(models.Model):
 
         return self.title if self.title is not None else "No title"
 
-    def to_json_object(self):
+    def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements statement into a serializable object that can
-        be dumped to JSON."""
+        be dumped to JSON.
+
+        If this statement has child requirements, it uses the child_fn to output
+        the JSON for each child. If child_fn is None, uses the to_json_object()
+        on the child requirements; if not, it should be a function that takes a
+        RequirementsStatement and produces a JSON object describing it.
+
+        The full keyword argument is currently not used by RequirementsStatement."""
+
         base = {}
         if self.title is not None and len(self.title) > 0:
             base[JSONConstants.title] = self.title
@@ -214,7 +222,7 @@ class RequirementsStatement(models.Model):
         if self.requirement is not None:
             base[JSONConstants.requirement] = self.requirement
         elif self.requirements.exists():
-            base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+            base[JSONConstants.requirements] = [(child_fn(r) if child_fn is not None else r.to_json_object()) for r in self.requirements.all()]
             base[JSONConstants.connection_type] = self.connection_type
 
         return base

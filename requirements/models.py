@@ -26,10 +26,11 @@ class RequirementsList(RequirementsStatement):
     def __str__(self):
         return self.short_title + " - " + self.title
 
-    def to_json_object(self, full=True):
+    def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements list into a dictionary that can be sent
         as JSON. If full is False, only returns the metadata about the requirements
-        list."""
+        list. See the documentation of RequirementsStatement.to_json_object() for
+        info about child_fn."""
         base = {
             JSONConstants.list_id: self.list_id,
             JSONConstants.short_title: self.short_title,
@@ -38,7 +39,8 @@ class RequirementsList(RequirementsStatement):
         }
         if full:
             if self.requirements.exists():
-                base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+                print(self.requirements.all())
+                base[JSONConstants.requirements] = [child_fn(r) if child_fn is not None else r.to_json_object() for r in self.requirements.all()]
             base[JSONConstants.title_no_degree] = self.title_no_degree
             base[JSONConstants.description] = self.description if self.description is not None else ""
 
@@ -76,7 +78,7 @@ class RequirementsList(RequirementsStatement):
                 if len(arg_comps) != 2:
                     print("{}: Unexpected number of = symbols in first line argument".format(self.list_id))
                     continue
-                    
+
 
         self.contents = contents_str
 
@@ -151,6 +153,7 @@ class RequirementsList(RequirementsStatement):
             req = variables[name]
             req.description = description
             req.list = self
+            req.parent = self
             req.substitute_variables(variables)
 
 
