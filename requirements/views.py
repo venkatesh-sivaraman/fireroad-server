@@ -12,6 +12,7 @@ from courseupdater.views import *
 import re
 from progress import RequirementsProgress
 from catalog.models import Course
+import logging
 
 REQUIREMENTS_EXT = ".reql"
 NEW_DOC_ID = "new_doc"
@@ -111,6 +112,8 @@ def get_json(request, list_id):
     """Returns the raw JSON for a given requirements list, without user
     course progress."""
 
+    for req in RequirementsList.objects.all():
+        print(req.list_id)
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
         # to pretty-print, use these keyword arguments to json.dumps:
@@ -125,6 +128,8 @@ def progress(request, list_id, courses):
     in courses as a comma-separated list of subject IDs."""
     req = None
 
+    print(type(list_id))
+    print(courses)
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
     except ObjectDoesNotExist:
@@ -144,7 +149,7 @@ def progress(request, list_id, courses):
 
     # to pretty-print, use these keyword arguments to json.dumps:
     # sort_keys=True, indent=4, separators=(',', ': ')
-    return HttpResponse(json.dumps(prog.to_json_object()), content_type="application/json")
+    return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")
 
 def list_reqs(request):
     """Return a JSON dictionary of all available requirements lists, with the
