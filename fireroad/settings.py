@@ -15,7 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = ""
+CATALOG_BASE_DIR = "/Users/georgiashay/Documents/0Classes/0Undergraduate-MIT/Freshman/Extracurriculars/SIPB/Courseroad/catalogs"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
