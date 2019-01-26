@@ -76,5 +76,6 @@ def get_access_info_with_temporary_code(code):
             raise PermissionDenied
         ret = json.loads(code_storage.access_info)
         code_storage.delete()
+        return ret
     except:
         raise PermissionDenied

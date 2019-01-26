@@ -9,6 +9,7 @@ from .decorators import logged_in_or_basicauth
 from .oauth_client import *
 import base64
 import json
+import re
 from token_gen import *
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -125,6 +126,8 @@ def finish_login_redirect(access_info, uri):
     URI passing the code as a "code" query parameter.
     """
     code = save_temporary_code(access_info)
+    if not re.search(r'^https?://', uri): # Redirect requires a protocol
+        uri = 'https://' + uri
     return redirect(uri + "?code=" + code)
 
 def fetch_token(request):
