@@ -128,8 +128,7 @@ def progress(request, list_id, courses):
     in courses as a comma-separated list of subject IDs."""
     req = None
 
-    print(type(list_id))
-    print(courses)
+    # print(courses)
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
     except ObjectDoesNotExist:

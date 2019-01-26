@@ -13,7 +13,7 @@ def total_units(courses):
     total = 0
     for course in courses:
         total += course.total_units
-    pass
+    return total
 
 def combine_progresses(p1,p2, maxFunc):
     if maxFunc is not None:
@@ -27,7 +27,6 @@ def sum_progresses(progresses, criterion_type, maxFunc):
         mapfunc = lambda p: p.unit_fulfillment
     sum_progress = reduce(lambda p1, p2: combine_progresses(p1, p2, maxFunc), map(mapfunc, progresses))
     return sum_progress
-
 
 class JSONProgressConstants:
     """Each of these keys will be filled in a RequirementsStatement JSON
@@ -54,14 +53,16 @@ class Progress(object):
         return self.max
     def get_percent(self):
         if self.max > 0:
-            return int((self.progress / float(self.max))*100)
+            return min(100,int((self.progress / float(self.max))*100))
         else:
-            return 0
+            return "N/A"
     def get_fraction(self):
         if self.max > 0:
             return self.progress / float(self.max)
         else:
-            return 0.0
+            return "N/A"
+    def __repr__(self):
+        return str(self.progress) + " / " + str(self.max)
 
 class Threshold(object):
     def __init__(self, threshold_type, number, criterion):
@@ -122,10 +123,10 @@ class RequirementsProgress(object):
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps'
         # computeRequirementsStatus method
+        courses = list(set(courses))
         satisfied_courses = []
         current_threshold = Threshold(self.statement.threshold_type, self.statement.threshold_cutoff, self.statement.threshold_criterion)
         current_distinct_threshold = Threshold(self.statement.distinct_threshold_type, self.statement.distinct_threshold_cutoff, self.statement.distinct_threshold_criterion)
-        print("statement:")
         if self.statement.requirement is not None:
             if False:
                 #manual progress
@@ -156,25 +157,20 @@ class RequirementsProgress(object):
                 self.progress_max = progress.get_max()
                 self.percent_fulfilled = progress.get_percent()
                 self.fraction_fulfilled = progress.get_fraction()
-                self.satisfied_courses = satisfied_courses
+                self.satisfied_courses = list(set(satisfied_courses))
         elif len(self.children)>0:
-            print("children:")
-            print(self.children)
-            # satisfied_by_category = []
-            # total_satisfied = []
             num_reqs_satisfied = 0
-
+            satisfied_by_category = []
+            satisfied_courses = []
             for req_progress in self.children:
                 req_progress.compute(courses)
                 req_satisfied_courses = req_progress.satisfied_courses
                 if(req_progress.is_fulfilled):
                     num_reqs_satisfied += 1
                 satisfied_courses.extend(req_satisfied_courses)
-
+                satisfied_by_category.append(req_satisfied_courses)
 
             sorted_progresses = sorted(self.children,key=lambda req: req.fraction_fulfilled, reverse=True)
-            print("Sorted progresses:")
-            print([str(s) for s in sorted_progresses])
             # sorted_progresses.sort(key=lambda req: req.fraction_fulfilled, reverse=True)
             if self.statement.threshold_type is None and self.statement.distinct_threshold_type is None:
                 is_fulfilled = (num_reqs_satisfied > 0)
@@ -190,7 +186,12 @@ class RequirementsProgress(object):
                     unit_progress = sum_progresses(sorted_progresses, CRITERION_UNITS, None)
             else:
                 if self.statement.distinct_threshold_type is not None:
-                    sorted_progresses = sorted_progresses[:min(current_distinct_threshold.get_actual_cutoff(), len(sorted_progresses))]
+                    num_progresses_to_count = min(current_distinct_threshold.get_actual_cutoff(), len(sorted_progresses))
+                    sorted_progresses = sorted_progresses[:num_progresses_to_count]
+                    satisfied_courses = []
+                    for i in range(num_progresses_to_count):
+                        satisfied_courses.extend(satisfied_by_category[i])
+
                 if self.statement.threshold_type is None and self.statement.distinct_threshold_type is not None:
                     if self.statement.distinct_threshold_type == THRESHOLD_TYPE_GTE or self.statement.distinct_threshold_type == THRESHOLD_TYPE_GT:
                         is_fulfilled = num_reqs_satisfied >= current_distinct_threshold.get_actual_cutoff()
@@ -227,13 +228,13 @@ class RequirementsProgress(object):
             self.progress_max = progress.get_max()
             self.percent_fulfilled = progress.get_percent()
             self.fraction_fulfilled = progress.get_fraction()
-            self.satisfied_courses = satisfied_courses
+            self.satisfied_courses = list(set(satisfied_courses))
 
     def to_json_object(self, full=True):
         """Returns a JSON dictionary containing the dictionary representation of
         the enclosed requirements statement, as well as progress information."""
         # Recursively decorate the JSON output of the children
-        print("Json of {} with full true".format(self.statement))
+        # print("Json of {} with full true".format(self.statement))
         # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
         # Add custom keys indicating progress for this statement
         # stmt[JSONProgressConstants.is_fulfilled] = False
@@ -250,10 +251,11 @@ class RequirementsProgress(object):
         if full:
             if JSONConstants.requirements in stmt_json:
                 del stmt_json[JSONConstants.requirements]
-            stmt_json[JSONProgressConstants.children_fulfillment] = []
-            for child in self.children:
-                stmt_json[JSONProgressConstants.children_fulfillment].append(child.to_json_object(full))
-        # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
+            if self.children:
+                stmt_json[JSONProgressConstants.children_fulfillment] = []
+                for child in self.children:
+                    stmt_json[JSONProgressConstants.children_fulfillment].append(child.to_json_object(full))
+            # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
 
         # stmt_json["children_fulfillment"] = map()
         return stmt_json
