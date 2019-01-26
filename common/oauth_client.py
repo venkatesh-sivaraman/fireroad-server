@@ -32,9 +32,13 @@ def generate_random_string(length):
     choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     return ''.join(random.choice(choices) for _ in range(length))
 
-def oauth_code_url(request):
+def oauth_code_url(request, after_redirect=None):
+    """after_redirect is used to redirect to an application site with a
+    temporary code AFTER FireRoad has created the user's account. It should be
+    None for mobile apps and a string for websites."""
+
     # Create a state and nonce, and save them
-    cache = OAuthCache(state=generate_random_string(48), nonce=generate_random_string(48))
+    cache = OAuthCache(state=generate_random_string(48), nonce=generate_random_string(48), redirect_uri=after_redirect)
     sem = request.GET.get('sem', '')
     if len(sem) > 0:
         cache.current_semester = sem
@@ -108,6 +112,8 @@ def get_oauth_id_token(request, code, state, refresh=False):
                 return None, None, 408
             found = True
             info["sem"] = cache.current_semester
+            if cache.redirect_uri is not None:
+                info["redirect"] = cache.redirect_uri
             break
     if not found:
         raise PermissionDenied

@@ -27,3 +27,11 @@ class OAuthCache(models.Model):
     nonce = models.CharField(max_length=50)
     current_semester = models.CharField(max_length=25, default='0')
     date = models.DateTimeField(auto_now_add=True)
+
+    # Store redirect URI if provided
+    redirect_uri = models.CharField(max_length=200, null=True)
+
+class TemporaryCode(models.Model):
+    code = models.CharField(max_length=100)
+    access_info = models.CharField(max_length=500)
+    date = models.DateTimeField(auto_now_add=True)

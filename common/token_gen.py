@@ -7,6 +7,9 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 from django.utils import timezone
 import datetime
+from oauth_client import generate_random_string, LOGIN_TIMEOUT
+from .models import TemporaryCode
+from django.core.exceptions import PermissionDenied
 
 FIREROAD_ISSUER = 'com.base12innovations.fireroad-server'
 
@@ -52,3 +55,26 @@ def get_user_for_token(request, token):
         return None, {'error': 'invalid_user', 'error_description': 'The token represents a non-existent user'}
 
     return user, None
+
+def save_temporary_code(access_info):
+    """Generates, saves, and returns a temporary code associated with the
+    given access information JSON object."""
+
+    code_storage = TemporaryCode.objects.create(access_info=json.dumps(access_info), code=generate_random_string(80))
+    code_storage.save()
+    return code_storage.code
+
+def get_access_info_with_temporary_code(code):
+    """Validates the given temporary code and retrieves the access info associated
+    with it as a JSON object, deleting the code storage afterward. Raises
+    PermissionDenied if the code is not found or is expired."""
+
+    try:
+        code_storage = TemporaryCode.objects.get(code=code)
+        expiry_date = code_storage.date + datetime.timedelta(seconds=LOGIN_TIMEOUT)
+        if expiry_date < timezone.now():
+            raise PermissionDenied
+        ret = json.loads(code_storage.access_info)
+        code_storage.delete()
+    except:
+        raise PermissionDenied
