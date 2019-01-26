@@ -40,7 +40,7 @@ If you made any changes you want to keep in the settings file for production, yo
 
 **Please remember to use the dev server (fireroad-dev.mit.edu) for all local testing, and _only_ use the production server (fireroad.mit.edu) for your production application.** The workflow for logging into the FireRoad server as a web application is as follows:
 
-1. Your site sends the user to `<FIREROAD>/login`, with an optional query parameter `sem` indicating the user's current semester, and required query parameter `redirect` indicating the redirect URL after login.
+1. Your site sends the user to `<FIREROAD>/login`, with an optional query parameter `sem` indicating the user's current semester, and required query parameter `redirect` indicating the redirect URL after login. For production, this redirect URL needs to be registered with FireRoad before use.
 2. The FireRoad server handles login through MIT OpenID Connect, creates a FireRoad account if necessary, then sends the user back to your redirect URL, passing a query parameter `code`.
 3. The code is a string that can be used exactly once within 5 minutes of login to retrieve an access token. The application server does this by sending a request to `<FIREROAD>/fetch_token`, passing the query parameter `code` received in step 2.
 4. The FireRoad server validates the temporary code and sends the application server back a JSON web token (JWT) that can be used to authorize use of the API.
