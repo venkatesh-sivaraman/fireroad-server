@@ -39,7 +39,6 @@ class RequirementsList(RequirementsStatement):
         }
         if full:
             if self.requirements.exists():
-                print(self.requirements.all())
                 base[JSONConstants.requirements] = [child_fn(r) if child_fn is not None else r.to_json_object() for r in self.requirements.all()]
             base[JSONConstants.title_no_degree] = self.title_no_degree
             base[JSONConstants.description] = self.description if self.description is not None else ""

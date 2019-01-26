@@ -112,8 +112,6 @@ def get_json(request, list_id):
     """Returns the raw JSON for a given requirements list, without user
     course progress."""
 
-    for req in RequirementsList.objects.all():
-        print(req.list_id)
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
         # to pretty-print, use these keyword arguments to json.dumps:
@@ -128,7 +126,19 @@ def progress(request, list_id, courses):
     in courses as a comma-separated list of subject IDs."""
     req = None
 
-    # print(courses)
+    try:
+        if request.user.is_authenticated():
+            progress_overrides = request.user.student.progress_overrides
+    except:
+        progress_overrides = {}
+
+
+    # fake_progress_overrides = {
+    #     "major1.1.3": 33
+    # }
+
+    progress_overrides = fake_progress_overrides
+
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
     except ObjectDoesNotExist:
@@ -143,9 +153,8 @@ def progress(request, list_id, courses):
             print("Warning: course {} does not exist in the catalog".format(subject_id))
 
     # Create a progress object for the requirements list
-    prog = RequirementsProgress(req)
-    prog.compute(course_objs)
-
+    prog = RequirementsProgress(req, list_id)
+    prog.compute(course_objs, progress_overrides)
     # to pretty-print, use these keyword arguments to json.dumps:
     # sort_keys=True, indent=4, separators=(',', ': ')
     return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")

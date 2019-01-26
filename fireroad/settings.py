@@ -28,7 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'lvh.me']
 
-MY_BASE_URL = 'https://lvh.me:8000'
+MY_BASE_URL = 'http://localhost:8000'
 
 # Application definition
 

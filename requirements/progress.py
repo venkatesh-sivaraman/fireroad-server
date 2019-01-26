@@ -1,5 +1,6 @@
 from reqlist import *
-
+import random
+from catalog.models import Course
 
 def ceiling_thresh(progress, maximum):
     effective_progress = max(0, progress)
@@ -104,13 +105,14 @@ class RequirementsProgress(object):
     persistent information can be stored in a database-friendly format, while
     information specific to a user's request is transient.
     """
-    def __init__(self, statement):
+    def __init__(self, statement, list_path):
         """Initializes a progress object with the given requirements statement."""
         self.statement = statement
+        self.list_path = list_path
         self.children = []
         if self.statement.requirements.exists():
-            for child in self.statement.requirements.all():
-                self.children.append(RequirementsProgress(child))
+            for index, child in enumerate(self.statement.requirements.all()):
+                self.children.append(RequirementsProgress(child, list_path+"."+str(index)))
 
     def courses_satisfying_req(self, courses):
         if self.statement.requirement is not None:
@@ -118,7 +120,7 @@ class RequirementsProgress(object):
         return []
 
 
-    def compute(self, courses):
+    def compute(self, courses, progress_overrides):
         """Computes and stores the status of the requirements statement using the
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps'
@@ -127,10 +129,29 @@ class RequirementsProgress(object):
         satisfied_courses = []
         current_threshold = Threshold(self.statement.threshold_type, self.statement.threshold_cutoff, self.statement.threshold_criterion)
         current_distinct_threshold = Threshold(self.statement.distinct_threshold_type, self.statement.distinct_threshold_cutoff, self.statement.distinct_threshold_criterion)
+        if self.list_path in progress_overrides:
+            manual_progress = progress_overrides[self.list_path]
+        else:
+            manual_progress = 0
         if self.statement.requirement is not None:
-            if False:
+            if self.statement.is_plain_string and not manual_progress == 0 and self.statement.threshold_type is not None:
                 #manual progress
-                pass
+                is_fulfilled = manual_progress == current_threshold.cutoff
+                subjects = 0
+                units = 0
+                if current_threshold.criterion == CRITERION_UNITS:
+                    units = manual_progress
+                    subjects = manual_progress / DEFAULT_UNIT_COUNT
+                else:
+                    units = manual_progress * DEFAULT_UNIT_COUNT
+                    subject = manual_progress
+                subject_progress = ceiling_thresh(subjects, current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
+                unit_progress = ceiling_thresh(units, current_threshold.cutoff_for_criterion(CRITERION_UNITS))
+                random_ids = random.sample(range(1,100000),subject_progress.progress)
+                for rand_id in random_ids:
+                            # course = Course.objects.create(creator=request.user.student, subject_id=subject_id)
+                    dummy_course = Course(id = rand_id, subject_id="gen_course"+str(rand_id),title="Generated Course "+str(rand_id))
+                    satisfied_courses.append(dummy_course)
             else:
                 satisfied_courses = self.courses_satisfying_req(courses)
                 if not self.statement.threshold_type is None:
@@ -145,25 +166,25 @@ class RequirementsProgress(object):
                         unit_progress = ceiling_thresh(satisfied_courses[0].total_units, DEFAULT_UNIT_COUNT)
                     else:
                         unit_progress = ceiling_thresh(0, DEFAULT_UNIT_COUNT)
-                progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
-                self.is_fulfilled = is_fulfilled
-                self.subject_fulfillment = subject_progress
-                self.subject_progress = subject_progress.get_progress()
-                self.subject_max = subject_progress.get_max()
-                self.unit_fulfillment = unit_progress
-                self.unit_progress = unit_progress.get_progress()
-                self.unit_max = unit_progress.get_max()
-                self.progress = progress.get_progress()
-                self.progress_max = progress.get_max()
-                self.percent_fulfilled = progress.get_percent()
-                self.fraction_fulfilled = progress.get_fraction()
-                self.satisfied_courses = list(set(satisfied_courses))
+            progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
+            self.is_fulfilled = is_fulfilled
+            self.subject_fulfillment = subject_progress
+            self.subject_progress = subject_progress.get_progress()
+            self.subject_max = subject_progress.get_max()
+            self.unit_fulfillment = unit_progress
+            self.unit_progress = unit_progress.get_progress()
+            self.unit_max = unit_progress.get_max()
+            self.progress = progress.get_progress()
+            self.progress_max = progress.get_max()
+            self.percent_fulfilled = progress.get_percent()
+            self.fraction_fulfilled = progress.get_fraction()
+            self.satisfied_courses = list(set(satisfied_courses))
         elif len(self.children)>0:
             num_reqs_satisfied = 0
             satisfied_by_category = []
             satisfied_courses = []
             for req_progress in self.children:
-                req_progress.compute(courses)
+                req_progress.compute(courses, progress_overrides)
                 req_satisfied_courses = req_progress.satisfied_courses
                 if(req_progress.is_fulfilled):
                     num_reqs_satisfied += 1
