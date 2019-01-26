@@ -35,3 +35,8 @@ class TemporaryCode(models.Model):
     code = models.CharField(max_length=100)
     access_info = models.CharField(max_length=500)
     date = models.DateTimeField(auto_now_add=True)
+
+class RedirectURL(models.Model):
+    """Defines a registered redirect URL for the login endpoint."""
+    label = models.CharField(max_length=50)
+    url = models.CharField(max_length=200)
