@@ -26,7 +26,7 @@ def login_oauth(request):
         code = request.GET.get('code', None)
         redirect_URL = request.GET.get('redirect', None)
         if RESTRICT_AUTH_REDIRECTS and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
-            raise PermissionDenied("Redirect URL not registered")
+            return HttpResponse("Redirect URL not registered", status=403)
         return redirect(oauth_code_url(request, after_redirect=redirect_URL))
 
     result, status, info = get_user_info(request)
