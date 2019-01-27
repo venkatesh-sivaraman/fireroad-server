@@ -17,7 +17,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CATALOG_BASE_DIR = ""
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> develop
 # If True, login redirects will be required to be registered as a RedirectURL
 # Set to True in production!
 RESTRICT_AUTH_REDIRECTS = False
