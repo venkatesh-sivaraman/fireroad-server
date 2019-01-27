@@ -125,8 +125,8 @@ class RequirementsProgress(object):
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps'
         # computeRequirementsStatus method
-        possible_manual = sum(progress_overrides.values())
-        random_sample = random.sample(range(1000, max(10000, possible_manual)), possible_manual)
+        possible_manual = sum(dict(progress_overrides).values())
+        # print(random_sample)
         courses = list(set(courses))
         satisfied_courses = []
         current_threshold = Threshold(self.statement.threshold_type, self.statement.threshold_cutoff, self.statement.threshold_criterion)
@@ -149,10 +149,9 @@ class RequirementsProgress(object):
                     subjects = manual_progress
                 subject_progress = ceiling_thresh(subjects, current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                 unit_progress = ceiling_thresh(units, current_threshold.cutoff_for_criterion(CRITERION_UNITS))
-                random_ids = random_sample[:subject_progress.progress]
-                random_sample = random_sample[subject_progress.progress:]
+                random_ids = random.sample(range(1000, max(10000, subject_progress.progress+1000)), subject_progress.progress)
                 for rand_id in random_ids:
-                    dummy_course = Course(id = rand_id, subject_id="gen_course"+str(rand_id),title="Generated Course "+str(rand_id))
+                    dummy_course = Course(id = self.list_path + "_"+str(rand_id), subject_id="gen_course_"+self.list_path+"_"+str(rand_id),title="Generated Course "+self.list_path + " " + str(rand_id))
                     satisfied_courses.append(dummy_course)
             else:
                 satisfied_courses = self.courses_satisfying_req(courses)
@@ -283,14 +282,13 @@ class RequirementsProgress(object):
             self.fraction_fulfilled = progress.get_fraction()
             self.satisfied_courses = list(set(satisfied_courses))
 
-    def to_json_object(self, full=True):
+    def to_json_object(self, full=True, child_fn=None):
         """Returns a JSON dictionary containing the dictionary representation of
         the enclosed requirements statement, as well as progress information."""
         # Recursively decorate the JSON output of the children
         # print("Json of {} with full true".format(self.statement))
         # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
         # Add custom keys indicating progress for this statement
-        # stmt[JSONProgressConstants.is_fulfilled] = False
         stmt_json = self.statement.to_json_object()
         stmt_json[JSONProgressConstants.is_fulfilled] = self.is_fulfilled
         stmt_json[JSONProgressConstants.subject_progress] = self.subject_progress
@@ -302,13 +300,9 @@ class RequirementsProgress(object):
         stmt_json[JSONProgressConstants.percent_fulfilled] = self.percent_fulfilled
         stmt_json[JSONProgressConstants.satisfied_courses] = map(lambda c: c.subject_id, self.satisfied_courses)
         if full:
-            if JSONConstants.requirements in stmt_json:
-                del stmt_json[JSONConstants.requirements]
             if self.children:
-                stmt_json[JSONProgressConstants.children_fulfillment] = []
-                for child in self.children:
-                    stmt_json[JSONProgressConstants.children_fulfillment].append(child.to_json_object(full))
-            # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
+                if child_fn is None:
+                    child_fn = lambda c: c.to_json_object()
+                stmt_json[JSONConstants.requirements] =[child_fn(child) for child in self.children]
 
-        # stmt_json["children_fulfillment"] = map()
         return stmt_json
