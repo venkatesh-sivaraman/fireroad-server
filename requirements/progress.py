@@ -226,40 +226,39 @@ class RequirementsProgress(object):
                     subject_progress = Progress(len(satisfied_courses), current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                     unit_progress = Progress(total_units(satisfied_courses), current_threshold.cutoff_for_criterion(CRITERION_UNITS))
                     if self.statement.distinct_threshold_type is not None and (self.statement.distinct_threshold_type == THRESHOLD_TYPE_GT or self.statement.distinct_threshold_type == THRESHOLD_TYPE_GTE):
-                        print('checking fulfillment for' + self.list_path)
-                        print('subject progress: '+str(current_threshold.is_satisfied_by(subject_progress.progress,unit_progress.progress)))
-                        print('distinct progress: '+str(num_reqs_satisfied >= current_distinct_threshold.get_actual_cutoff()))
-                        print("num_reqs_satisfied: "+str(num_reqs_satisfied))
-                        print("cutoff: " + str(current_distinct_threshold.get_actual_cutoff()))
                         is_fulfilled = current_threshold.is_satisfied_by(subject_progress.progress, unit_progress.progress) and num_reqs_satisfied >= current_distinct_threshold.get_actual_cutoff()
                         if num_reqs_satisfied < current_distinct_threshold.get_actual_cutoff():
                             subject_cutoff = current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS)
                             unit_cutoff = current_threshold.cutoff_for_criterion(CRITERION_UNITS)
+
                             max_unit_subjects = map(lambda sat_cat: sorted(sat_cat, key = lambda s: s.total_units), satisfied_by_category)
-                            fixed_courses = []
+
+                            fixed_subject_progress = 0
+                            fixed_subject_max = current_distinct_threshold.get_actual_cutoff()
+                            fixed_unit_progress = 0
+                            fixed_unit_max = 0
+
                             for category_subjects in max_unit_subjects:
                                 if len(category_subjects) > 0:
-                                    fixed_courses.append(category_subjects.pop())
-                            fixed_subject_progress = len(fixed_courses)
-                            fixed_unit_progress = total_units(fixed_courses)
-                            remaining_subject_progress = subject_cutoff - current_distinct_threshold.cutoff
-                            if current_threshold.criterion == CRITERION_UNITS:
-                                remaining_unit_progress = unit_cutoff - fixed_unit_progress - ((current_distinct_threshold.cutoff-fixed_subject_progress) * DEFAULT_UNIT_COUNT)
-                            else:
-                                unit_cutoff = unit_cutoff + fixed_unit_progress - (fixed_subject_progress)*DEFAULT_UNIT_COUNT
-                                remaining_unit_progress = unit_cutoff - (current_distinct_threshold.cutoff * DEFAULT_UNIT_COUNT)
-                            remaining_sorted_subjects = sorted([course for category in max_unit_subjects for course in category], key = lambda s: s.total_units, reverse = True)
-                            if current_threshold.criterion == CRITERION_SUBJECTS:
-                                free_courses = remaining_sorted_subjects[:remaining_subject_progress]
-                            else:
-                                free_courses = []
-                                while total_units(free_courses) < remaining_unit_progress and len(remaining_sorted_subjects) > 0:
-                                    free_courses.append(remaining_sorted_subjects.pop(0))
-                            free_subject_progress = len(free_courses)
-                            free_unit_progress = total_units(free_courses)
+                                    subject_to_count = category_subjects.pop()
+                                    fixed_subject_progress += 1
+                                    fixed_unit_progress += subject_to_count.total_units
+                                    fixed_unit_max += subject_to_count.total_units
+                                else:
+                                    fixed_unit_max += DEFAULT_UNIT_COUNT
+
+                            remaining_subject_progress = subject_cutoff - fixed_subject_max
+                            remaining_unit_progress = unit_cutoff - fixed_unit_max
+
+                            free_courses = sorted([course for category in max_unit_subjects for course in category], key = lambda s: s.total_units, reverse = True)
+                            free_subject_max = subject_cutoff - fixed_subject_max
+                            free_unit_max = unit_cutoff - fixed_unit_max
+                            
+                            free_subject_progress = min(len(free_courses), free_subject_max)
+                            free_unit_progress = min(total_units(free_courses), free_unit_max)
+
                             subject_progress = Progress(fixed_subject_progress+free_subject_progress,subject_cutoff)
                             unit_progress = Progress(fixed_unit_progress+free_unit_progress,unit_cutoff)
-                            # satisfied_courses = fixed_courses + free_courses
                     else:
                         is_fulfilled = current_threshold.is_satisfied_by(subject_progress.progress, unit_progress.progress)
             if self.statement.connection_type == CONNECTION_TYPE_ALL:
