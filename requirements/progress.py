@@ -125,6 +125,8 @@ class RequirementsProgress(object):
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps'
         # computeRequirementsStatus method
+        possible_manual = sum(progress_overrides.values())
+        random_sample = random.sample(range(1000, max(10000, possible_manual)), possible_manual)
         courses = list(set(courses))
         satisfied_courses = []
         current_threshold = Threshold(self.statement.threshold_type, self.statement.threshold_cutoff, self.statement.threshold_criterion)
@@ -136,7 +138,7 @@ class RequirementsProgress(object):
         if self.statement.requirement is not None:
             if self.statement.is_plain_string and not manual_progress == 0 and self.statement.threshold_type is not None:
                 #manual progress
-                is_fulfilled = manual_progress == current_threshold.cutoff
+                is_fulfilled = manual_progress >= current_threshold.get_actual_cutoff()
                 subjects = 0
                 units = 0
                 if current_threshold.criterion == CRITERION_UNITS:
@@ -144,12 +146,12 @@ class RequirementsProgress(object):
                     subjects = manual_progress / DEFAULT_UNIT_COUNT
                 else:
                     units = manual_progress * DEFAULT_UNIT_COUNT
-                    subject = manual_progress
+                    subjects = manual_progress
                 subject_progress = ceiling_thresh(subjects, current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                 unit_progress = ceiling_thresh(units, current_threshold.cutoff_for_criterion(CRITERION_UNITS))
-                random_ids = random.sample(range(1,100000),subject_progress.progress)
+                random_ids = random_sample[:subject_progress.progress]
+                random_sample = random_sample[subject_progress.progress:]
                 for rand_id in random_ids:
-                            # course = Course.objects.create(creator=request.user.student, subject_id=subject_id)
                     dummy_course = Course(id = rand_id, subject_id="gen_course"+str(rand_id),title="Generated Course "+str(rand_id))
                     satisfied_courses.append(dummy_course)
             else:
@@ -179,7 +181,7 @@ class RequirementsProgress(object):
             self.percent_fulfilled = progress.get_percent()
             self.fraction_fulfilled = progress.get_fraction()
             self.satisfied_courses = list(set(satisfied_courses))
-        elif len(self.children)>0:
+        if len(self.children)>0:
             num_reqs_satisfied = 0
             satisfied_by_category = []
             satisfied_courses = []
@@ -192,7 +194,6 @@ class RequirementsProgress(object):
                 satisfied_by_category.append(req_satisfied_courses)
 
             satisfied_by_cateogry = [sat for prog, sat in sorted(zip(self.children,satisfied_by_category), key=lambda z: z[0].fraction_fulfilled, reverse = True)]
-            print(satisfied_by_category)
             sorted_progresses = sorted(self.children,key=lambda req: req.fraction_fulfilled, reverse=True)
             # sorted_progresses.sort(key=lambda req: req.fraction_fulfilled, reverse=True)
             if self.statement.threshold_type is None and self.statement.distinct_threshold_type is None:
@@ -253,7 +254,7 @@ class RequirementsProgress(object):
                             free_courses = sorted([course for category in max_unit_subjects for course in category], key = lambda s: s.total_units, reverse = True)
                             free_subject_max = subject_cutoff - fixed_subject_max
                             free_unit_max = unit_cutoff - fixed_unit_max
-                            
+
                             free_subject_progress = min(len(free_courses), free_subject_max)
                             free_unit_progress = min(total_units(free_courses), free_unit_max)
 

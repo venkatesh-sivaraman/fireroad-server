@@ -132,13 +132,6 @@ def progress(request, list_id, courses):
     except:
         progress_overrides = {}
 
-
-    # fake_progress_overrides = {
-    #     "major1.1.3": 33
-    # }
-
-    # progress_overrides = fake_progress_overrides
-
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
     except ObjectDoesNotExist:
