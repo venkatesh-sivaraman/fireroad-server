@@ -97,7 +97,7 @@ class Progress(object):
         return self.max
     def get_percent(self):
         if self.max > 0:
-            return min(100,round((self.progress / float(self.max))*100))
+            return min(100,int(round((self.progress / float(self.max))*100)))
         else:
             return "N/A"
     def get_fraction(self):
@@ -159,7 +159,7 @@ class RequirementsProgress(object):
 
     def courses_satisfying_req(self, courses):
         if self.statement.requirement is not None:
-            return [c for c in courses if c.satisfies(self.statement.requirement)]
+            return set([c for c in courses if c.satisfies(self.statement.requirement)])
         return []
 
 
@@ -169,7 +169,7 @@ class RequirementsProgress(object):
         # Compute status of children and then self, adapted from mobile apps'
         # computeRequirementsStatus method
         courses = list(set(courses))
-        satisfied_courses = []
+        satisfied_courses = set()
         current_threshold = Threshold(self.statement.threshold_type, self.statement.threshold_cutoff, self.statement.threshold_criterion)
         current_distinct_threshold = Threshold(self.statement.distinct_threshold_type, self.statement.distinct_threshold_cutoff, self.statement.distinct_threshold_criterion)
         if self.list_path in progress_overrides:
@@ -195,7 +195,7 @@ class RequirementsProgress(object):
                 random_ids = random.sample(range(1000, max(10000, subject_progress.progress+1000)), subject_progress.progress)
                 for rand_id in random_ids:
                     dummy_course = Course(id = self.list_path + "_"+str(rand_id), subject_id="gen_course_"+self.list_path+"_"+str(rand_id),title="Generated Course "+self.list_path + " " + str(rand_id))
-                    satisfied_courses.append(dummy_course)
+                    satisfied_courses.add(dummy_course)
             else:
                 #Example: requirement CI-H, we want to show how many have been fulfilled
                 satisfied_courses = self.courses_satisfying_req(courses)
@@ -210,35 +210,22 @@ class RequirementsProgress(object):
                     is_fulfilled = len(satisfied_courses) > 0
                     subject_progress = ceiling_thresh(progress_subjects, 1)
                     if len(satisfied_courses) > 0:
-                        unit_progress = ceiling_thresh(satisfied_courses[0].total_units, DEFAULT_UNIT_COUNT)
+                        unit_progress = ceiling_thresh(list(satisfied_courses)[0].total_units, DEFAULT_UNIT_COUNT)
                     else:
                         unit_progress = ceiling_thresh(0, DEFAULT_UNIT_COUNT)
             progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
-            self.is_fulfilled = is_fulfilled
-            self.subject_fulfillment = subject_progress
-            self.subject_progress = subject_progress.get_progress()
-            self.subject_max = subject_progress.get_max()
-            self.unit_fulfillment = unit_progress
-            self.unit_progress = unit_progress.get_progress()
-            self.unit_max = unit_progress.get_max()
-            self.progress = progress.get_progress()
-            self.progress_max = progress.get_max()
-            self.percent_fulfilled = progress.get_percent()
-            self.fraction_fulfilled = progress.get_fraction()
-            self.satisfied_courses = list(set(satisfied_courses))
         if len(self.children)>0:
             #It's a compound requirement
             num_reqs_satisfied = 0
             satisfied_by_category = []
-            satisfied_courses = []
+            satisfied_courses = set()
             for req_progress in self.children:
                 req_progress.compute(courses, progress_overrides)
                 req_satisfied_courses = req_progress.satisfied_courses
                 if(req_progress.is_fulfilled and len(req_progress.satisfied_courses)>0):
                     num_reqs_satisfied += 1
-                satisfied_courses.extend(req_satisfied_courses)
-                satisfied_by_category.append(req_satisfied_courses)
-
+                satisfied_courses.update(req_satisfied_courses)
+                satisfied_by_category.append(list(req_satisfied_courses))
             satisfied_by_cateogry = [sat for prog, sat in sorted(zip(self.children,satisfied_by_category), key=lambda z: z[0].fraction_fulfilled, reverse = True)]
             sorted_progresses = sorted(self.children,key=lambda req: req.fraction_fulfilled, reverse=True)
             if self.statement.threshold_type is None and self.statement.distinct_threshold_type is None:
@@ -261,9 +248,9 @@ class RequirementsProgress(object):
                     num_progresses_to_count = min(current_distinct_threshold.get_actual_cutoff(), len(sorted_progresses))
                     sorted_progresses = sorted_progresses[:num_progresses_to_count]
                     satisfied_by_category = satisfied_by_category[:num_progresses_to_count]
-                    satisfied_courses = []
+                    satisfied_courses = set()
                     for i in range(num_progresses_to_count):
-                        satisfied_courses.extend(satisfied_by_category[i])
+                        satisfied_courses.update(satisfied_by_category[i])
                 if self.statement.threshold_type is None and self.statement.distinct_threshold_type is not None:
                     #Required number of statements
                     if self.statement.distinct_threshold_type == THRESHOLD_TYPE_GTE or self.statement.distinct_threshold_type == THRESHOLD_TYPE_GT:
@@ -285,6 +272,7 @@ class RequirementsProgress(object):
             if self.statement.connection_type == CONNECTION_TYPE_ALL:
                 #"All" statement - make above progresses more stringent
                 is_fulfilled = is_fulfilled and (num_reqs_satisfied == len(self.children))
+                print self.list_path, num_reqs_satisfied, len(self.children)
                 if subject_progress.progress == subject_progress.max and len(self.children) > num_reqs_satisfied:
                     subject_progress.max += len(self.children) - num_reqs_satisfied
                     unit_progress.max += (len(self.children) - num_reqs_satisfied) * DEFAULT_UNIT_COUNT
@@ -292,18 +280,18 @@ class RequirementsProgress(object):
             subject_progress = ceiling_thresh(subject_progress.progress, subject_progress.max)
             unit_progress = ceiling_thresh(unit_progress.progress, unit_progress.max)
             progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
-            self.is_fulfilled = is_fulfilled
-            self.subject_fulfillment = subject_progress
-            self.subject_progress = subject_progress.get_progress()
-            self.subject_max = subject_progress.get_max()
-            self.unit_fulfillment = unit_progress
-            self.unit_progress = unit_progress.get_progress()
-            self.unit_max = unit_progress.get_max()
-            self.progress = progress.get_progress()
-            self.progress_max = progress.get_max()
-            self.percent_fulfilled = progress.get_percent()
-            self.fraction_fulfilled = progress.get_fraction()
-            self.satisfied_courses = list(set(satisfied_courses))
+        self.is_fulfilled = is_fulfilled
+        self.subject_fulfillment = subject_progress
+        self.subject_progress = subject_progress.get_progress()
+        self.subject_max = subject_progress.get_max()
+        self.unit_fulfillment = unit_progress
+        self.unit_progress = unit_progress.get_progress()
+        self.unit_max = unit_progress.get_max()
+        self.progress = progress.get_progress()
+        self.progress_max = progress.get_max()
+        self.percent_fulfilled = progress.get_percent()
+        self.fraction_fulfilled = progress.get_fraction()
+        self.satisfied_courses = list(satisfied_courses)
 
     def to_json_object(self, full=True, child_fn=None):
         """Returns a JSON dictionary containing the dictionary representation of
