@@ -89,7 +89,6 @@ local_settings.py
 db.sqlite3
 
 # Additional hidden
-
 secret.txt
 dbcreds.py
 oidc.txt

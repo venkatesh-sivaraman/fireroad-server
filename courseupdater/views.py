@@ -45,8 +45,6 @@ def compute_updated_files(version, base_dir):
             print("Doesn't exist: {}".format(url))
             break
         semester, version, delta = read_delta(url)
-        print(url)
-        
         if version != version_num:
             print("Wrong version number in {}".format(url))
         updated_files.update(set(delta))
@@ -70,6 +68,7 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
     # Walk through the delta files
     semester_dir = semester_dir_prefix + semester_comps[0] + '-' + semester_comps[1]
     updated_files, updated_version = compute_updated_files(version_num, os.path.join(module_dir, semester_dir))
+
     # Write out the updated files to JSON
     def url_comp(x):
         if x in global_file_names:
