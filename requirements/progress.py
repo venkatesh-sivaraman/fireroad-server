@@ -97,7 +97,7 @@ class Progress(object):
         return self.max
     def get_percent(self):
         if self.max > 0:
-            return min(100,int((self.progress / float(self.max))*100))
+            return min(100,round((self.progress / float(self.max))*100))
         else:
             return "N/A"
     def get_fraction(self):
