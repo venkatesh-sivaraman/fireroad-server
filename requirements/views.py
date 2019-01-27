@@ -128,7 +128,7 @@ def progress(request, list_id, courses):
 
     try:
         if request.user.is_authenticated():
-            progress_overrides = request.user.student.progress_overrides
+            progress_overrides = json.loads(request.user.student.progress_overrides)
     except:
         progress_overrides = {}
 
