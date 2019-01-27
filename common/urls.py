@@ -20,5 +20,7 @@ urlpatterns = [
     url('prefs/set_custom_course/', views.set_custom_course, name='set_custom_course'),
     url('prefs/remove_custom_course/', views.remove_custom_course, name='remove_custom_course'),
     url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
+    url('fetch_token/', views.fetch_token, name='fetch_token'),
+    url('user_info/', views.user_info, name='user_info')
     #url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),
 ]

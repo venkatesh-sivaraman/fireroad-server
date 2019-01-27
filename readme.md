@@ -1,6 +1,6 @@
 # FireRoad Server
 
-FireRoad is an iOS (and hopefully soon, web) application providing MIT students with accessible information about courses, subjects, and schedules. The FireRoad Server is a Django server that currently provides simple catalog auto-updating services but is intended to expand into course suggestion features later on.
+FireRoad is an iOS/Android (and hopefully soon, web) application providing MIT students with accessible information about courses, subjects, and schedules. The FireRoad Server is a Django server that currently provides simple catalog auto-updating services but is intended to expand into course suggestion features later on.
 
 The `master` branch of this repo is intended to be checked out and run by the production server. All changes not ready for `master` should be kept in the `develop` branch.
 
@@ -15,9 +15,14 @@ $ cd fireroad-server
 $ openssl rand -base64 80 > fireroad/secret.txt
 ```
 
-**For development (develop branch):** Checkout the develop branch with `git checkout develop`. Then, using an environment with the appropriate Python/Django versions, run `python manage.py migrate` to build the SQLite database.
+You will need a SQL server - we use SQLite for local testing and MySQL for production. (If using MySQL, follow instructions in the MySQL note below *before* running the migration commands. If using SQLite, a database file will be automatically created.) Using an environment with the appropriate Python/Django versions, run the following commands to build the database:
 
-**For production (master branch):** You will need to create a file called `dbcreds.py` within the (inner) `fireroad` directory that defines the following variables: `dbname`, `username`, `password`, and `host`. These are used to initialize the MySQL database in `settings.py`. To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
+```
+python manage.py makemigrations common catalog sync recommend requirements
+python manage.py migrate
+```
+
+**MySQL note:** To set up a MySQL database, you will need to create a file called `dbcreds.py` within the (inner) `fireroad` directory that defines the following variables: `dbname`, `username`, `password`, and `host`. These are used to initialize the MySQL database in `settings.py`. To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
 
 ### Merging Notes
 
@@ -31,17 +36,37 @@ git checkout -- fireroad/settings.py
 
 If you made any changes you want to keep in the settings file for production, you would need to redo those changes before committing the merge.
 
+## Login Procedures
+
+**Please remember to use the dev server (fireroad-dev.mit.edu) for all local testing, and _only_ use the production server (fireroad.mit.edu) for your production application.** The workflow for logging into the FireRoad server as a web application is as follows:
+
+1. Your site sends the user to `<FIREROAD>/login`, with an optional query parameter `sem` indicating the user's current semester, and required query parameter `redirect` indicating the redirect URL after login. For production, this redirect URL needs to be registered with FireRoad before use.
+2. The FireRoad server handles login through MIT OpenID Connect, creates a FireRoad account if necessary, then sends the user back to your redirect URL, passing a query parameter `code`.
+3. The code is a string that can be used exactly once within 5 minutes of login to retrieve an access token. The application server does this by sending a request to `<FIREROAD>/fetch_token`, passing the query parameter `code` received in step 2.
+4. The FireRoad server validates the temporary code and sends the application server back a JSON web token (JWT) that can be used to authorize use of the API.
+5. The application server uses the JWT by including the `Authorization` header set to `"Bearer <base-64 encoded token string>"` in any request to the FireRoad server.
+6. Since the JWT may expire, the application server should check its validity by requesting the `/verify/` endpoint with the `Authorization` header. If the token is expired or invalid, this endpoint will return 403, indicating that the user should log in again.
+
 ## API Endpoints
 
-*(Up-to-date as of 1/17/2019)* All endpoints in `recommend`, `prefs`, and `sync` require login. To log in programmatically, pass the 'HTTP_AUTHORIZATION' header using either basic authentication or a bearer token issued by the FireRoad server upon OAuth login. Note that even if authentication is performed using HTTP basic authentication, it is always protected by HTTPS.
+*(Up-to-date as of 1/26/2019)* All endpoints in `recommend`, `prefs`, and `sync` require login. See "Login Procedures" above for information on how to use the authentication system.
 
 ### Authentication
 
 * `/signup/`: Displays a user-facing page that specifies the conditions of allowing recommendations.
 
-* `/login/`: Redirects to the OAuth page (URL specified in `common/oauth_client.py`) to log the user in.
+* `/login/`: Redirects to the OAuth page (URL specified in `common/oauth_client.py`) to log the user in. See "Login Procedures" for how to log in as a web client. **Note:** Web clients *must* include a `redirect` query parameter. Requests without a `redirect` parameter will be treated as coming from a native (mobile) app, and will transfer the token to the client in a way that is **not secure** outside of a native app.
+
+* `/fetch_token/`: Takes a query parameter `code` and, if it is valid and unexpired, returns the associated access token. See "Login Procedures" above for more details.
 
 * `/verify/` *(GET)*: Checks that the user is logged in, and if so, auto-increments the user's current semester and returns the new semester.
+
+* `/user_info/` *(GET)*: (Requires authentication) Returns a JSON object containing information about the current user, including the following keys:
+
+  * `academic_id`: the user's institution email address
+  * `current_semester`: the user's current semester (numbered 0),
+  * `name`: the user's full name
+  * `username` the user's username on the FireRoad server (not human-readable)
 
 ### Course Updater
 

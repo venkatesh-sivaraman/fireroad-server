@@ -16,6 +16,13 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CATALOG_BASE_DIR = ""
+<<<<<<< HEAD
+=======
+# If True, login redirects will be required to be registered as a RedirectURL
+# Set to True in production!
+RESTRICT_AUTH_REDIRECTS = False
+
+>>>>>>> develop
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
