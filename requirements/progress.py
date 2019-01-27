@@ -272,7 +272,6 @@ class RequirementsProgress(object):
             if self.statement.connection_type == CONNECTION_TYPE_ALL:
                 #"All" statement - make above progresses more stringent
                 is_fulfilled = is_fulfilled and (num_reqs_satisfied == len(self.children))
-                print self.list_path, num_reqs_satisfied, len(self.children)
                 if subject_progress.progress == subject_progress.max and len(self.children) > num_reqs_satisfied:
                     subject_progress.max += len(self.children) - num_reqs_satisfied
                     unit_progress.max += (len(self.children) - num_reqs_satisfied) * DEFAULT_UNIT_COUNT
