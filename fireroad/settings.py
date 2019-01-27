@@ -19,6 +19,10 @@ CATALOG_BASE_DIR = ""
 # If True, login redirects will be required to be registered as a RedirectURL
 # Set to True in production!
 RESTRICT_AUTH_REDIRECTS = False
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6f81bb8b825acc7d62261ccbf32c3e9bb4dd0175
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
