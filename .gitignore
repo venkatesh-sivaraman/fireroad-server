@@ -87,10 +87,3 @@ local_settings.py
 
 .env
 db.sqlite3
-
-# Additional hidden
-secret.txt
-dbcreds.py
-oidc.txt
-migrations
-.settings.py.swp
