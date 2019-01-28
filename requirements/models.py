@@ -5,7 +5,7 @@ from django import forms
 from .reqlist import JSONConstants, RequirementsStatement, undecorated_component, unwrapped_component, SyntaxConstants
 
 # Create your models here.
-class RequirementsList(models.Model):
+class RequirementsList(RequirementsStatement):
     """Describes a requirements list document (for example, major3, minorWGS).
     The requirements list document has a variety of titles of different lengths,
     as well as raw string contents in the requirements list format. It can also
@@ -16,19 +16,21 @@ class RequirementsList(models.Model):
     short_title = models.CharField(max_length=50, default="")
     medium_title = models.CharField(max_length=100, default="")
     title_no_degree = models.CharField(max_length=250, default="")
-    title = models.CharField(max_length=250, default="")
+    #title = models.CharField(max_length=250, default="")
 
     contents = models.CharField(max_length=10000, default="")
+    catalog_url = models.CharField(max_length=150, default="")
 
-    description = models.TextField(null=True)
+    #description = models.TextField(null=True)
 
     def __str__(self):
         return self.short_title + " - " + self.title
 
-    def to_json_object(self, full=True):
+    def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements list into a dictionary that can be sent
         as JSON. If full is False, only returns the metadata about the requirements
-        list."""
+        list. See the documentation of RequirementsStatement.to_json_object() for
+        info about child_fn."""
         base = {
             JSONConstants.list_id: self.list_id,
             JSONConstants.short_title: self.short_title,
@@ -37,7 +39,7 @@ class RequirementsList(models.Model):
         }
         if full:
             if self.requirements.exists():
-                base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+                base[JSONConstants.requirements] = [child_fn(r) if child_fn is not None else r.to_json_object() for r in self.requirements.all()]
             base[JSONConstants.title_no_degree] = self.title_no_degree
             base[JSONConstants.description] = self.description if self.description is not None else ""
 
@@ -68,7 +70,14 @@ class RequirementsList(models.Model):
         elif len(header_comps) > 0:
             self.title = header_comps.pop(0)
 
-        # TODO: Requirements lists with an overall threshold
+        while len(header_comps) > 0:
+            comp = header_comps.pop(0)
+            if "=" in comp:
+                arg_comps = comp.split("=")
+                if len(arg_comps) != 2:
+                    print("{}: Unexpected number of = symbols in first line argument".format(self.list_id))
+                    continue
+
 
         self.contents = contents_str
 
@@ -143,6 +152,7 @@ class RequirementsList(models.Model):
             req = variables[name]
             req.description = description
             req.list = self
+            req.parent = self
             req.substitute_variables(variables)
 
 

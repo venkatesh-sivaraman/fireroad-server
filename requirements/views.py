@@ -10,6 +10,9 @@ import os
 import requests
 from courseupdater.views import *
 import re
+from progress import RequirementsProgress
+from catalog.models import Course
+import logging
 
 REQUIREMENTS_EXT = ".reql"
 NEW_DOC_ID = "new_doc"
@@ -113,9 +116,41 @@ def get_json(request, list_id):
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
         # to pretty-print, use these keyword arguments to json.dumps:
         # sort_keys=True, indent=4, separators=(',', ': ')
-        return HttpResponse(json.dumps(req.to_json_object()), content_type="application/json")
+        return HttpResponse(json.dumps(req.to_json_object(full=True)), content_type="application/json")
     except ObjectDoesNotExist:
         return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
+
+def progress(request, list_id, courses):
+    """Returns the raw JSON for a given requirements list including user
+    progress. The courses used to evaluate the requirements list are provided
+    in courses as a comma-separated list of subject IDs."""
+    req = None
+
+    try:
+        if request.user.is_authenticated():
+            progress_overrides = json.loads(request.user.student.progress_overrides)
+    except:
+        progress_overrides = {}
+
+    try:
+        req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
+
+    # Get Course objects
+    course_objs = []
+    for subject_id in [c for c in courses.split(",") if len(c)]:
+        try:
+            course_objs.append(Course.public_courses().get(subject_id=subject_id))
+        except ObjectDoesNotExist:
+            print("Warning: course {} does not exist in the catalog".format(subject_id))
+
+    # Create a progress object for the requirements list
+    prog = RequirementsProgress(req, list_id)
+    prog.compute(course_objs, progress_overrides)
+    # to pretty-print, use these keyword arguments to json.dumps:
+    # sort_keys=True, indent=4, separators=(',', ': ')
+    return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")
 
 def list_reqs(request):
     """Return a JSON dictionary of all available requirements lists, with the
