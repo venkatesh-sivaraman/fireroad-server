@@ -4,11 +4,11 @@ from catalog.models import Course
 
 
 def ceiling_thresh(progress, maximum):
-    """
-    Creates a progress object
-    Ensures that 0 < progress < maximum
-    """
+    """Creates a progress object
+    Ensures that 0 < progress < maximum"""
+
     effective_progress = max(0, progress)
+    
     if maximum > 0:
         return Progress(min(effective_progress, maximum), maximum)
     else:
@@ -16,9 +16,7 @@ def ceiling_thresh(progress, maximum):
 
 
 def total_units(courses):
-    """
-    Finds the total units in a list of Course objects
-    """
+    """Finds the total units in a list of Course objects"""
     total = 0
     for course in courses:
         total += course.total_units
@@ -26,11 +24,10 @@ def total_units(courses):
 
 
 def sum_progresses(progresses, criterion_type, maxFunc):
-    """
-    Adds together a list of Progress objects by combining them one by one
+    """Adds together a list of Progress objects by combining them one by one
     criterion_type: either subjects or units
-    maxFunc: describes how to combine the maximums of the Progress objects
-    """
+    maxFunc: describes how to combine the maximums of the Progress objects"""
+
     if criterion_type == CRITERION_SUBJECTS:
         mapfunc = lambda p: p.subject_fulfillment
     elif criterion_type == CRITERION_UNITS:
@@ -40,13 +37,12 @@ def sum_progresses(progresses, criterion_type, maxFunc):
 
 
 def force_unfill_progresses(satisfied_by_category, current_distinct_threshold, current_threshold):
-    """
-    Adjusts the fulfillment and progress of RequirementsProgress object with both distinct thresholds and thresholds
+    """Adjusts the fulfillment and progress of RequirementsProgress object with both distinct thresholds and thresholds
     These requirements follow the form "X subjects/units from at least N categories"
     satisfied_by_category: list of lists of Courses for each category
     current_distinct_threshold: threshold object for distinct threshold
-    current_threshold: threshold object for regular threshold
-    """
+    current_threshold: threshold object for regular threshold"""
+
     subject_cutoff = current_threshold.cutoff_for_criterion(CRITERION_SUBJECTS)
     unit_cutoff = current_threshold.cutoff_for_criterion(CRITERION_UNITS)
 
@@ -318,8 +314,6 @@ class RequirementsProgress(object):
         """Returns a JSON dictionary containing the dictionary representation of
         the enclosed requirements statement, as well as progress information."""
         # Recursively decorate the JSON output of the children
-        # print("Json of {} with full true".format(self.statement))
-        # stmt = self.statement.to_json_object(full=True, child_fn=lambda c: self.children[c].to_json_object())
         # Add custom keys indicating progress for this statement
         stmt_json = self.statement.to_json_object()
         stmt_json[JSONProgressConstants.is_fulfilled] = self.is_fulfilled
@@ -327,6 +321,7 @@ class RequirementsProgress(object):
         stmt_json[JSONProgressConstants.progress_max] = self.progress_max
         stmt_json[JSONProgressConstants.percent_fulfilled] = self.percent_fulfilled
         stmt_json[JSONProgressConstants.satisfied_courses] = map(lambda c: c.subject_id, self.satisfied_courses)
+
         if full:
             if self.children:
                 if child_fn is None:
