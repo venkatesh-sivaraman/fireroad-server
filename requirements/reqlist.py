@@ -39,6 +39,43 @@ def unwrapped_component(component):
 def components_separated_by_regex(string, regex):
     return [undecorated_component(comp) for comp in re.split(regex, string)]
 
+class Threshold(object):
+    """An object describing a threshold of child requirements to fulfill to fulfill an overall requirement
+    type: threshold type (GT, GTE, LT, LTE)
+    cutoff: the number of subjects/units to fulfill the requirement
+    get_actual_cutoff(): actual number of subjects/units needed to fulfill the requirement (adjusted up or down 1 for less than or greater than)
+    criterion: metric to meet cutoff (subjects or units)
+    cutoff_for_criterion: converts cutoff into subjects to units
+    is_satisfied_by: tests if the threshold is satisfied by a given subject and unit Progress object
+    """
+    def __init__(self, threshold_type, number, criterion):
+        self.type = threshold_type
+        self.cutoff = number
+        self.criterion = criterion
+    def cutoff_for_criterion(self, criterion):
+        if self.criterion == criterion:
+            co = self.cutoff
+        elif self.criterion == CRITERION_SUBJECTS:
+            co = self.cutoff * DEFAULT_UNIT_COUNT
+        else:
+            co = self.cutoff / DEFAULT_UNIT_COUNT
+        return co
+    def get_actual_cutoff(self):
+        if self.type == THRESHOLD_TYPE_GT:
+            return self.cutoff + 1
+        elif self.type == THRESHOLD_TYPE_LT:
+            return self.cutoff - 1
+        return self.cutoff
+    def is_satisfied_by(self, subject_progress, unit_progress):
+        progress = (subject_progress, unit_progress)[self.criterion == CRITERION_UNITS]
+        actualcutoff = self.get_actual_cutoff()
+        if self.type == THRESHOLD_TYPE_LT or self.type == THRESHOLD_TYPE_LTE:
+            return progess <= actualcutoff
+        elif self.type == THRESHOLD_TYPE_GT or self.type == THRESHOLD_TYPE_GTE:
+            return progress >= actualcutoff
+    def __repr__(self):
+        return self.type + " " + self.criterion + " " + self.number
+
 class SyntaxConstants:
     """Static constants for use in parsing."""
     all_separator = ","
@@ -121,6 +158,17 @@ class RequirementsStatement(models.Model):
         (CRITERION_SUBJECTS, "subjects"),
         (CRITERION_UNITS, "units")
     ), default=CRITERION_SUBJECTS)
+
+    def get_threshold(self):
+        if self.threshold_type is not None:
+            return Threshold(self.threshold_type, self.threshold_cutoff, self.threshold_criterion)
+        else:
+            return None
+    def get_distinct_threshold(self):
+        if self.distinct_threshold_type is not None:
+            return Threshold(self.distinct_threshold_type, self.distinct_threshold_cutoff, self.distinct_threshold_criterion)
+        else:
+            return None
 
     def threshold_description(self):
         """Returns a string description of this statement's threshold."""
