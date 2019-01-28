@@ -48,10 +48,12 @@ class Threshold(object):
     cutoff_for_criterion: converts cutoff into subjects to units
     is_satisfied_by: tests if the threshold is satisfied by a given subject and unit Progress object
     """
+
     def __init__(self, threshold_type, number, criterion):
         self.type = threshold_type
         self.cutoff = number
         self.criterion = criterion
+
     def cutoff_for_criterion(self, criterion):
         if self.criterion == criterion:
             co = self.cutoff
@@ -60,19 +62,23 @@ class Threshold(object):
         else:
             co = self.cutoff / DEFAULT_UNIT_COUNT
         return co
+
     def get_actual_cutoff(self):
         if self.type == THRESHOLD_TYPE_GT:
             return self.cutoff + 1
         elif self.type == THRESHOLD_TYPE_LT:
             return self.cutoff - 1
         return self.cutoff
+
     def is_satisfied_by(self, subject_progress, unit_progress):
         progress = (subject_progress, unit_progress)[self.criterion == CRITERION_UNITS]
         actualcutoff = self.get_actual_cutoff()
+
         if self.type == THRESHOLD_TYPE_LT or self.type == THRESHOLD_TYPE_LTE:
-            return progess <= actualcutoff
+            return progress <= actualcutoff
         elif self.type == THRESHOLD_TYPE_GT or self.type == THRESHOLD_TYPE_GTE:
             return progress >= actualcutoff
+
     def __repr__(self):
         return self.type + " " + self.criterion + " " + self.number
 

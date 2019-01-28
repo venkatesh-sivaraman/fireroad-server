@@ -175,7 +175,7 @@ class RequirementsProgress(object):
 
         if self.statement.requirement is not None:
             #it is a basic requirement
-            if self.statement.is_plain_string and not manual_progress == 0 and self.statement.threshold_type is not None:
+            if self.statement.is_plain_string and not manual_progress == 0 and self.threshold is not None:
                 #use manual progress
                 is_fulfilled = manual_progress >= self.threshold.get_actual_cutoff()
                 subjects = 0
@@ -201,7 +201,7 @@ class RequirementsProgress(object):
                 #Example: requirement CI-H, we want to show how many have been fulfilled
                 satisfied_courses = self.courses_satisfying_req(courses)
 
-                if not self.statement.threshold_type is None:
+                if not self.threshold is None:
                     #A specific number of courses is required
                     subject_progress = ceiling_thresh(len(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                     unit_progress = ceiling_thresh(total_units(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_UNITS))
@@ -217,7 +217,7 @@ class RequirementsProgress(object):
                     else:
                         unit_progress = ceiling_thresh(0, DEFAULT_UNIT_COUNT)
 
-            progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
+            progress = unit_progress if self.threshold is not None and self.threshold.criterion == CRITERION_UNITS else subject_progress
 
 
         if len(self.children) > 0:
@@ -239,7 +239,7 @@ class RequirementsProgress(object):
             satisfied_by_cateogry = [sat for prog, sat in sorted(zip(self.children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
             sorted_progresses = sorted(self.children, key = lambda req: req.fraction_fulfilled, reverse = True)
 
-            if self.statement.threshold_type is None and self.statement.distinct_threshold_type is None:
+            if self.threshold is None and self.distinct_threshold is None:
                 is_fulfilled = (num_reqs_satisfied > 0)
 
                 if self.statement.connection_type == CONNECTION_TYPE_ANY:
@@ -258,7 +258,7 @@ class RequirementsProgress(object):
 
             else:
 
-                if self.statement.distinct_threshold_type is not None:
+                if self.distinct_threshold is not None:
                     #Clip the progresses to the ones which the user is closest to completing
                     num_progresses_to_count = min(self.distinct_threshold.get_actual_cutoff(), len(sorted_progresses))
                     sorted_progresses = sorted_progresses[:num_progresses_to_count]
@@ -268,9 +268,9 @@ class RequirementsProgress(object):
                     for i in range(num_progresses_to_count):
                         satisfied_courses.update(satisfied_by_category[i])
 
-                if self.statement.threshold_type is None and self.statement.distinct_threshold_type is not None:
+                if self.threshold is None and self.distinct_threshold is not None:
                     #Required number of statements
-                    if self.statement.distinct_threshold_type == THRESHOLD_TYPE_GTE or self.statement.distinct_threshold_type == THRESHOLD_TYPE_GT:
+                    if self.distinct_threshold == THRESHOLD_TYPE_GTE or self.distinct_threshold.type == THRESHOLD_TYPE_GT:
                         is_fulfilled = num_reqs_satisfied >= self.distinct_threshold.get_actual_cutoff()
                     else:
                         is_fulfilled = True
@@ -278,12 +278,12 @@ class RequirementsProgress(object):
                     subject_progress = sum_progresses(sorted_progresses, CRITERION_SUBJECTS, lambda x: max(x, 1))
                     unit_progress = sum_progresses(sorted_progresses, CRITERION_UNITS, lambda x: (x, DEFAULT_UNIT_COUNT)[x == 0])
 
-                elif self.statement.threshold_type is not None:
+                elif self.threshold is not None:
                     #Required number of subjects or units
                     subject_progress = Progress(len(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                     unit_progress = Progress(total_units(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_UNITS))
 
-                    if self.statement.distinct_threshold_type is not None and (self.statement.distinct_threshold_type == THRESHOLD_TYPE_GT or self.statement.distinct_threshold_type == THRESHOLD_TYPE_GTE):
+                    if self.distinct_threshold is not None and (self.distinct_threshold.type == THRESHOLD_TYPE_GT or self.distinct_threshold.type == THRESHOLD_TYPE_GTE):
                         is_fulfilled = self.threshold.is_satisfied_by(subject_progress.progress, unit_progress.progress) and num_reqs_satisfied >= self.distinct_threshold.get_actual_cutoff()
                         if num_reqs_satisfied < self.distinct_threshold.get_actual_cutoff():
                             (subject_progress, unit_progress) = force_unfill_progresses(satisfied_by_category, self.distinct_threshold, self.threshold)
@@ -299,7 +299,7 @@ class RequirementsProgress(object):
             #Polish up values
             subject_progress = ceiling_thresh(subject_progress.progress, subject_progress.max)
             unit_progress = ceiling_thresh(unit_progress.progress, unit_progress.max)
-            progress = (subject_progress, unit_progress)[self.statement.threshold_type is not None and self.statement.threshold_criterion == CRITERION_UNITS]
+            progress = unit_progress if self.threshold is not None and self.threshold.criterion == CRITERION_UNITS else subject_progress
 
         self.is_fulfilled = is_fulfilled
         self.subject_fulfillment = subject_progress
