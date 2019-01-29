@@ -11,7 +11,7 @@ import requests
 from courseupdater.views import *
 import re
 from progress import RequirementsProgress
-from catalog.models import Course
+from catalog.models import Course, CourseAttributeLists
 import logging
 
 REQUIREMENTS_EXT = ".reql"
@@ -137,11 +137,46 @@ def progress(request, list_id, courses):
 
     # Get Course objects
     course_objs = []
+    #required to give generic courses unique id's so muliple can count towards requirement
+    unique_generic_id = 0
     for subject_id in [c for c in courses.split(",") if len(c)]:
         try:
             course_objs.append(Course.public_courses().get(subject_id=subject_id))
         except ObjectDoesNotExist:
-            print("Warning: course {} does not exist in the catalog".format(subject_id))
+            is_generic_course = False
+            if("." not in subject_id):
+                #potential a generic course
+                #generic course could have more than one attribute, e.g. CI-H HASS-A
+                subject_ids = subject_id.split(" ")
+                #dict of attributes and values to add to created Course object
+                attribute_dict = dict()
+                #attributes to test for in generic course (gets a list of CourseAttributeLists properties that aren't hidden)
+                tested_attributes = [attr for attr in CourseAttributeLists.__dict__.keys() if "__" not in attr]
+
+                is_generic_course = True
+                for subject_attribute in subject_ids:
+                    #each spaced delimited subject attribute must be sensical
+                    subject_attribute_exists = False
+                    for attr in tested_attributes:
+                        #if the course matches a generic attribute, it is a generic course with that attribute
+                        if subject_attribute in CourseAttributeLists.__dict__[attr]:
+                            attribute_dict[attr] = subject_attribute
+                            subject_attribute_exists = True
+
+                    if not subject_attribute_exists:
+                        is_generic_course = False
+
+                #add all matching attributes to generic course
+                if is_generic_course:
+                    generic_course = Course(id=subject_id+str(unique_generic_id),subject_id=subject_id)
+                    unique_generic_id += 1
+                    for attr in tested_attributes:
+                        if attr in attribute_dict:
+                            generic_course.__dict__[attr] = attribute_dict[attr]
+                    course_objs.append(generic_course)
+            if not is_generic_course:
+                print("Warning: course {} does not exist in the catalog".format(subject_id))
+
 
     # Create a progress object for the requirements list
     prog = RequirementsProgress(req, list_id)

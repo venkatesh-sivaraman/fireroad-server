@@ -4,6 +4,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from common.models import Student
 
+class CourseAttributeLists:
+    gir_attribute = ["REST", "LAB2", "LAB", "CAL1", "CAL2", "CHEM", "BIOL", "PHY1", "PHY2"]
+    hass_attribute = ["HASS-S", "HASS-H", "HASS-A","HASS"]
+    communication_requirement = ["CI-H", "CI-HW"]
+
 class CourseFields:
     subject_id = "subject_id"
     title = "title"
