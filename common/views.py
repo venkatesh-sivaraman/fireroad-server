@@ -25,7 +25,7 @@ def login_oauth(request):
     if request.GET.get('code', None) is None:
         code = request.GET.get('code', None)
         redirect_URL = request.GET.get('redirect', None)
-        if RESTRICT_AUTH_REDIRECTS and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
+        if RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
             return HttpResponse("Redirect URL not registered", status=403)
         return redirect(oauth_code_url(request, after_redirect=redirect_URL))
 
