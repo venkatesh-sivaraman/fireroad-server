@@ -126,11 +126,9 @@ def progress(request, list_id, courses):
     in courses as a comma-separated list of subject IDs."""
     req = None
 
-    try:
-        if request.user.is_authenticated():
-            progress_overrides = json.loads(request.user.student.progress_overrides)
-    except:
-        progress_overrides = {}
+    progress_overrides = {}
+    if request.user.is_authenticated():
+        progress_overrides = json.loads(request.user.student.progress_overrides)
 
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
