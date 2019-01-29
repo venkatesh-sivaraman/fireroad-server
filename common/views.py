@@ -325,7 +325,7 @@ def remove_custom_course(request):
     try:
         course_json = json.loads(request.body)
     except:
-        return None, HttpResponseBadRequest('<h1>JSON error</h1>')
+        return HttpResponseBadRequest('<h1>JSON error</h1>')
 
     subject_id = course_json.get(CourseFields.subject_id, '')
     if len(subject_id) == 0:
