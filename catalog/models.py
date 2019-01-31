@@ -69,11 +69,6 @@ class CommunicationAttribute(Attribute):
         course.communication_requirement = self.requirement
         return course
 
-class CourseAttributeLists:
-    gir_attribute = ["REST", "LAB2", "LAB", "CAL1", "CAL2", "CHEM", "BIOL", "PHY1", "PHY2"]
-    hass_attribute = ["HASS-S", "HASS-H", "HASS-A","HASS"]
-    communication_requirement = ["CI-H", "CI-HW"]
-
 class CourseFields:
     subject_id = "subject_id"
     title = "title"
