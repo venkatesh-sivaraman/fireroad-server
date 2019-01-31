@@ -4,6 +4,71 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from common.models import Student
 
+class Attribute:
+    """Class that describes an attribute.
+        parseReq: takes in a possible requirement, returns an instance of a
+        specific attribute class if that requirement is valid, otherwise None
+        combine: combines attributes to form a hybrid attribute.  Their courses
+        are combined together to form a course that satisfies each attribute's
+        requirement, and a unique id is assigned to the course only if it makes
+        sense for at least one attribute to exist multiple times in a list of courses
+
+        Each attribute subclass has:
+        attributes: a list of valid attributes
+        multiple: whether it makes sense for multiple classes with this attribute
+        to exist in the same list of classes
+    """
+    def __init__(self, req, needsuniqueid):
+        self.requirement = req
+        self.course = Course(id=req)
+        self.needsuniqueid = needsuniqueid
+
+    @classmethod
+    def parseReq(cls, req):
+        if req in cls.attributes:
+            return cls(req, cls.multiple)
+        return None
+
+    @classmethod
+    def combine(cls, attrs, uniqueid):
+        newattr = cls(" ".join(map(lambda a: a.requirement,attrs)),False)
+        for attr in attrs:
+            newattr.course = attr.modifyCourse(newattr.course)
+            newattr.needsuniqueid = newattr.needsuniqueid or attr.needsuniqueid
+        if newattr.needsuniqueid:
+            newattr.course.id += str(uniqueid)
+        newattr.course.subject_id = newattr.requirement
+        return newattr
+
+class GIRAttribute(Attribute):
+    attributes = ["REST", "LAB2", "LAB", "CAL1", "CAL2", "CHEM", "BIOL", "PHY1", "PHY2"]
+    #most GIR attributes should only be once (e.g. CAL1), but some can be used twice (e.g. REST) - changed in __init__
+    multiple = False
+    def __init__(self, req, needsuniqueid):
+        if(req == "REST" or req == "LAB2" or req == "LAB"):
+            needsuniqueid = True
+        Attribute.__init__(self, req, needsuniqueid)
+
+    def modifyCourse(self, course):
+        course.gir_attribute = self.requirement
+        return course
+
+class HASSAttribute(Attribute):
+    attributes = ["HASS-S", "HASS-H", "HASS-A","HASS"]
+    #There could be many HASS classes in a schedule
+    multiple = True
+    def modifyCourse(self, course):
+        course.hass_attribute = self.requirement
+        return course
+
+class CommunicationAttribute(Attribute):
+    attributes = ["CI-H", "CI-HW"]
+    #There could be many CI classes in a schedule
+    multiple = True
+    def modifyCourse(self, course):
+        course.communication_requirement = self.requirement
+        return course
+
 class CourseAttributeLists:
     gir_attribute = ["REST", "LAB2", "LAB", "CAL1", "CAL2", "CHEM", "BIOL", "PHY1", "PHY2"]
     hass_attribute = ["HASS-S", "HASS-H", "HASS-A","HASS"]
@@ -317,7 +382,6 @@ class Course(models.Model):
         if "CI-" in req and self.communication_requirement is not None and len(self.communication_requirement) > 0 and self.communication_requirement == req:
             return True
 
-        # TODO: GIR/HASS/CI
         if self.subject_id == req or req in self.joint_subjects.split(","):
             return True
         for item_1, item_2 in EQUIVALENCE_PAIRS:
