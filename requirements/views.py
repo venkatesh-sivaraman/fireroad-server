@@ -146,37 +146,12 @@ def progress(request, list_id, courses):
         try:
             course_objs.append(Course.public_courses().get(subject_id=subject_id))
         except ObjectDoesNotExist:
-            is_generic_course = False
-            if "." not in subject_id:
-                #potential a generic course
-                #generic course could have more than one attribute, e.g. CI-H HASS-A
-                subject_ids = subject_id.split(" ")
-                #dict of attributes and values to add to created Course object
-                matching_attributes = []
-                #attributes to test for in generic course (gets a list of CourseAttributeLists properties that aren't hidden)
-                tested_attributes = [GIRAttribute, HASSAttribute, CommunicationAttribute]
-                is_generic_course = True
-                for subject_attribute in subject_ids:
-                    #each spaced delimited subject attribute must be sensical
-                    subject_attribute_exists = False
-                    for attribute in tested_attributes:
-                        #if the course matches a generic attribute, it is a generic course with that attribute
-                        matching_attribute = attribute.parseReq(subject_attribute)
-                        if matching_attribute is not None:
-                            matching_attributes.append(matching_attribute)
-                            subject_attribute_exists = True
-
-                    if not subject_attribute_exists:
-                        is_generic_course = False
-
-                #add all matching attributes to generic course
-                if is_generic_course:
-                    unique_generic_id += 1
-                    generic_course = Attribute.combine(matching_attributes, unique_generic_id).course
-
-                    course_objs.append(generic_course)
-            if not is_generic_course:
+            try:
+                course_objs.append(Course.make_generic(subject_id,unique_generic_id))
+                unique_generic_id += 1
+            except ValueError:
                 print("Warning: course {} does not exist in the catalog".format(subject_id))
+
 
 
     # Create a progress object for the requirements list
