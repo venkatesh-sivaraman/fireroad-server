@@ -11,7 +11,7 @@ import requests
 from courseupdater.views import *
 import re
 from progress import RequirementsProgress
-from catalog.models import Course
+from catalog.models import Course, Attribute, HASSAttribute, GIRAttribute, CommunicationAttribute
 import logging
 
 REQUIREMENTS_EXT = ".reql"
@@ -140,11 +140,19 @@ def progress(request, list_id, courses):
 
     # Get Course objects
     course_objs = []
+    #required to give generic courses unique id's so muliple can count towards requirement
+    unique_generic_id = 0
     for subject_id in [c for c in courses.split(",") if len(c)]:
         try:
             course_objs.append(Course.public_courses().get(subject_id=subject_id))
         except ObjectDoesNotExist:
-            print("Warning: course {} does not exist in the catalog".format(subject_id))
+            try:
+                course_objs.append(Course.make_generic(subject_id,unique_generic_id))
+                unique_generic_id += 1
+            except ValueError:
+                print("Warning: course {} does not exist in the catalog".format(subject_id))
+
+
 
     # Create a progress object for the requirements list
     prog = RequirementsProgress(req, list_id)

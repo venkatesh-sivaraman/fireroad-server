@@ -4,6 +4,72 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from common.models import Student
 
+class Attribute:
+    """
+    Class that describes an attribute.
+
+    Each attribute subclass has:
+    - attributes: a list of valid attributes
+    - multiple: whether it makes sense for multiple classes with this attribute
+      to exist in the same list of classes
+    """
+    def __init__(self, req, needs_unique_id):
+        self.requirement = req
+        self.course = Course(id=req)
+        self.needs_unique_id = needs_unique_id
+
+    @classmethod
+    def parse_req(cls, req):
+        """Takes in a possible requirement, returns an instance of a
+        specific attribute class if that requirement is valid, otherwise None"""
+        if req in cls.attributes:
+            return cls(req, cls.multiple)
+        return None
+
+    @classmethod
+    def combine(cls, attrs, unique_id):
+        """Combines attributes to form a hybrid attribute.  Their courses
+        are combined together to form a course that satisfies each attribute's
+        requirement, and a unique id is assigned to the course only if it makes
+        sense for each attribute to exist multiple times in a list of courses"""
+        new_attr = cls(" ".join(map(lambda a: a.requirement,attrs)),True)
+        for attr in attrs:
+            new_attr.course = attr.modify_course(new_attr.course)
+            new_attr.needs_unique_id = new_attr.needs_unique_id and attr.needs_unique_id
+        if new_attr.needs_unique_id:
+            new_attr.course.id += str(unique_id)
+        new_attr.course.subject_id = new_attr.requirement
+        return new_attr
+
+class GIRAttribute(Attribute):
+    attributes = ["REST", "LAB2", "LAB", "CAL1", "CAL2", "CHEM", "BIOL", "PHY1", "PHY2"]
+    #most GIR attributes should only be once (e.g. CAL1), but some can be used twice (e.g. REST) - changed in __init__
+    multiple = False
+    def __init__(self, req, needs_unique_id):
+        if(req == "REST" or req == "LAB2" or req == "LAB"):
+            needs_unique_id = True
+        Attribute.__init__(self, req, needs_unique_id)
+
+    def modify_course(self, course):
+        course.gir_attribute = self.requirement
+        return course
+
+class HASSAttribute(Attribute):
+    attributes = ["HASS-S", "HASS-H", "HASS-A","HASS"]
+    #There could be many HASS classes in a schedule
+    multiple = True
+    def modify_course(self, course):
+        course.hass_attribute = self.requirement
+        return course
+
+class CommunicationAttribute(Attribute):
+    attributes = ["CI-H", "CI-HW"]
+    #There could be many CI classes in a schedule
+    multiple = True
+    def modify_course(self, course):
+        course.communication_requirement = self.requirement
+        return course
+
 class CourseFields:
     subject_id = "subject_id"
     title = "title"
@@ -140,6 +206,43 @@ class Course(models.Model):
     def public_courses(cls):
         return Course.objects.filter(public=True)
 
+    @classmethod
+    def make_generic(cls, subject_id, unique_id):
+        """Creates a generic course that satisfies the requirements separated by 
+        spaces in the given subject ID, e.g. "CI-H HASS-A". Returns a Course whose 
+        subject ID has unique ID appended. Raises a ValueError if one or more 
+        generic attributes are invalid."""
+        
+        is_generic_course = False
+        if "." not in subject_id:
+            #potential a generic course
+            #generic course could have more than one attribute, e.g. CI-H HASS-A
+            subject_ids = subject_id.split(" ")
+            #dict of attributes and values to add to created Course object
+            matching_attributes = []
+            #attributes to test for in generic course (gets a list of CourseAttributeLists properties that aren't hidden)
+            tested_attributes = [GIRAttribute, HASSAttribute, CommunicationAttribute]
+            is_generic_course = True
+            for subject_attribute in subject_ids:
+                #each spaced delimited subject attribute must be sensical
+                subject_attribute_exists = False
+                for attribute in tested_attributes:
+                    #if the course matches a generic attribute, it is a generic course with that attribute
+                    matching_attribute = attribute.parse_req(subject_attribute)
+                    if matching_attribute is not None:
+                        matching_attributes.append(matching_attribute)
+                        subject_attribute_exists = True
+
+                if not subject_attribute_exists:
+                    is_generic_course = False
+
+        #add all matching attributes to generic course
+        if is_generic_course:
+            generic_course = Attribute.combine(matching_attributes, unique_id).course
+            return generic_course
+        else:
+            raise ValueError
+
     # Used to keep multiple semesters' worth of courses in the database
     catalog_semester = models.CharField(max_length=15)
 
@@ -170,6 +273,7 @@ class Course(models.Model):
         return self._get_courses(self.joint_subjects)
     def get_meets_with_subjects(self):
         return self._get_courses(self.meets_with_subjects)
+
 
     prerequisites = models.TextField(null=True)
     corequisites = models.TextField(null=True)
@@ -293,6 +397,7 @@ class Course(models.Model):
 
         return data
 
+
     def satisfies(self, requirement, all_courses=None):
         """
         If `allCourses` is not nil, it may be a list of course objects that can
@@ -300,8 +405,17 @@ class Course(models.Model):
         satisfies the requirement, this method will return true.
         """
 
-        req = requirement.replace("GIR:", "")
-        # TODO: GIR/HASS/CI
+        req = requirement.replace("GIR:","")
+
+        if "GIR:" in requirement and self.gir_attribute is not None and len(self.gir_attribute) > 0 and self.gir_attribute == req:
+            return True
+
+        if "HASS" in req and self.hass_attribute is not None and len(self.hass_attribute) > 0 and (self.hass_attribute == req or req=="HASS"):
+            return True
+
+        if "CI-" in req and self.communication_requirement is not None and len(self.communication_requirement) > 0 and self.communication_requirement == req:
+            return True
+
         if self.subject_id == req or req in self.joint_subjects.split(","):
             return True
         for item_1, item_2 in EQUIVALENCE_PAIRS:
@@ -313,5 +427,7 @@ class Course(models.Model):
             for eq_reqs, eq_req in EQUIVALENCE_SETS:
                 if eq_req == req and all(subreq in ids for subreq in eq_reqs):
                     return True
+
+
 
         return False
