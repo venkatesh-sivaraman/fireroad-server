@@ -5,31 +5,33 @@ from django.db import models
 from common.models import Student
 
 class Attribute:
-    """Class that describes an attribute.
+    """
+    Class that describes an attribute.
 
     Each attribute subclass has:
-    attributes: a list of valid attributes
-    multiple: whether it makes sense for multiple classes with this attribute
-    to exist in the same list of classes"""
+    - attributes: a list of valid attributes
+    - multiple: whether it makes sense for multiple classes with this attribute
+      to exist in the same list of classes
+    """
     def __init__(self, req, needs_unique_id):
         self.requirement = req
         self.course = Course(id=req)
         self.needs_unique_id = needs_unique_id
 
-    """Takes in a possible requirement, returns an instance of a
-    specific attribute class if that requirement is valid, otherwise None"""
     @classmethod
     def parse_req(cls, req):
+        """Takes in a possible requirement, returns an instance of a
+        specific attribute class if that requirement is valid, otherwise None"""
         if req in cls.attributes:
             return cls(req, cls.multiple)
         return None
 
-    """Combines attributes to form a hybrid attribute.  Their courses
-    are combined together to form a course that satisfies each attribute's
-    requirement, and a unique id is assigned to the course only if it makes
-    sense for each attribute to exist multiple times in a list of courses"""
     @classmethod
     def combine(cls, attrs, unique_id):
+        """Combines attributes to form a hybrid attribute.  Their courses
+        are combined together to form a course that satisfies each attribute's
+        requirement, and a unique id is assigned to the course only if it makes
+        sense for each attribute to exist multiple times in a list of courses"""
         new_attr = cls(" ".join(map(lambda a: a.requirement,attrs)),True)
         for attr in attrs:
             new_attr.course = attr.modify_course(new_attr.course)
@@ -206,6 +208,11 @@ class Course(models.Model):
 
     @classmethod
     def make_generic(cls, subject_id, unique_id):
+        """Creates a generic course that satisfies the requirements separated by 
+        spaces in the given subject ID, e.g. "CI-H HASS-A". Returns a Course whose 
+        subject ID has unique ID appended. Raises a ValueError if one or more 
+        generic attributes are invalid."""
+        
         is_generic_course = False
         if "." not in subject_id:
             #potential a generic course
@@ -229,11 +236,11 @@ class Course(models.Model):
                 if not subject_attribute_exists:
                     is_generic_course = False
 
-            #add all matching attributes to generic course
-            if is_generic_course:
-                generic_course = Attribute.combine(matching_attributes, unique_id).course
-                return generic_course
-        if not is_generic_course:
+        #add all matching attributes to generic course
+        if is_generic_course:
+            generic_course = Attribute.combine(matching_attributes, unique_id).course
+            return generic_course
+        else:
             raise ValueError
 
     # Used to keep multiple semesters' worth of courses in the database
