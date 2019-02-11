@@ -433,3 +433,28 @@ class RequirementsStatement(models.Model):
         else:
             for c in components:
                 RequirementsStatement.from_string(unwrapped_component(c), parent=self)
+
+    def minimum_nest_depth(self):
+        """Gives the minimum number of steps needed to traverse the tree down to a leaf (an individual course)."""
+        if self.requirements.exists():
+            return min(req.minimum_nest_depth() for req in self.requirements.all()) + 1
+        return 0
+
+    def maximum_nest_depth(self):
+        """Gives the maximum number of steps needed to traverse the tree down to a leaf (an individual course)."""
+        if self.requirements.exists():
+            return max(req.minimum_nest_depth() for req in self.requirements.all()) + 1
+        return 0
+
+    def short_description(self):
+        """Returns a short description of the requirement."""
+        if self.requirement is not None:
+            return self.requirement
+        elif self.requirements.exists():
+            connection = "and" if self.connection_type == CONNECTION_TYPE_ALL else "or"
+            if self.requirements.count() == 2:
+                return "{} {} {}".format(self.requirements.all()[0].short_description(), connection, self.requirements.all()[1].short_description())
+            else:
+                return "{} {} {} others".format(self.requirements.all()[0].short_description(), connection, self.requirements.count() - 1)
+
+        return baseString

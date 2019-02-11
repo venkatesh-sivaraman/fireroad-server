@@ -4,12 +4,14 @@
 {% endblock %}
 {% block content %}
 <div class="row edit-head">
-  <div class="col s12 red-text text-darken-4">
+  <div class="col s9 red-text text-darken-4">
     <h4>{{ action }} {{ req.medium_title }}</h4>
   </div>
+  <a id="preview-button" class="waves-effect waves-light mbtn red right" onclick="onPreviewButtonClicked()">Preview</a>
 </div>
 <div class="card hoverable editor-card">
   <textarea class="editor" id="contents">{{ req.contents }}</textarea>
+  <div id="preview" style="display: none;"></div>
 </div>
 <div class="row">
   <div class="col s12"><p>{% if action == "Create" %}To submit a new requirements list, please enter the requirements in the box above{% else %}To submit a modification request, please modify the requirements list source displayed above{% endif %}, following the rules described in the Format Specification. Then provide your email address (in case of any clarifications) and a brief message explaining the change, and press Submit.</p></div>
