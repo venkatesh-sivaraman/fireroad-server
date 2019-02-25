@@ -18,7 +18,7 @@ AUTH_CODE_URL = 'https://oidc.mit.edu/authorize'
 AUTH_TOKEN_URL = 'https://oidc.mit.edu/token'
 AUTH_USER_INFO_URL = 'https://oidc.mit.edu/userinfo'
 
-LOGIN_TIMEOUT = 300
+LOGIN_TIMEOUT = 600
 AUTH_SCOPES = ['email', 'openid', 'profile', 'offline_access']
 AUTH_RESPONSE_TYPE = 'code'
 
@@ -58,7 +58,7 @@ def get_user_info(request):
 
     acc_token, info, all_json, status = get_oauth_id_token(request, code, state)
     if acc_token is None:
-        return None, status
+        return None, status, None
 
     result, status = get_user_info_with_token(request, acc_token)
     if result is not None:
@@ -83,7 +83,7 @@ def get_oauth_id_token(request, code, state, refresh=False):
     r = requests.post(AUTH_TOKEN_URL, auth=(id, secret), data=payload)
     print(r.text, r.status_code)
     if r.status_code != 200:
-        return None, None, r.status_code
+        return None, None, None, r.status_code
 
     # Parse token
     r_json = r.json()
@@ -105,7 +105,7 @@ def get_oauth_id_token(request, code, state, refresh=False):
         if cache.nonce == nonce:
             current_date = timezone.now()
             if (current_date - cache.date).total_seconds() > LOGIN_TIMEOUT:
-                return None, None, 408
+                return None, None, None, 408
             found = True
             info["sem"] = cache.current_semester
             break
