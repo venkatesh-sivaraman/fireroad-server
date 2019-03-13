@@ -52,7 +52,8 @@ def login_oauth(request):
         student.current_semester = info.get('sem', '0')
         student.save()
     else:
-        if 'sem' in info:
+        # Only set the current semester if there's a real new value
+        if len(info.get('sem', '')) > 0 and int(info['sem']) != 0:
             student.current_semester = info['sem']
         if student.user is None:
             user = User.objects.create_user(username=random.getrandbits(32), password=password)
