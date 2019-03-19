@@ -155,7 +155,7 @@ class EditRequest(models.Model):
     type = models.CharField(max_length=10)
     email_address = models.CharField(max_length=100)
     reason = models.CharField(max_length=2000)
-    contents = models.CharField(max_length=10000)
+    contents = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
 
