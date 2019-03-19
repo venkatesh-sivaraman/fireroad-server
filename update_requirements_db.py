@@ -19,6 +19,7 @@ def update_db():
 
     req_urls = compute_semester_delta(list_semesters()[-1].split('-'), 0, 0)
     for path_name in req_urls[REQUIREMENTS_INFO_KEY]:
+        print(path_name)
         new_req = RequirementsList.objects.create(list_id=os.path.basename(path_name))
         with open(os.path.join(CATALOG_BASE_DIR, path_name), 'rb') as file:
             new_req.parse(file.read().decode('utf-8'))

@@ -42,7 +42,6 @@ def compute_updated_files(version, base_dir):
     while version_num < version_recursion_threshold:
         url = os.path.join(base_dir, delta_file_prefix + '{}.txt'.format(version_num))
         if not os.path.exists(url):
-            print("Doesn't exist: {}".format(url))
             break
         semester, version, delta = read_delta(url)
         if version != version_num:
