@@ -105,6 +105,7 @@ class JSONConstants:
     short_title = "short-title"
     medium_title = "medium-title"
     title_no_degree = "title-no-degree"
+    catalog_url = "url"
     # And requirements
 
     # Top level keys in a RequirementsStatement JSON dictionary

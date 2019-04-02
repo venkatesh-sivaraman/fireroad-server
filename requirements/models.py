@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django import forms
-from .reqlist import JSONConstants, RequirementsStatement, undecorated_component, unwrapped_component, SyntaxConstants
+from .reqlist import JSONConstants, RequirementsStatement, undecorated_component, unwrapped_component, SyntaxConstants, THRESHOLD_TYPE_GTE, CRITERION_SUBJECTS
 
 # Create your models here.
 class RequirementsList(RequirementsStatement):
@@ -42,6 +42,8 @@ class RequirementsList(RequirementsStatement):
                 base[JSONConstants.requirements] = [child_fn(r) if child_fn is not None else r.to_json_object() for r in self.requirements.all()]
             base[JSONConstants.title_no_degree] = self.title_no_degree
             base[JSONConstants.description] = self.description if self.description is not None else ""
+            if self.catalog_url is not None and len(self.catalog_url) > 0:
+                base[JSONConstants.catalog_url] = self.catalog_url
 
         return base
 
@@ -77,6 +79,16 @@ class RequirementsList(RequirementsStatement):
                 if len(arg_comps) != 2:
                     print("{}: Unexpected number of = symbols in first line argument".format(self.list_id))
                     continue
+                if arg_comps[0].strip() == "threshold":
+                    self.threshold_type = THRESHOLD_TYPE_GTE
+                    try:
+                        self.threshold_cutoff = int(arg_comps[1])
+                    except:
+                        print("{}: Invalid threshold argument {}".format(self.list_id, arg_comps[1]))
+                        continue
+                    self.threshold_criterion = CRITERION_SUBJECTS
+                elif arg_comps[0].strip() == "url":
+                    self.catalog_url = arg_comps[1].strip()
 
 
         self.contents = contents_str
