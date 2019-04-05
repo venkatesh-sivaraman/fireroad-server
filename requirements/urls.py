@@ -12,7 +12,7 @@ urlpatterns = [
     url(r'^preview/', editor.preview, name='preview'),
     url(r'^list_reqs/', views.list_reqs, name='list_reqs'),
     url(r'^get_json/(?P<list_id>.{1,50})/', views.get_json, name='get_json'),
+    url(r'^progress/(?P<list_id>.{1,50})/(?P<courses>.+)', views.progress, name='progress'),
     url(r'^progress/(?P<list_id>.{1,50})/', views.road_progress, name='road_progress'),
-    url(r'^progress/(?P<list_id>.{1,50})/(?P<courses>.*)', views.progress, name='progress'),
     url(r'^$', editor.index, name='requirements_index'),
 ]
