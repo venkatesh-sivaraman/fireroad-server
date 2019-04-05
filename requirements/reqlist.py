@@ -80,7 +80,7 @@ class Threshold(object):
             return progress >= actualcutoff
 
     def __repr__(self):
-        return self.type + " " + self.criterion + " " + self.number
+        return self.type + " " + self.criterion + " " + str(self.cutoff)
 
 class SyntaxConstants:
     """Static constants for use in parsing."""

@@ -9,6 +9,7 @@ import json
 import os
 import requests
 from courseupdater.views import *
+from sync.models import Road
 import re
 from progress import RequirementsProgress
 from catalog.models import Course, Attribute, HASSAttribute, GIRAttribute, CommunicationAttribute
@@ -28,19 +29,9 @@ def get_json(request, list_id):
     except ObjectDoesNotExist:
         return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
 
-def progress(request, list_id, courses):
-    """Returns the raw JSON for a given requirements list including user
-    progress. The courses used to evaluate the requirements list are provided
-    in courses as a comma-separated list of subject IDs."""
-    req = None
-
-    progress_overrides = {}
-    if request.user.is_authenticated():
-        try:
-            progress_overrides = json.loads(request.user.student.progress_overrides)
-        except:
-            print("Progress overrides json failed to load correctly")
-
+def compute_progress(request, list_id, course_list, progress_overrides):
+    """Utility function for road_progress and progress that computes and returns
+    the progress on the given requirements list."""
     try:
         req = RequirementsList.objects.get(list_id=list_id + REQUIREMENTS_EXT)
     except ObjectDoesNotExist:
@@ -50,7 +41,7 @@ def progress(request, list_id, courses):
     course_objs = []
     #required to give generic courses unique id's so muliple can count towards requirement
     unique_generic_id = 0
-    for subject_id in [c for c in courses.split(",") if len(c)]:
+    for subject_id in course_list:
         try:
             course_objs.append(Course.public_courses().get(subject_id=subject_id))
         except ObjectDoesNotExist:
@@ -68,6 +59,41 @@ def progress(request, list_id, courses):
     # to pretty-print, use these keyword arguments to json.dumps:
     # sort_keys=True, indent=4, separators=(',', ': ')
     return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")
+
+@logged_in_or_basicauth
+def road_progress(request, list_id):
+    """Returns the raw JSON for a given requirements list including user
+    progress. A 'road' query parameter should be passed that indicates the ID
+    number of the road that is being checked."""
+    road_id = request.GET.get("road", "")
+    if road_id is None or len(road_id) == 0:
+        return HttpResponseBadRequest("need a road ID")
+    try:
+        road_id = int(road_id)
+    except:
+        return HttpResponseBadRequest("road ID must be an integer")
+
+    try:
+        road = Road.objects.get(user=request.user, pk=road_id)
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("the road does not exist on the server")
+
+    try:
+        contents = json.loads(Road.expand(road.contents))
+    except:
+        return HttpResponseBadRequest("badly formatted road contents")
+
+    progress_overrides = contents.get("progressOverrides", {})
+    course_list = [subj["id"] for subj in contents.get("selectedSubjects", []) if "id" in subj]
+
+    return compute_progress(request, list_id, course_list, progress_overrides)
+
+
+def progress(request, list_id, courses):
+    """Returns the raw JSON for a given requirements list including user
+    progress. The courses used to evaluate the requirements list are provided
+    in courses as a comma-separated list of subject IDs."""
+    return compute_progress(request, list_id, [c for c in courses.split(",") if len(c)], {})
 
 def list_reqs(request):
     """Return a JSON dictionary of all available requirements lists, with the

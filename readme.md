@@ -106,7 +106,7 @@ If you made any changes you want to keep in the settings file for production, yo
 
 * `/prefs/favorites/` *(GET)*, `/prefs/set_favorites/` *(POST)*: These endpoints handle read-write of favorite subjects. The format of the returned data is a dictionary with the `success` key, and if that is true, a `favorites` key containing a list of subject IDs.
 
-* `/prefs/progress_overrides/` *(GET)*, `/prefs/set_progress_overrides/` *(POST)*: These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the `success` key, and if that is true, a `progress_overrides` key containing a dictionary keyed by requirements list key-paths (see the `RequirementsListStatement` implementation in the mobile app for more information).
+* `/prefs/progress_overrides/` *(GET)*, `/prefs/set_progress_overrides/` *(POST)*: **Deprecated: use the `progressOverrides` key in the road file to store progress overrides.** These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the `success` key, and if that is true, a `progress_overrides` key containing a dictionary keyed by requirements list key-paths (see the `RequirementsListStatement` implementation in the mobile app for more information).
 
 * `/prefs/custom_courses/` *(GET)*, `/prefs/set_custom_course/` *(POST)*, and `/prefs/remove_custom_course/` *(POST)*: Endpoints to manage custom courses created by the user. The input and output JSON formats are as follows:
 
