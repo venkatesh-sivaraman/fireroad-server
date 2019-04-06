@@ -137,10 +137,10 @@ def preview(request):
 
 def show_in_row(requirement):
     """Returns whether the given requirement should be displayed in a single row."""
-    if requirement.minimum_nest_depth() <= 1:
+    if requirement.minimum_nest_depth() < 1:
         return True
     if not requirement.requirements.exists():
-        return False
+        return True
     if not any(r.requirement is not None for r in requirement.requirements.all()):
         return False
     if any(r.title is not None and len(r.title) > 0 for r in requirement.requirements.all()):
@@ -150,7 +150,13 @@ def show_in_row(requirement):
 def make_row(requirement):
     """Returns HTML for displaying the given requirement in a row."""
     html = u"<div class=\"course-list\"><div class=\"course-list-inner\">"
-    for req in requirement.requirements.all():
+
+    if requirement.requirements.exists():
+        reqs = requirement.requirements.all()
+    else:
+        reqs = [requirement]
+
+    for req in reqs:
         html += "<div class=\"course-tile-outer\">"
         desc = req.short_description()
 

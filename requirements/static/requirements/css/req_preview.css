@@ -12,6 +12,10 @@
   bottom: 0;
 }
 
+.req-title {
+  margin-top: 4px !important;
+}
+
 h3.req-title {
   padding-left: 6px;
   font-size: 14pt;
