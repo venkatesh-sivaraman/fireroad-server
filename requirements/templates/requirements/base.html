@@ -7,10 +7,10 @@
     <link href="{% static "requirements/css/editor.css" %}" rel="stylesheet" />
     <link href="{% static "requirements/css/req_preview.css" %}" rel="stylesheet" />
     <link href="{% static "requirements/css/nav.css" %}" rel="stylesheet" />
+    <link type="text/css" rel="stylesheet" href="{% static "common/css/materialize.min.css" %}" media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="{% static "common/css/shared.css" %}" media="screen,projection"/>
     <!--Import Google Icon Font-->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="{% static "common/css/materialize.min.css" %}" media="screen,projection"/>
     <!--Let browser know website is optimized for mobile-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     {% block title %}
@@ -23,6 +23,42 @@
   </head>
 
   <body class="grey lighten-4">
+
+    <ul id="dropdown1" class="dropdown-content grey lighten-4">
+      <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/FireRoad" target="_blank">iOS App</a></li>
+      <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/FireRoad-Android" target="_blank">Android App</a></li>
+      <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/fireroad-server" target="_blank">Server</a></li>
+    </ul>
+
+    <div class="navbar-fixed">
+      <nav class="red darken-1">
+        <div class="nav-wrapper">
+          <a href="#" data-target="mobile-nav" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+          <a href="/" class="brand-logo"><img class="logo-img hoverable" src="https://fireroad.mit.edu/catalogs/fireroad_logo.png" width="40" height="40"/>&nbsp;&nbsp;FireRoad</a>
+          <ul class="right hide-on-med-and-down">
+            <li><a href="/requirements">Requirements Editor</a></li>
+            <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">GitHub</a></li>
+            <li><a href="mailto:base12apps@gmail.com">Contact</a></li>
+            <li><a href="/admin">Admin</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <ul id="dropdown2" class="dropdown-content">
+      <li><a href="https://github.com/venkatesh-sivaraman/FireRoad" target="_blank">iOS App</a></li>
+      <li><a href="https://github.com/venkatesh-sivaraman/FireRoad-Android" target="_blank">Android App</a></li>
+      <li><a href="https://github.com/venkatesh-sivaraman/fireroad-server" target="_blank">Server</a></li>
+    </ul>
+
+    <ul class="sidenav" id="mobile-nav">
+      <li><a href="/requirements">Requirements Editor</a></li>
+      <li><a class="dropdown-trigger" href="#!" data-target="dropdown2">GitHub<i class="material-icons right">arrow_drop_down</i></a></li>
+      <li><a href="mailto:base12apps@gmail.com">Contact</a></li>
+      <li><a href="/admin">Admin</a></li>
+    </ul>
+
+
     <div class="nav-side-menu">
       {% block nav %}
         <div class="brand">FireRoad Requirements</div>
@@ -73,16 +109,17 @@
     {% block content %} {% endblock %}
   </div>
     <!--JavaScript at end of body for optimized loading-->
-    <script type="text/javascript" src="{% static "common/js/materialize.min.js" %}"></script>
     <script type="text/javascript" src="{% static "requirements/js/edit.js" %}"></script>
     <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script type="text/javascript" src="{% static "common/js/materialize.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "common/js/index.js" %}"></script>
+    <!--<link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">-->
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <script type="text/javascript">
     $(document).ready(function () {
     // Handler for .ready() called.
     $('.nav-side-menu').animate({
-        scrollTop: $('.scroll-to-me').offset().top
+        scrollTop: $('.scroll-to-me').offset().top - 64
     }, 'fast');
     });
     </script>
