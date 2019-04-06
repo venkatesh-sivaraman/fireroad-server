@@ -132,7 +132,7 @@ def preview(request):
         req_list.delete()
     except:
         req_list.delete()
-        raise
+        return HttpResponse("<p>An error occurred while generating the preview. Please double-check your syntax!</p>")
     return HttpResponse(html)
 
 def show_in_row(requirement):
@@ -213,7 +213,7 @@ def build_presentation_items(list):
 
     ret = []
     if list.maximum_nest_depth() <= 1:
-        ret.append(presentation_items(list))
+        ret = presentation_items(list, 0)
     else:
         if list.title is not None and len(list.title) > 0:
             ret.append(u"<h1 class=\"req-title\">{}</h1>".format(list.title))
