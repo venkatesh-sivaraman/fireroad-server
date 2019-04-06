@@ -8,7 +8,7 @@ def ceiling_thresh(progress, maximum):
     Ensures that 0 < progress < maximum"""
 
     effective_progress = max(0, progress)
-    
+
     if maximum > 0:
         return Progress(min(effective_progress, maximum), maximum)
     else:
@@ -94,7 +94,6 @@ class JSONProgressConstants:
     progress = "progress"
     progress_max = "max"
     percent_fulfilled = "percent_fulfilled"
-    children_fulfillment = "zreqs"
     satisfied_courses = "sat_courses"
 
 

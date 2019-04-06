@@ -137,6 +137,20 @@ If you made any changes you want to keep in the settings file for production, yo
   * `distinct-threshold` - optional dictionary describing the number of distinct child requirements of this statement that must be satisfied. Keys are the same as `threshold`.
   * `threshold-desc` - user-facing string describing the thresholds (if applicable)
 
+* `/requirements/progress/`: Returns a JSON representation of a course requirements list, including user progresses. There are a few different ways to provide the user's courses and progress overrides to this endpoint:
+
+  * `/requirements/progress/<list_id>/<courses>` *(GET)*: `courses` is a comma-separated list of subject IDs. (Progress overrides cannot be passed using this method. No authorization is necessary.)
+  * `/requirements/progress/<list_id>?road=<road_id>` *(GET)*: `road_id` is the integer ID number of the user's road. The user must be logged in or an authorization token must be passed.
+  * `/requirements/progress/<list_id>/` *(POST)*: The request body should contain the JSON representation of the road to evaluate against. (No authorization is necessary.)
+
+  The JSON returned by this endpoint contains the following keys in addition to those defined above:
+
+  * `fulfilled` - boolean indicating whether the requirement is completed
+  * `progress` - the integer progress toward the requirement, in units of `criterion`
+  * `max` - the maximum possible progress, serving as a denominator for `progress`
+  * `percent_fulfilled` - the percentage fulfilled
+  * `sat_courses` - a list of courses that satisfies this requirement
+
 ### Sync
 
 * `/sync/roads/` *(GET)*: If a primary key is specified by the `id` query parameter, returns the contents of the given file as well as its last-modified agent. If no primary key is specified, returns a dictionary of primary-keys to metadata about each of the user's roads.

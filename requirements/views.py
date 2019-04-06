@@ -61,7 +61,7 @@ def compute_progress(request, list_id, course_list, progress_overrides):
     return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")
 
 @logged_in_or_basicauth
-def road_progress(request, list_id):
+def road_progress_get(request, list_id):
     """Returns the raw JSON for a given requirements list including user
     progress. A 'road' query parameter should be passed that indicates the ID
     number of the road that is being checked."""
@@ -88,6 +88,30 @@ def road_progress(request, list_id):
 
     return compute_progress(request, list_id, course_list, progress_overrides)
 
+def road_progress_post(request, list_id):
+    """Returns the raw JSON for a given requirements list including user
+    progress. The POST body should contain the JSON for the road."""
+    try:
+        contents = json.loads(request.body)
+    except:
+        return HttpResponseBadRequest("badly formatted road contents")
+
+    progress_overrides = contents.get("progressOverrides", {})
+    course_list = [subj["id"] for subj in contents.get("selectedSubjects", []) if "id" in subj]
+
+    return compute_progress(request, list_id, course_list, progress_overrides)
+
+@csrf_exempt
+def road_progress(request, list_id):
+    """Returns the raw JSON for a given requirements list including user
+    progress. If the method is POST, expects the road contents in the request
+    body. If it is GET, expects an authorization token and a 'road' query
+    parameter containing the ID number of the road to check."""
+
+    if request.method == 'POST':
+        return road_progress_post(request, list_id)
+    else:
+        return road_progress_get(request, list_id)
 
 def progress(request, list_id, courses):
     """Returns the raw JSON for a given requirements list including user
