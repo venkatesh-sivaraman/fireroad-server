@@ -85,7 +85,6 @@ def get_oauth_id_token(request, code, state, refresh=False):
             'redirect_uri': REDIRECT_URI
         }
     r = requests.post(AUTH_TOKEN_URL, auth=(id, secret), data=payload)
-    print(r.text, r.status_code)
     if r.status_code != 200:
         return None, None, None, r.status_code
 
