@@ -15,7 +15,10 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = "/mit/venkats/web_scripts/catalogs"
+CATALOG_BASE_DIR = ""
+# If True, login redirects will be required to be registered as a RedirectURL
+# Set to True in production!
+RESTRICT_AUTH_REDIRECTS = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
@@ -105,6 +108,21 @@ DATABASES = {
     }
 }
 
+# Set up email if email_creds.txt file is present in this directory (format should be "host,email address,password")
+email_creds_path = os.path.join(os.path.dirname(__file__), 'email_creds.txt')
+if os.path.exists(email_creds_path):
+    with open(email_creds_path, "r") as file:
+        host, email, passwd = file.readline().strip().split(",")
+
+        FR_EMAIL_ENABLED = True
+        EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+        EMAIL_HOST = host # e.g. smtp.gmail.com
+        EMAIL_USE_TLS = True
+        EMAIL_PORT = 587
+        EMAIL_HOST_USER = email
+        EMAIL_HOST_PASSWORD = passwd
+else:
+    FR_EMAIL_ENABLED = False
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators

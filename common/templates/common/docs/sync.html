@@ -1,0 +1,77 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="sync" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">Sync</h2>
+<p>Upon obtaining an authentication token for a given user, FireRoad provides you access to that user's preferences, roads and schedules.</p>
+
+<h4 class="red-text text-darken-4">Preferences</h4>
+
+<h5>/prefs/notes <span class="grey-text">(GET)</span>, /prefs/set_notes <span class="grey-text">(POST)</span></h5>
+<p>These endpoints handle read-write of notes, which the user can enter for any subject in the catalog. The format of the returned notes is a dictionary with the <span class="code">success</span> key, and if that is true, a <span class="code">notes</span> key containing a dictionary keyed by subject IDs.</p>
+
+<h5>/prefs/favorites <span class="grey-text">(GET)</span>, /prefs/set_favorites <span class="grey-text">(POST)</span></h5>
+<p>These endpoints handle read-write of favorite subjects. The format of the returned data is a dictionary with the <span class="code">success</span> key, and if that is true, a <span class="code">favorites</span> key containing a list of subject IDs.</p>
+
+<h5>/prefs/progress_overrides <span class="grey-text">(GET)</span>, /prefs/set_progress_overrides <span class="grey-text">(POST)</span></h5>
+<p class="red-text text-darken-4"><strong>Deprecated.</strong> Use the <span class="code">progressOverrides</span> key in the road file to store progress overrides.</p>
+<p>These endpoints handle read-write of manual progress overrides, which the user can set for requirements lists to indicate progress toward completion. The format of the returned data is a dictionary with the <span class="code">success</span> key, and if that is true, a <span class="code">progress_overrides</span> key containing a dictionary keyed by requirements list key-paths (see the <span class="code">RequirementsListStatement</span> implementation in the mobile app for more information).</p>
+
+<h5>/prefs/custom_courses <span class="grey-text">(GET)</span></h5>
+<p>Retrieves the custom courses created by the user. Takes no input, and provides the list of custom courses in standard JSON course format under the <span class="code">custom_courses</span> key of the returned dictionary.</p>
+
+<h5>/prefs/set_custom_course <span class="grey-text">(POST)</span></h5>
+<p>Creates or updates a custom course. The input is a JSON dictionary containing the full description of a course to add or update (<span class="code">subject_id</span> is required). By default, the course is set to <span class="code">"public": false</span> (a value of <span class="code">true</span> currently has no effect). Output has a <span class="code">success</span> key indicating whether the update was successful.</p>
+
+<h5>/prefs/remove_custom_course <span class="grey-text">(POST)</span></h5>
+<p>Removes a custom course from the user's list. The input is a JSON dictionary specifying the course to remove (<span class="code">subject_id</span> is required). Output has a <span class="code">success</span> key indicating whether the update was successful.</p>
+
+<h4 class="red-text text-darken-4">File Sync</h4>
+
+<h5>/sync/roads <span class="grey-text">(GET)</span></h5>
+<p>If a primary key is specified by the <span class="code">id</span> query parameter, returns the contents of the given file as well as its last-modified agent. If no primary key is specified, returns a dictionary of primary-keys to metadata about each of the user's roads.</p>
+
+<h5>/sync/sync_road <span class="grey-text">(POST)</span></h5>
+<p>This endpoint determines whether to change the remote copy of the file, update the local copy, or handle a sync conflict. The body of the request should be a JSON dictionary containing the following keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">id</span>: The primary key of the road to update (don't pass if adding a new file)</li>
+  <li class="collection-item"><span class="code">contents</span>: The contents of the road to update</li>
+  <li class="collection-item"><span class="code">changed</span>: The local last-modified date of the road</li>
+  <li class="collection-item"><span class="code">downloaded</span>: The date of the last download of the road from the server</li>
+  <li class="collection-item"><span class="code">name</span>: The road name (required if adding a new file, or if renaming an existing road)</li>
+  <li class="collection-item"><span class="code">agent</span>: The name of the device submitting the change</li>
+  <li class="collection-item"><span class="code">override</span>: Whether to override conflicts</li>
+  </ul
+
+  <p>Returns a JSON dictionary that may update the above keys and/or add the following keys:</p>
+  <ul class="collection">
+    <li class="collection-item"><span class="code">success</span>: Whether the file was successfully compared against its remote version</li>
+    <li class="collection-item"><span class="code">error</span>: A console error if <span class="code">success</span> is false</li>
+    <li class="collection-item"><span class="code">error_msg</span>: A user-facing error to display if <span class="code">success</span> is false</li>
+    <li class="collection-item"><span class="code">result</span>: A string indicating the result of the operation, e.g. "update_remote", "update_local", "conflict", or "no_change"</li>
+    <li class="collection-item"><span class="code">other_name</span>, <span class="code">other_agent</span>, <span class="code">other_date</span>, <span class="code">other_contents</span>, <span class="code">this_agent</span>, <span class="code">this_date</span>: Keys that are specified in the case of a conflict. In this case, the user should select whether to keep the local copy, the remote copy, or both. If keeping the local copy, the client should submit a new <span class="code">sync_road</span> request with the <span class="code">override</span> flag set to true.</li>
+  </ul>
+
+  <h5>/sync/delete_road <span class="grey-text">(POST)</span></h5>
+  <p>Deletes the file specified by the <span class="code">id</span> key in the body of the request.</p>
+
+  <h5>/sync/schedules, /sync/sync_schedule, /sync/delete_schedule</h5>
+  <p>Analogous to the above endpoints, but for schedules.</p>
+
+
+  <div id="sequential-nav">
+    <div class="col s6">
+      <a href="/reference/auth" class="red-text text-darken-1"><i class="material-icons">chevron_left</i> Authentication</a>
+    </div>
+    <div class="col s6">
+      <div class="right-align">
+        <a href="/reference/recommender" class="red-text text-darken-1">Recommender <i class="material-icons">chevron_right</i></a>
+      </div>
+    </div>
+    <br/><br/>
+  </div>
+{% endblock %}

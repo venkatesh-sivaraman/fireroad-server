@@ -1,0 +1,29 @@
+<div class="nav-side-menu">
+    <div class="brand">FireRoad API Reference</div>
+    <i class="fa fa-angle-double-down fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
+
+        <div class="menu-list">
+
+            <ul id="menu-content" class="menu-content collapse out">
+                <li class="{% if active_id == "overview" %}active{% endif %}">
+                  <a href="/reference">Overview</a>
+                </li>
+                <li class="{% if active_id == "catalog" %}active{% endif %}">
+                  <a href="/reference/catalog">Catalog</a>
+                </li>
+                <li class="{% if active_id == "requirements" %}active{% endif %}">
+                  <a href="/reference/requirements">Requirements</a>
+                </li>
+                <li class="{% if active_id == "auth" %}active{% endif %}">
+                  <a href="/reference/auth">Authentication</a>
+                </li>
+                <li class="{% if active_id == "sync" %}active{% endif %}">
+                  <a href="/reference/sync">Sync</a>
+                </li>
+                <li class="{% if active_id == "recommender" %}active{% endif %}">
+                  <a href="/reference/recommender">Recommender</a>
+                </li>
+
+            </ul>
+     </div>
+</div>

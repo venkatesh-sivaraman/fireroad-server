@@ -1,0 +1,58 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="auth" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">Authentication</h2>
+
+<h4 class="red-text text-darken-4">Login Procedures</h4>
+
+<strong>Please remember to use the dev server (fireroad-dev.mit.edu) for all local testing, and <i>only</i> use the production server (fireroad.mit.edu) for your production application.</strong> The workflow for logging into the FireRoad server as a web application is as follows:
+
+<ol>
+  <li>Your site sends the user to <span class="code">/login</span>, with an optional query parameter <span class="code">sem</span> indicating the user's current semester, and required query parameter <span class="code">redirect</span> indicating the redirect URL after login. For production, this redirect URL needs to be registered with FireRoad before use.</li>
+  <li>The FireRoad server handles login through MIT OpenID Connect, creates a FireRoad account if necessary, then sends the user back to your redirect URL, passing a query parameter <span class="code">code</span></li>
+  <li>The code is a string that can be used exactly once within 5 minutes of login to retrieve an access token. The application server does this by sending a request to <span class="code">/fetch_token</span>, passing the query parameter <span class="code">code</span> received in step 2.</li>
+  <li>The FireRoad server validates the temporary code and sends the application server back a JSON web token (JWT) that can be used to authorize use of the API.</li>
+  <li>The application server uses the JWT by including the <span class="code">Authorization</span> header set to <span class="code">"Bearer &lt;base-64 encoded token string&gt;"</span> in any request to the FireRoad server.</li>
+  <li>Since the JWT may expire, the application server should check its validity by requesting the <span class="code">/verify</span> endpoint with the <span class="code">Authorization</span> header. If the token is expired or invalid, this endpoint will return 403, indicating that the user should log in again.</li>
+</ol>
+</div>
+
+<h4 class="red-text text-darken-4">Endpoints</h4>
+
+<h5>/signup</h5>
+<p>Displays a user-facing page that specifies the conditions of allowing recommendations.</p>
+
+<h5>/login</h5>
+<p>Redirects to the OAuth page to log the user in. See "Login Procedures" for how to log in as a web client. <strong>Note:</strong> Web clients <i>must</i> include a <span class="code">redirect</span> query parameter. Requests without a <span class="code">redirect</span> parameter will be treated as coming from a native (mobile) app, and will transfer the token to the client in a way that is <strong>not secure</strong> outside of a native app.</p>
+
+<h5>/fetch_token <span class="grey-text">(GET)</span></h5>
+<p>Takes a query parameter <span class="code">code</span> and, if it is valid and unexpired, returns the associated access token. See "Login Procedures" above for more details.</p>
+
+<h5>/verify <span class="grey-text">(GET)</span></h5>
+<p>Checks that the user is logged in, and if so, auto-increments the user's current semester and returns the new semester.</p>
+
+<h5>/user_info <span class="grey-text">(GET)</span></h5>
+<p>(Requires authentication) Returns a JSON object containing information about the current user, including the following keys:</p>
+<ul class="collection">
+  <li class="collection-item"><span class="code">academic_id</span>: the user's institution email address</li>
+  <li class="collection-item"><span class="code">current_semester</span>: the user's current semester (numbered 0)</li>
+  <li class="collection-item"><span class="code">name</span>: the user's full name</li>
+  <li class="collection-item"><span class="code">username</span> the user's username on the FireRoad server (not human-readable)</li>
+</ul>
+
+<div id="sequential-nav">
+  <div class="col s6">
+    <a href="/reference/requirements" class="red-text text-darken-1"><i class="material-icons">chevron_left</i> Requirements</a>
+  </div>
+  <div class="col s6">
+    <div class="right-align">
+      <a href="/reference/sync" class="red-text text-darken-1">Sync <i class="material-icons">chevron_right</i></a>
+    </div>
+  </div>
+  <br/><br/>
+</div>
+{% endblock %}

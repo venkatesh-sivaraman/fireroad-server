@@ -1,89 +1,69 @@
+{% extends "common/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-  <head>
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
-    <link href="{% static "requirements/css/editor.css" %}" rel="stylesheet" />
-    <link href="{% static "requirements/css/nav.css" %}" rel="stylesheet" />
-    <!--Import Google Icon Font-->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!--Import materialize.css-->
-    <link type="text/css" rel="stylesheet" href="{% static "common/css/materialize.min.css" %}" media="screen,projection"/>
-    <!--Let browser know website is optimized for mobile-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    {% block title %}
-    <title>FireRoad Requirements Editor</title>
-    {% endblock %}
-    <style>
-    .header { padding: 24px 0 0 0; margin: 0; }
-    .page-height { height: 100vh; }
-    </style>
-  </head>
+{% block title %}
+<title>FireRoad Requirements Editor</title>
+{% endblock %}
 
-  <body class="grey lighten-4">
+{% block pagebody %}
     <div class="nav-side-menu">
       {% block nav %}
-        <div class="brand">FireRoad Requirements</div>
-        <i class="fa fa-bars fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
+      <div class="brand">FireRoad Requirements</div>
+      <i class="fa fa-angle-double-down fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
 
-            <div class="menu-list">
+      <div class="menu-list">
 
-                <ul id="menu-content" class="menu-content collapse out">
-                    <li class="{% if active_id == "index" %}active{% endif %}">
-                      <a href="{% url 'requirements_index' %}">Format Specification</a>
-                    </li>
+        <ul id="menu-content" class="menu-content collapse out">
+          <li class="{% if active_id == "index" %}active{% endif %}">
+            <a href="{% url 'requirements_index' %}">Format Specification</a>
+          </li>
 
-                    <li  data-toggle="collapse" data-target="#majors" class="{% if "major" in active_id %}active{% else %}collapsed{% endif %}">
-                      <a href="#">Majors <span class="arrow"></span></a>
-                    </li>
-                    <ul class="sub-menu collapse {% if "major" in active_id %}in{% endif %}" id="majors">
-                      {% for reqlist in majors %}
-                      <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
-                      {% endfor %}
-                    </ul>
+          <li  data-toggle="collapse" data-target="#majors" class="{% if "major" in active_id %}active{% else %}collapsed{% endif %}">
+            <a href="#">Majors <span class="arrow"></span></a>
+          </li>
+          <ul class="sub-menu collapse {% if "major" in active_id %}in{% endif %}" id="majors">
+            {% for reqlist in majors %}
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            {% endfor %}
+          </ul>
 
-                    <li  data-toggle="collapse" data-target="#minors" class="{% if "minor" in active_id %}active{% else %}collapsed{% endif %}">
-                      <a href="#">Minors <span class="arrow"></span></a>
-                    </li>
-                    <ul class="sub-menu collapse {% if "minor" in active_id %}in{% endif %}" id="minors">
-                      {% for reqlist in minors %}
-                      <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
-                      {% endfor %}
-                    </ul>
+          <li  data-toggle="collapse" data-target="#minors" class="{% if "minor" in active_id %}active{% else %}collapsed{% endif %}">
+            <a href="#">Minors <span class="arrow"></span></a>
+          </li>
+          <ul class="sub-menu collapse {% if "minor" in active_id %}in{% endif %}" id="minors">
+            {% for reqlist in minors %}
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            {% endfor %}
+          </ul>
 
-                    <li  data-toggle="collapse" data-target="#other" class="{% if exists and "major" not in active_id and "minor" not in active_id %}active{% else %}collapsed{% endif %}">
-                      <a href="#">Other <span class="arrow"></span></a>
-                    </li>
-                    <ul class="sub-menu collapse {% if exists and "major" not in active_id and "minor" not in active_id %}in{% endif %}" id="other">
-                      {% for reqlist in other %}
-                      <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
-                      {% endfor %}
-                    </ul>
+          <li  data-toggle="collapse" data-target="#other" class="{% if exists and "major" not in active_id and "minor" not in active_id %}active{% else %}collapsed{% endif %}">
+            <a href="#">Other <span class="arrow"></span></a>
+          </li>
+          <ul class="sub-menu collapse {% if exists and "major" not in active_id and "minor" not in active_id %}in{% endif %}" id="other">
+            {% for reqlist in other %}
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            {% endfor %}
+          </ul>
 
-                    <li class="{% if active_id == "new_doc" %}active{% endif %}">
-                      <a href="{% url 'create' %}">New requirements list...</a>
-                    </li>
-                </ul>
-         </div>
+          <li class="{% if active_id == "new_doc" %}active{% endif %}">
+            <a href="{% url 'create' %}">New requirements list...</a>
+          </li>
+        </ul>
+      </div>
     </div>
-    <div class="content">
-    {% endblock %}
-    {% block content %} {% endblock %}
+  {% endblock %}
+  <div class="content">
+  {% block content %} {% endblock %}
   </div>
-    <!--JavaScript at end of body for optimized loading-->
-    <script type="text/javascript" src="{% static "common/js/materialize.min.js" %}"></script>
-    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+{% endblock %}
+
+{% block pagescripts %}
     <script type="text/javascript">
     $(document).ready(function () {
     // Handler for .ready() called.
     $('.nav-side-menu').animate({
-        scrollTop: $('.scroll-to-me').offset().top
+        scrollTop: $('.scroll-to-me').offset().top - 64
     }, 'fast');
     });
     </script>
     {% block scripts %}{% endblock %}
-  </body>
-</html>
+{% endblock %}

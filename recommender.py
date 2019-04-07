@@ -200,6 +200,18 @@ class UserRecommenderProfile(object):
         """Returns a list of the subjects taken by this user."""
         return list(self.roads[0].keys()) # + list(self.ratings.keys())
 
+    def filtered_rated_subjects(self):
+        """
+        Returns a list of ratings that are valid, i.e. non-negative and
+        present in the user's road or negative. This is because the app
+        automatically assigns ratings that are non-negative, so some of the ratings
+        may be spurious and due to courses that were on the user's road in the
+        past.
+        """
+        base = set([subj for subj in sorted(self.ratings.keys()) if subj in subject_arrays])
+        taken_subjects = set(self.subjects_taken())
+        return list([subj for subj in base if self.ratings[subj] < 0 or subj in taken_subjects])
+
     def compute_regression_predictions(self, subject_arrays, all_subject_features):
         """
         Computes regression predictions on the (subject, rating) pairs stored in
@@ -210,7 +222,8 @@ class UserRecommenderProfile(object):
         a matrix of the same subject features where each row is a subject (in a
         pre-specified order).
         """
-        ratings_keys = [subj for subj in sorted(self.ratings.keys()) if subj in subject_arrays]
+        ratings_keys = self.filtered_rated_subjects()
+
         X = np.vstack([subject_arrays[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
         Y = np.array([self.ratings[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
 

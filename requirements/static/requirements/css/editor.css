@@ -6,6 +6,7 @@
 }
 .code, .editor {
   font-family: 'Inconsolata', Menlo, Monaco, Courier, monospace;
+  line-height: 1.5em;
 }
 .code {
   padding: 2px;
@@ -25,10 +26,15 @@
   margin-right: 32px;
   display: flex;
   flex-direction: column;
+  margin-bottom: 12px;
 }
 @media (min-width: 767px) {
   .edit-head {
     margin-top: 12px;
+  }
+  .content {
+    margin-top: -64px;
+    padding-top: 64px;
   }
 }
 .mbtn:hover {

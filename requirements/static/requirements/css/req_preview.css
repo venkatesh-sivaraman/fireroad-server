@@ -1,0 +1,132 @@
+#preview {
+  overflow: scroll;
+  padding: 0 6px 6px 6px;
+}
+
+#preview-loading-ind {
+  position: absolute;
+  margin: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.req-title {
+  margin-top: 4px !important;
+}
+
+h3.req-title {
+  padding-left: 6px;
+  font-size: 14pt;
+  font-weight: 700;
+}
+
+h4.req-title {
+  padding-left: 6px;
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+h1.req-title {
+  padding-left: 6px;
+  font-size: 18pt;
+  font-weight: 800;
+}
+
+h2.req-title {
+  padding-left: 6px;
+  font-size: 16pt;
+  font-weight: 700;
+}
+
+p.req {
+  padding-left: 6px;
+  color: #888;
+}
+
+.course-list {
+  overflow-x: auto;
+  overflow-y: visible;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.course-list-inner {
+  display: table-row;
+  overflow-y: visible;
+}
+
+.course-tile-outer {
+  top: 0;
+  overflow-y: visible;
+  display: table-cell;
+  padding: 2px 8px 2px 8px;
+}
+
+.course-tile {
+  display: block;
+  text-align: center;
+  white-space: normal;
+  overflow: hidden;
+  padding: 6px;
+  width: 140px;
+  height: 76px;
+  line-height: 1.15em;
+}
+
+.course-id {
+  font-weight: 200;
+  font-size: 13pt;
+}
+
+.course-title {
+  font-weight: 400;
+  font-size: 9pt;
+}
+
+/* Department classes */
+
+.course-none { background-color: #999 !important; }
+
+.course-1 { background-color: #DE4343 !important; }
+.course-2 { background-color: #DE7643 !important; }
+.course-3 { background-color: #4369DE !important; }
+.course-4 { background-color: #57B563 !important; }
+.course-5 { background-color: #43DEAF !important; }
+.course-6 { background-color: #4390DE !important; }
+.course-7 { background-color: #5779B5 !important; }
+.course-8 { background-color: #8157B5 !important; }
+.course-9 { background-color: #8143DE !important; }
+.course-10 { background-color: #B55757 !important; }
+.course-11 { background-color: #B55773 !important; }
+.course-12 { background-color: #43DE4F !important; }
+.course-14 { background-color: #DE9043 !important; }
+.course-15 { background-color: #B55C57 !important; }
+.course-16 { background-color: #43B2DE !important; }
+.course-17 { background-color: #DE43B7 !important; }
+.course-18 { background-color: #575DB5 !important; }
+.course-20 { background-color: #57B56E !important; }
+.course-21 { background-color: #57B567 !important; }
+.course-21A { background-color: #57B573 !important; }
+.course-21W { background-color: #57B580 !important; }
+.course-CMS { background-color: #57B58C !important; }
+.course-21G { background-color: #57B599 !important; }
+.course-21H { background-color: #57B5A5 !important; }
+.course-21L { background-color: #57B5B2 !important; }
+.course-21M { background-color: #57ACB5 !important; }
+.course-WGS { background-color: #579FB5 !important; }
+.course-22 { background-color: #B55757 !important; }
+.course-24 { background-color: #7657B5 !important; }
+.course-CC { background-color: #4FDE43 !important; }
+.course-CSB { background-color: #579AB5 !important; }
+.course-EC { background-color: #76B557 !important; }
+.course-EM { background-color: #576EB5 !important; }
+.course-ES { background-color: #5A57B5 !important; }
+.course-HST { background-color: #5779B5 !important; }
+.course-IDS { background-color: #57B586 !important; }
+.course-MAS { background-color: #57B55A !important; }
+.course-SCM { background-color: #57B573 !important; }
+.course-STS { background-color: #8F57B5 !important; }
+.course-SWE { background-color: #B56B57 !important; }
+.course-SP { background-color: #4343DE !important; }

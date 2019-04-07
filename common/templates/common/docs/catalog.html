@@ -1,0 +1,59 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="catalog" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">Catalog</h2>
+
+<h4 class="red-text text-darken-4">Course Lookup</h4>
+
+<h5>/courses/all <span class="grey-text">(GET)</span></h5>
+<p>Returns a JSON list of all courses in the current version of the catalog, in numerically sorted order. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version.</p>
+
+<h5>/courses/dept/&lt;dept code&gt; <span class="grey-text">(GET)</span></h5>
+<p>Returns a JSON list containing all subjects in the given department (the subject ID prefix, such as "6", "WGS"), in numerically sorted order. If the department does not exist, returns an empty list. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version.</p>
+
+<h5>/courses/lookup/&lt;subject ID&gt; <span class="grey-text">(GET)</span></h5>
+<p>Returns a JSON description of the course with the given subject ID, or a 404 error if the course is not present.</p>
+
+<h5>/courses/search/&lt;search term&gt; <span class="grey-text">(GET)</span></h5>
+<p>Returns a JSON list of courses for the given search term. Currently only the subject ID and subject title are searched. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version. Also takes query parameters to filter the results:</p>
+
+<ul class="collection">
+
+  <li class="collection-item"><span class="code">type</span>: The match type to use with the search term. Possible values: "contains" (default), "matches", "starts", "ends"</li>
+  <li class="collection-item"><span class="code">gir</span>: Filter by GIR requirement. Possible values: "off" (default), "any", "lab", "rest"</li>
+  <li class="collection-item"><span class="code">hass</span>: Filter by HASS requirement. Possible values: "off" (default), "any", "a", "s", "h"</li>
+  <li class="collection-item"><span class="code">ci</span>: Filter by communication requirement. Possible values: "off" (default), "cih", "cihw", "not-ci"</li>
+  <li class="collection-item"><span class="code">offered</span>: Filter by semester offered. Possible values: "off" (default), "fall", "spring", "IAP", "summer"</li>
+  <li class="collection-item"><span class="code">level</span>: Filter by course level. Possible values: "off" (default), "undergrad", "grad"</li>
+</ul>
+
+<h4 class="red-text text-darken-4">Course Updater</h4>
+
+These endpoints can be used to update a local version of the course database, such as in a mobile app.
+
+<h5>/courseupdater/semesters <span class="grey-text">(GET)</span></h5>
+<p>Returns a JSON list specifying the order of the semesters available on the server, as well as their current version numbers.</p>
+
+<h5>/courseupdater/check <span class="grey-text">(GET)</span></h5>
+<p>Given a semester and local version number, returns a new version number and the delta of catalog files that should be updated. Takes as query parameters:</p>
+<ul class="collection">
+  <li class="collection-item"><span class="code">sem</span>: a comma-separated specification of the semester (e.g. "fall,2018")</li>
+  <li class="collection-item"><span class="code">v</span>: the local version number of the catalog</li>
+</ul>
+
+<div id="sequential-nav">
+  <div class="col s6">
+    <a href="/reference/auth" class="red-text text-darken-1"><i class="material-icons">chevron_left</i> Authentication</a>
+  </div>
+  <div class="col s6">
+    <div class="right-align">
+      <a href="/reference/requirements" class="red-text text-darken-1">Requirements <i class="material-icons">chevron_right</i></a>
+    </div>
+  </div>
+  <br/><br/>
+</div>
+{% endblock %}

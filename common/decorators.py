@@ -89,6 +89,9 @@ def logged_in_or_basicauth(func, realm = ""):
     You can provide the name of the realm to ask for authentication within.
     """
     def wrapper(request, *args, **kwargs):
+        # If it's a preflight request, don't even run the view
+        if request.method == 'OPTIONS':
+            return HttpResponse()
         return view_or_basicauth(func, request,
                                  lambda u: u.is_authenticated(),
                                  realm, *args, **kwargs)

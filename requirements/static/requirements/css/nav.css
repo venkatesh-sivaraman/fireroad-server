@@ -4,7 +4,7 @@
   font-weight: 300;
   background-color: white;
   position: fixed;
-  top: 0px;
+  top: 0;
   width: 300px;
   color: #bb2222;
   border-right: 1px solid #dddddd;
@@ -139,6 +139,7 @@
 @media (min-width: 767px) {
   .nav-side-menu {
     height: 100%;
+    padding-top: 64px;
   }
   .nav-side-menu .menu-list .menu-content {
     display: block;
@@ -154,4 +155,28 @@ body {
 .row {
   margin-left: 0 !important;
   margin-right: 0 !important;
+}
+.collapse {
+    display: none
+}
+
+.collapse.in {
+    display: block
+}
+
+tr.collapse.in {
+    display: table-row
+}
+
+tbody.collapse.in {
+    display: table-row-group
+}
+
+.collapsing {
+    position: relative;
+    height: 0;
+    overflow: hidden;
+    -webkit-transition: height .35s ease;
+    -o-transition: height .35s ease;
+    transition: height .35s ease
 }

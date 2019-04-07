@@ -9,55 +9,72 @@ from .decorators import logged_in_or_basicauth
 from .oauth_client import *
 import base64
 import json
+import re
 from token_gen import *
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from catalog.models import Course, CourseFields
 from django.core.exceptions import ObjectDoesNotExist
+from fireroad.settings import RESTRICT_AUTH_REDIRECTS
 
-# One month
-TOKEN_EXPIRY_TIME = 2.6e6
+# One month for mobile, ~1 week for web
+TOKEN_EXPIRY_MOBILE = 2.6e6
+TOKEN_EXPIRY_WEB = 6e5
 
 def login_oauth(request):
     if request.GET.get('code', None) is None:
         code = request.GET.get('code', None)
-        return redirect(oauth_code_url(request))
+        redirect_URL = request.GET.get('redirect', None)
+        if RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
+            return HttpResponse("Redirect URL not registered", status=403)
+        return redirect(oauth_code_url(request, after_redirect=redirect_URL))
 
     result, status, info = get_user_info(request)
     if result is None or status != 200:
         return login_error_response(request, 'Please try again later.')
-    else:
-        # Save the user's profile, check if there are any other accounts
-        email = result.get(u'email', None)
-        if email is None:
-            return login_error_response(request, 'Please try again and allow FireRoad to access your email address.')
 
-        sub = result.get(u'sub', None)
-        if sub is None:
-            return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
-        password = generate_random_string(32)
-        try:
-            student = Student.objects.get(unique_id=sub)
-        except:
+    # Save the user's profile, check if there are any other accounts
+    email = result.get(u'email', None)
+    if email is None:
+        return login_error_response(request, 'Please try again and allow FireRoad to access your email address.')
+
+    sub = result.get(u'sub', None)
+    if sub is None:
+        return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
+    password = generate_random_string(32)
+    try:
+        student = Student.objects.get(unique_id=sub)
+    except:
+        user = User.objects.create_user(username=random.getrandbits(32), password=password)
+        user.save()
+        #Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
+        student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
+        student.current_semester = info.get('sem', '0')
+        student.save()
+    else:
+        # Only set the current semester if there's a real new value
+        if len(info.get('sem', '')) > 0 and int(info['sem']) != 0:
+            student.current_semester = info['sem']
+        if student.user is None:
             user = User.objects.create_user(username=random.getrandbits(32), password=password)
             user.save()
-            #Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
-            student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
-            student.current_semester = info.get('sem', '0')
-            student.save()
-        else:
-            student.current_semester = info.get('sem', '0')
-            if student.user is None:
-                user = User.objects.create_user(username=random.getrandbits(32), password=password)
-                user.save()
-                student.user = user
-            student.save()
+            student.user = user
+        student.save()
 
-        student.user.backend = 'django.contrib.auth.backends.ModelBackend'
-        login(request, student.user)
+    student.user.backend = 'django.contrib.auth.backends.ModelBackend'
+    login(request, student.user)
 
-        token = generate_token(request, student.user, TOKEN_EXPIRY_TIME)
-        return render(request, 'common/login_success.html', {'access_info': json.dumps({'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token, 'sub': sub})})
+    # Generate access token for the user
+    lifetime = TOKEN_EXPIRY_WEB if "redirect" in info else TOKEN_EXPIRY_MOBILE
+    token = generate_token(request, student.user, lifetime)
+    access_info = {'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token, 'sub': sub}
+
+    if "redirect" in info:
+        # Redirect to the web application's page with a temporary code to get the access token
+        return finish_login_redirect(access_info, info["redirect"])
+    else:
+        # Go to FireRoad's login success page, which is read by the mobile apps
+        return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
 
 def login_error_response(request, message):
     params = {'message': message}
@@ -106,7 +123,42 @@ def set_semester(request):
     s.save()
     return HttpResponse(json.dumps({'success': True}), content_type="application/json")
 
-# Semester calculation
+### Application Server Login
+
+def finish_login_redirect(access_info, uri):
+    """
+    Saves a temporary code that can be used by an application server to
+    retrieve the access token and associated info, and redirects to the given
+    URI passing the code as a "code" query parameter.
+    """
+    code = save_temporary_code(access_info)
+    if not re.search(r'^https?://', uri): # Redirect requires a protocol
+        uri = 'https://' + uri
+    return redirect(uri + "?code=" + code)
+
+def fetch_token(request):
+    """
+    Takes and validates a temporary code in the "code" query parameter, and
+    returns a JSON response containing the access token. Raises PermissionDenied
+    if the code is expired.
+    """
+    code = request.GET.get('code', '')
+    if len(code) == 0:
+        return HttpResponseBadRequest("Please provide the temporary code")
+    access_info = get_access_info_with_temporary_code(code)
+    return HttpResponse(json.dumps({'success': True, 'access_info': access_info}), content_type="application/json")
+
+@logged_in_or_basicauth
+def user_info(request):
+    """Returns a JSON object containing the logged-in student's information."""
+    student = request.user.student
+    return HttpResponse(json.dumps({
+        'academic_id': student.academic_id,
+        'current_semester': int(student.current_semester),
+        'name': student.name,
+        'username': request.user.username}), content_type="application/json")
+
+### Semester calculation
 
 def is_fall(date):
     return date.month >= 5 and date.month <= 11

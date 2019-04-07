@@ -1,0 +1,15 @@
+.logo-img {
+  vertical-align: middle;
+  margin-top: -5px;
+}
+.nav-wrapper {
+  padding-left: 12px;
+}
+.mbtn {
+  margin: 8px;
+}
+
+.material-icons{
+    display: inline-flex;
+    vertical-align: top;
+}

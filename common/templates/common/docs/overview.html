@@ -1,0 +1,23 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="overview" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">FireRoad API Reference</h2>
+<p>The FireRoad server provides a comprehensive API, with both <strong>read-only</strong> interfaces for course catalogs and major/minor requirements and <strong>read-write</strong> endpoints for interfacing with users' roads and schedules.</p>
+<p>The read-only API is <strong>open-access</strong>, and logging in with your MIT credentials allows you to test the read-write APIs within your own account. Please contact us if you would like to use the read-write APIs to create a FireRoad client that accesses other user data.</p>
+<p class="red-text text-darken-4"><strong>IMPORTANT:</strong> Please use the development server at <strong>fireroad-dev.mit.edu</strong> for all testing.</p>
+
+<div id="sequential-nav">
+  <div class="col s6">
+  </div>
+  <div class="col s6">
+    <div class="right-align">
+      <a href="/reference/catalog" class="red-text text-darken-1">Catalog <i class="material-icons">chevron_right</i></a>
+    </div>
+  </div>
+  <br/><br/>
+</div>
+{% endblock %}

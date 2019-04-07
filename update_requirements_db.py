@@ -15,6 +15,7 @@ REQUIREMENTS_INFO_KEY = "r_delta"
 
 def update_db():
     RequirementsList.objects.all().delete()
+    RequirementsStatement.objects.all().delete()
 
     req_urls = compute_semester_delta(list_semesters()[-1].split('-'), 0, 0)
     for path_name in req_urls[REQUIREMENTS_INFO_KEY]:

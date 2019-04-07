@@ -39,6 +39,49 @@ def unwrapped_component(component):
 def components_separated_by_regex(string, regex):
     return [undecorated_component(comp) for comp in re.split(regex, string)]
 
+class Threshold(object):
+    """An object describing a threshold of child requirements to fulfill to fulfill an overall requirement
+    type: threshold type (GT, GTE, LT, LTE)
+    cutoff: the number of subjects/units to fulfill the requirement
+    get_actual_cutoff(): actual number of subjects/units needed to fulfill the requirement (adjusted up or down 1 for less than or greater than)
+    criterion: metric to meet cutoff (subjects or units)
+    cutoff_for_criterion: converts cutoff into subjects to units
+    is_satisfied_by: tests if the threshold is satisfied by a given subject and unit Progress object
+    """
+
+    def __init__(self, threshold_type, number, criterion):
+        self.type = threshold_type
+        self.cutoff = number
+        self.criterion = criterion
+
+    def cutoff_for_criterion(self, criterion):
+        if self.criterion == criterion:
+            co = self.cutoff
+        elif self.criterion == CRITERION_SUBJECTS:
+            co = self.cutoff * DEFAULT_UNIT_COUNT
+        else:
+            co = self.cutoff / DEFAULT_UNIT_COUNT
+        return co
+
+    def get_actual_cutoff(self):
+        if self.type == THRESHOLD_TYPE_GT:
+            return self.cutoff + 1
+        elif self.type == THRESHOLD_TYPE_LT:
+            return self.cutoff - 1
+        return self.cutoff
+
+    def is_satisfied_by(self, subject_progress, unit_progress):
+        progress = (subject_progress, unit_progress)[self.criterion == CRITERION_UNITS]
+        actualcutoff = self.get_actual_cutoff()
+
+        if self.type == THRESHOLD_TYPE_LT or self.type == THRESHOLD_TYPE_LTE:
+            return progress <= actualcutoff
+        elif self.type == THRESHOLD_TYPE_GT or self.type == THRESHOLD_TYPE_GTE:
+            return progress >= actualcutoff
+
+    def __repr__(self):
+        return self.type + " " + self.criterion + " " + str(self.cutoff)
+
 class SyntaxConstants:
     """Static constants for use in parsing."""
     all_separator = ","
@@ -62,6 +105,7 @@ class JSONConstants:
     short_title = "short-title"
     medium_title = "medium-title"
     title_no_degree = "title-no-degree"
+    catalog_url = "url"
     # And requirements
 
     # Top level keys in a RequirementsStatement JSON dictionary
@@ -82,7 +126,7 @@ class RequirementsStatement(models.Model):
     """Represents a single requirements statement, encompassing a series of
     subjects or other requirements statements connected by AND or OR."""
 
-    list = models.ForeignKey("RequirementsList", on_delete=models.CASCADE, related_name="requirements", null=True)
+    #list = models.ForeignKey("RequirementsList", on_delete=models.CASCADE, related_name="requirements", null=True)
 
     title = models.CharField(max_length=250, null=True)
     description = models.TextField(null=True)
@@ -121,6 +165,17 @@ class RequirementsStatement(models.Model):
         (CRITERION_SUBJECTS, "subjects"),
         (CRITERION_UNITS, "units")
     ), default=CRITERION_SUBJECTS)
+
+    def get_threshold(self):
+        if self.threshold_type is not None:
+            return Threshold(self.threshold_type, self.threshold_cutoff, self.threshold_criterion)
+        else:
+            return None
+    def get_distinct_threshold(self):
+        if self.distinct_threshold_type is not None:
+            return Threshold(self.distinct_threshold_type, self.distinct_threshold_cutoff, self.distinct_threshold_criterion)
+        else:
+            return None
 
     def threshold_description(self):
         """Returns a string description of this statement's threshold."""
@@ -183,9 +238,17 @@ class RequirementsStatement(models.Model):
 
         return self.title if self.title is not None else "No title"
 
-    def to_json_object(self):
+    def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements statement into a serializable object that can
-        be dumped to JSON."""
+        be dumped to JSON.
+
+        If this statement has child requirements, it uses the child_fn to output
+        the JSON for each child. If child_fn is None, uses the to_json_object()
+        on the child requirements; if not, it should be a function that takes a
+        RequirementsStatement and produces a JSON object describing it.
+
+        The full keyword argument is currently not used by RequirementsStatement."""
+
         base = {}
         if self.title is not None and len(self.title) > 0:
             base[JSONConstants.title] = self.title
@@ -214,7 +277,7 @@ class RequirementsStatement(models.Model):
         if self.requirement is not None:
             base[JSONConstants.requirement] = self.requirement
         elif self.requirements.exists():
-            base[JSONConstants.requirements] = [r.to_json_object() for r in self.requirements.all()]
+            base[JSONConstants.requirements] = [(child_fn(r) if child_fn is not None else r.to_json_object()) for r in self.requirements.all()]
             base[JSONConstants.connection_type] = self.connection_type
 
         return base
@@ -331,10 +394,10 @@ class RequirementsStatement(models.Model):
         self.save()
 
     @staticmethod
-    def initialize(title, contents, list=None):
+    def initialize(title, contents, parent=None):
         """Initializes a new requirements statement with the given title and
         requirement string. Parses the requirements statement."""
-        statement = RequirementsStatement.objects.create(title=title, list=list)
+        statement = RequirementsStatement.objects.create(title=title, parent=parent)
         statement.list = list
         statement.parse_string(contents)
         statement.save()
@@ -346,7 +409,6 @@ class RequirementsStatement(models.Model):
         given string."""
         statement = RequirementsStatement.objects.create()
         statement.parent = parent
-        statement.list = parent.list
         statement.parse_string(string)
         statement.save()
         return statement
@@ -372,3 +434,28 @@ class RequirementsStatement(models.Model):
         else:
             for c in components:
                 RequirementsStatement.from_string(unwrapped_component(c), parent=self)
+
+    def minimum_nest_depth(self):
+        """Gives the minimum number of steps needed to traverse the tree down to a leaf (an individual course)."""
+        if self.requirements.exists():
+            return min(req.minimum_nest_depth() for req in self.requirements.all()) + 1
+        return 0
+
+    def maximum_nest_depth(self):
+        """Gives the maximum number of steps needed to traverse the tree down to a leaf (an individual course)."""
+        if self.requirements.exists():
+            return max(req.minimum_nest_depth() for req in self.requirements.all()) + 1
+        return 0
+
+    def short_description(self):
+        """Returns a short description of the requirement."""
+        if self.requirement is not None:
+            return self.requirement
+        elif self.requirements.exists():
+            connection = "and" if self.connection_type == CONNECTION_TYPE_ALL else "or"
+            if self.requirements.count() == 2:
+                return "{} {} {}".format(self.requirements.all()[0].short_description(), connection, self.requirements.all()[1].short_description())
+            else:
+                return "{} {} {} others".format(self.requirements.all()[0].short_description(), connection, self.requirements.count() - 1)
+
+        return baseString
