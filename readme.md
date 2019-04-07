@@ -38,4 +38,4 @@ If you made any changes you want to keep in the settings file for production, yo
 
 ### API Endpoints
 
-The FireRoad API is fully documented at [fireroad.mit.edu/reference](fireroad.mit.edu/reference) (dev version at [fireroad-dev.mit.edu/reference](fireroad-dev.mit.edu/reference)). When submitting PRs that modify the behavior of these endpoints or add new ones, please update the docs in `common/templates/docs` accordingly.
+The FireRoad API is fully documented at [fireroad.mit.edu/reference](https://fireroad.mit.edu/reference) (dev version at [fireroad-dev.mit.edu/reference](https://fireroad-dev.mit.edu/reference)). When submitting PRs that modify the behavior of these endpoints or add new ones, please update the docs in `common/templates/docs` accordingly.
