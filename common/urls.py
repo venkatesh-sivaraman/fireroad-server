@@ -22,5 +22,15 @@ urlpatterns = [
     url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
     url('fetch_token/', views.fetch_token, name='fetch_token'),
     url('user_info/', views.user_info, name='user_info'),
+
+    # reference
+    url('reference/$', TemplateView.as_view(template_name='common/docs/overview.html'), name='overview'),
+    url('reference/auth', TemplateView.as_view(template_name='common/docs/auth.html'), name='auth'),
+    url('reference/catalog', TemplateView.as_view(template_name='common/docs/catalog.html'), name='catalog'),
+    url('reference/requirements', TemplateView.as_view(template_name='common/docs/requirements.html'), name='requirements'),
+    url('reference/sync', TemplateView.as_view(template_name='common/docs/sync.html'), name='sync'),
+    url('reference/recommender', TemplateView.as_view(template_name='common/docs/recommender.html'), name='recommender'),
+
+    # index
     url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),
 ]

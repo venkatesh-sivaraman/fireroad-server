@@ -1,0 +1,69 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="requirements" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">Requirements</h2>
+<p>The FireRoad API provides access to JSON representations of all available major/minor requirements. You can view these requirements and submit modification requests in the <a href="/requirements">Requirements Editor</a>.</p>
+
+<h4 class="red-text text-darken-4">Requirements Lists</h4>
+
+<h5>/requirements/list_reqs <span class="grey-text">(GET)</span></h5>
+<p>Returns a dictionary where the keys are list IDs of requirements lists, and the values are metadata dictionaries containing various titles for the corresponding lists.</p>
+
+<h5>/requirements/get_json/&lt;list_id&gt; <span class="grey-text">(GET)</span></h5>
+<p>Use this endpoint to get a JSON representation of a course requirements list. The list_id should be one of the keys returned by <span class="code">/requirements/list_reqs</span>, or else a bad request error is thrown. The return value of this endpoint is a JSON representation which may contain the following keys:</p>
+<ul class="collection">
+  <li class="collection-item"><span class="code">list-id</span> - the requirements list ID</li>
+  <li class="collection-item"><span class="code">short-title</span> - a short title, e.g. "6-7"</li>
+  <li class="collection-item"><span class="code">medium-title</span> - a medium title, e.g. "WGS Minor"</li>
+  <li class="collection-item"><span class="code">title-no-degree</span> - a title without the degree name (e.g. "Computer Science and Engineering")</li>
+  <li class="collection-item"><span class="code">title</span> - the full title (e.g. "Bachelor of Science in Computer Science and Engineering")</li>
+  <li class="collection-item"><span class="code">desc</span> - an optional description of the statement or requirements list</li>
+  <li class="collection-item"><span class="code">req</span> - string requirement, such as "6.009" or "24 units in 8.200-8.299" (if not present, see <span class="code">reqs</span>)</li>
+  <li class="collection-item"><span class="code">plain-string</span> - whether to interpret <span class="code">req</span> as a parseable requirement ("6.009") or as a plain string ("24 units in 8.200-8.299"). Note that plain strings may have <span class="code">(distinct-)threshold</span> keys attached, allowing the user to manually control progress.</li>
+  <li class="collection-item"><span class="code">reqs</span> - a list of nested requirements statements (if not present, see req)</li>
+  <li class="collection-item"><span class="code">connection-type</span> - logical connection type between the reqs (<span class="code">all</span> or <span class="code">any</span>, or <span class="code">none</span> if it is a plain string)</li>
+  <li class="collection-item"><span class="code">threshold</span> - optional dictionary describing the threshold to satisfy this statement. Keys are:
+    <ul class="bullet-list">
+      <li><span class="code">type</span> - the type of inequality to apply (<span class="code">LT</span>, <span class="code">GT</span>, <span class="code">LTE</span>, or <span class="code">GTE</span>)</li>
+      <li><span class="code">cutoff</span> - the numerical cutoff</li>
+      <li><span class="code">criterion</span> - either <span class="code">subjects</span> or <span class="code">units</span></li>
+    </ul>
+  </li>
+  <li class="collection-item"><span class="code">distinct-threshold</span> - optional dictionary describing the number of distinct child requirements of this statement that must be satisfied. Keys are the same as <span class="code">threshold</span>.</li>
+  <li class="collection-item"><span class="code">threshold-desc</span> - user-facing string describing the thresholds (if applicable)</li>
+</ul>
+
+<h4 class="red-text text-darken-4">Requirements Progress</h4>
+
+<h5>/requirements/progress <span class="grey-text">(GET or POST)</span></h5>
+<p>Returns a JSON representation of a course requirements list, including user progresses. There are a few different ways to provide the user's courses and progress overrides to this endpoint:</p>
+<ol>
+  <li><strong>/requirements/progress/&lt;list_id&gt;/&lt;courses&gt;</strong> <span class="grey-text">(GET)</span> <span class="code">courses</span> is a comma-separated list of subject IDs. (Progress overrides cannot be passed using this method. No authorization is necessary.)</li>
+  <li><strong>/requirements/progress/&lt;list_id&gt;?road=&lt;road_id&gt;</strong> <span class="grey-text">(GET)</span> <span class="code">road_id</span> is the integer ID number of the user's road. The user must be logged in or an authorization token must be passed.</li>
+  <li><strong>/requirements/progress/&lt;list_id&gt;</strong> <span class="grey-text">(POST)</span> The request body should contain the JSON representation of the road to evaluate against. (No authorization is necessary.)</li>
+</ol>
+<p>The JSON returned by this endpoint contains the following keys in addition to those defined above:</p>
+<ul class="collection">
+  <li class="collection-item"><span class="code">fulfilled</span> - boolean indicating whether the requirement is completed</li>
+  <li class="collection-item"><span class="code">progress</span> - the integer progress toward the requirement, in units of <span class="code">criterion</span></li>
+  <li class="collection-item"><span class="code">max</span> - the maximum possible progress, serving as a denominator for <span class="code">progress</span></li>
+  <li class="collection-item"><span class="code">percent_fulfilled</span> - the percentage fulfilled</li>
+  <li class="collection-item"><span class="code">sat_courses</span> - a list of courses that satisfies this requirement</li>
+</ul>
+
+<div id="sequential-nav">
+  <div class="col s6">
+    <a href="/reference/catalog" class="red-text text-darken-1"><i class="material-icons">chevron_left</i> Catalog</a>
+  </div>
+  <div class="col s6">
+    <div class="right-align">
+      <a href="/reference/auth" class="red-text text-darken-1">Authentication <i class="material-icons">chevron_right</i></a>
+    </div>
+  </div>
+  <br/><br/>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block title %}
+<title>FireRoad API Reference</title>
+{% endblock %}
+
+{% block pagebody %}
+  {% block nav %}
+  {% include "common/docs/sidebar.html" with active_id="" %}
+  {% endblock %}
+  <div class="content">
+    <div class="row edit-head">
+      <div class="col s12">
+        {% block content %} {% endblock %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block pagescripts %}
+  <script type="text/javascript">
+  $(document).ready(function () {
+  // Handler for .ready() called.
+  $('.nav-side-menu').animate({
+      scrollTop: $('.scroll-to-me').offset().top - 64
+  }, 'fast');
+  });
+  </script>
+  {% block scripts %}{% endblock %}
+{% endblock %}

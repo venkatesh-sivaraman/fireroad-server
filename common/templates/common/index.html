@@ -1,113 +1,62 @@
+{% extends "common/base.html" %}
 {% load static %}
-<!DOCTYPE html>
-  <html>
-    <head>
-      <!--Import Google Icon Font-->
-      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-      <!--Import materialize.css-->
-      <link type="text/css" rel="stylesheet" href="{% static "common/css/materialize.min.css" %}" media="screen,projection"/>
-      <link type="text/css" rel="stylesheet" href="{% static "common/css/shared.css" %}" media="screen,projection"/>
-      <!--Let browser know website is optimized for mobile-->
-      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-      <style>
-      .header { padding: 24px 0 0 0; margin: 0; }
-      .page-height { height: 100vh; }
+{% block title %}
+  <title>FireRoad</title>
+    <style>
+    .header { padding: 24px 0 0 0; margin: 0; }
+    .page-height { height: 100vh; }
 
-      .img-wrapper {
-        height: 100%;
-        position: relative;
-        max-width: 100%; max-height: 90%;
-      }
-      .image-helper  {
-        width: 100%;
-        text-align: center;
-        position: absolute;
-        bottom: 0px;
-      }
-      .product-img {
-        margin-left: auto;
-        margin-right: auto;
-        margin-top: auto;
-        margin-bottom: 0;
-        display: block;
-        max-width:100%;
-        max-height:100%;
-        width: auto;
-        height: auto;
-      }
+    .img-wrapper {
+      height: 100%;
+      position: relative;
+      max-width: 100%; max-height: 90%;
+    }
+    .image-helper  {
+      width: 100%;
+      text-align: center;
+      position: absolute;
+      bottom: 0px;
+    }
+    .product-img {
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: auto;
+      margin-bottom: 0;
+      display: block;
+      max-width:100%;
+      max-height:100%;
+      width: auto;
+      height: auto;
+    }
 
-      </style>
-    </head>
+    </style>
+{% endblock %}
 
-    <body class="grey lighten-4">
-      <div class="page-height">
-        <!-- nav -->
-
-        <ul id="dropdown1" class="dropdown-content grey lighten-4">
-          <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/FireRoad" target="_blank">iOS App</a></li>
-          <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/FireRoad-Android" target="_blank">Android App</a></li>
-          <li><a class="red-text text-darken-3" href="https://github.com/venkatesh-sivaraman/fireroad-server" target="_blank">Server</a></li>
-        </ul>
-
-        <div class="navbar-fixed">
-          <nav class="red darken-1">
-            <div class="nav-wrapper">
-              <a href="#" data-target="mobile-nav" class="sidenav-trigger"><i class="material-icons">menu</i></a>
-              <a href="#" class="brand-logo"><img class="logo-img hoverable" src="https://fireroad.mit.edu/catalogs/fireroad_logo.png" width="40" height="40"/>&nbsp;&nbsp;FireRoad</a>
-              <ul class="right hide-on-med-and-down">
-                <li><a href="/requirements">Requirements Editor</a></li>
-                <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">GitHub</a></li>
-                <li><a href="mailto:base12apps@gmail.com">Contact</a></li>
-                <li><a href="/admin">Admin</a></li>
-              </ul>
-            </div>
-          </nav>
+{% block pagebody %}
+  <div class="row">
+    <div class="col s12 m7">
+      <div class="container">
+        <br/><br/>
+        <h4>Light your path through MIT with FireRoad.</h4>
+        <p>FireRoad is the new best way to plan your path through MIT. Plan for both the upcoming semester and the years ahead, all in one place. You can view up-to-date course requirements and add them directly to your roads, and browse subjects by any criteria. FireRoad even learns from your selections to recommend other subjects you might be interested in!</p>
+        <div class="card hoverable">
+          <div class="card-content">
+            <p class="black-text">Download the app now:</p>
+            <br/>
+            <p><a class="waves-effect waves-light mbtn red" href="http://itunes.apple.com/us/app/fireroad-mit-course-planner/id1330678450" target="_blank">App Store</a> <a class="waves-effect waves-light mbtn red" href="https://play.google.com/store/apps/details?id=com.base12innovations.android.fireroad&hl=en_US" target="_blank">Google Play Store</a></p>
+          </div>
         </div>
-
-        <ul id="dropdown2" class="dropdown-content">
-          <li><a href="https://github.com/venkatesh-sivaraman/FireRoad" target="_blank">iOS App</a></li>
-          <li><a href="https://github.com/venkatesh-sivaraman/FireRoad-Android" target="_blank">Android App</a></li>
-          <li><a href="https://github.com/venkatesh-sivaraman/fireroad-server" target="_blank">Server</a></li>
-        </ul>
-
-        <ul class="sidenav" id="mobile-nav">
-          <li><a href="/requirements">Requirements Editor</a></li>
-          <li><a class="dropdown-trigger" href="#!" data-target="dropdown2">GitHub<i class="material-icons right">arrow_drop_down</i></a></li>
-          <li><a href="mailto:base12apps@gmail.com">Contact</a></li>
-          <li><a href="/admin">Admin</a></li>
-        </ul>
-
-        <!-- page content -->
-
-        <div class="row">
-          <div class="col s12 m7">
-            <div class="container">
-              <br/><br/>
-              <h4>Light your path through MIT with FireRoad.</h4>
-              <p>FireRoad is the new best way to plan your path through MIT. Plan for both the upcoming semester and the years ahead, all in one place. You can view up-to-date course requirements and add them directly to your roads, and browse subjects by any criteria. FireRoad even learns from your selections to recommend other subjects you might be interested in!</p>
-              <div class="card hoverable">
-                <div class="card-content">
-                  <p class="black-text">Download the app now:</p>
-                  <br/>
-                  <p><a class="waves-effect waves-light mbtn red" href="http://itunes.apple.com/us/app/fireroad-mit-course-planner/id1330678450" target="_blank">App Store</a> <a class="waves-effect waves-light mbtn red" href="https://play.google.com/store/apps/details?id=com.base12innovations.android.fireroad&hl=en_US" target="_blank">Google Play Store</a></p>
-                </div>
-              </div>
-              <br/>
-              <div class="grey-text center">
-                  Created by Venkatesh Sivaraman, MIT 2020.
-              </div>
-            </div>
-          </div>
-          <div class="col s12 m5 page-height">
-            <div class="img-wrapper">
-              <span class="img-helper"><img src="{% static "common/img/combined_img.png" %}" class="product-img"/></span>
-            </div>
-          </div>
+        <br/>
+        <div class="grey-text center">
+            Created by Venkatesh Sivaraman, MIT 2020.
         </div>
       </div>
-      <!--JavaScript at end of body for optimized loading-->
-      <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-      <script type="text/javascript" src="{% static "common/js/materialize.min.js" %}"></script>
-      <script type="text/javascript" src="{% static "common/js/index.js" %}"></script>
-    </body>
-  </html>
+    </div>
+    <div class="col s12 m5 page-height">
+      <div class="img-wrapper">
+        <span class="img-helper"><img src="{% static "common/img/combined_img.png" %}" class="product-img"/></span>
+      </div>
+    </div>
+  </div>
+  </div>
+{% endblock %}
