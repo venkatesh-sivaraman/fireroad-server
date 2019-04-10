@@ -53,12 +53,18 @@ excluded_subjects = ["18.01", "18.02", "8.01", "8.02"]
 
 ROAD_SELECTED_SUBJECTS_KEY = u"selectedSubjects"
 ROAD_SUBJECT_ID_KEY = u"id"
+ROAD_SUBJECT_ID_ALT_KEY = u"subject_id"
 ROAD_SEMESTER_KEY = u"semester"
 ROAD_COURSES_KEY = u"coursesOfStudy"
 
 keyword_indexes = {}
 
 ### Building input data
+
+def get_subject_id(info_dict):
+    """Finds the subject ID in the given road subject info dictionary. Returns
+    None if no subject ID is present."""
+    return info_dict.get(ROAD_SUBJECT_ID_KEY, info_dict.get(ROAD_SUBJECT_ID_ALT_KEY, None))
 
 def generate_subject_features(features_path):
     """
@@ -164,13 +170,16 @@ def get_road_data():
             selected_subjs = contents[ROAD_SELECTED_SUBJECTS_KEY]
             course_to_sem, sem_to_course = road_data[road.user.username]
             for subj in selected_subjs:
-                if subj[ROAD_SUBJECT_ID_KEY] not in course_to_sem:
-                    course_to_sem[subj[ROAD_SUBJECT_ID_KEY]] = set()
-                course_to_sem[subj[ROAD_SUBJECT_ID_KEY]].add(subj[ROAD_SEMESTER_KEY])
+                subject_id = get_subject_id(subj)
+                if subject_id is None: continue
+
+                if subject_id not in course_to_sem:
+                    course_to_sem[subject_id] = set()
+                course_to_sem[subject_id].add(subj[ROAD_SEMESTER_KEY])
 
                 if subj[ROAD_SEMESTER_KEY] not in sem_to_course:
                     sem_to_course[subj[ROAD_SEMESTER_KEY]] = set()
-                sem_to_course[subj[ROAD_SEMESTER_KEY]].add(subj[ROAD_SUBJECT_ID_KEY])
+                sem_to_course[subj[ROAD_SEMESTER_KEY]].add(subject_id)
 
             if road.user.username not in courses_of_study:
                 courses_of_study[road.user.username] = set()
@@ -224,6 +233,9 @@ class UserRecommenderProfile(object):
         """
         ratings_keys = self.filtered_rated_subjects()
 
+        if len(ratings_keys) == 0:
+            self.regression_predictions = np.zeros(all_subject_features.shape[0])
+            return
         X = np.vstack([subject_arrays[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
         Y = np.array([self.ratings[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
 
@@ -358,6 +370,8 @@ def basic_rating_predictor(profiles, subject_ids, subject_id_dict, course_data=N
     be most highly ranked by that user, incorporating social reinforcement.
     """
 
+    profiles = [p for p in profiles if len(p.filtered_rated_subjects()) > 0]
+    print("{} users with available rated subjects".format(len(profiles)))
     similarities = user_similarities(profiles)
 
     # Build course semester distributions
