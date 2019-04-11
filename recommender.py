@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression, Ridge, LogisticRegression, RidgeClassifier
 from scipy.spatial.distance import cosine
+from sklearn.metrics.pairwise import cosine_similarity
 import json
 import os
 import time
@@ -221,7 +222,7 @@ class UserRecommenderProfile(object):
         taken_subjects = set(self.subjects_taken())
         return list([subj for subj in base if self.ratings[subj] < 0 or subj in taken_subjects])
 
-    def compute_regression_predictions(self, subject_arrays, all_subject_features):
+    def compute_regression_predictions(self, subject_arrays, all_subject_features, subject_distances, subject_id_map):
         """
         Computes regression predictions on the (subject, rating) pairs stored in
         self.ratings. Once finished, sets the value of self.regression_predictions
@@ -229,7 +230,9 @@ class UserRecommenderProfile(object):
         specified by all_subject_features. subject_arrays should be a dictionary
         of feature vectors keyed by subject IDs; all_subject_features should be
         a matrix of the same subject features where each row is a subject (in a
-        pre-specified order).
+        pre-specified order). subject_similarities should be a matrix indicating
+        the pairwise distances (from 0 to 1) of each course to each other course.
+        The order of subjects in the two matrices should be given by subject_id_map.
         """
         ratings_keys = self.filtered_rated_subjects()
 
@@ -239,7 +242,16 @@ class UserRecommenderProfile(object):
         X = np.vstack([subject_arrays[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
         Y = np.array([self.ratings[subj] for subj in ratings_keys for i in range(abs(int(self.ratings[subj])))])
 
-        model = Ridge(alpha=0.75) #RidgeClassifier() #Ridge(alpha=0.75) #RandomForestRegressor()
+        # Generate negative examples by sampling proportionally to negative cosine similarity
+        my_course_indexes = [subject_id_map[subj] for subj in ratings_keys]
+        dists_to_mine = np.mean(subject_distances[my_course_indexes], axis=0)
+        dists_to_mine /= np.sum(dists_to_mine)
+        negative_examples = all_subject_features[np.random.choice(len(dists_to_mine), size=len(ratings_keys), replace=True, p=dists_to_mine)]
+
+        X = np.vstack([X, negative_examples])
+        Y = np.concatenate([Y, np.array([np.random.randint(-2, 0) for _ in range(len(negative_examples))])])
+
+        model = Ridge(alpha=0.5) #RidgeClassifier() #Ridge(alpha=0.75) #RandomForestRegressor()
         model.fit(X, Y)
         self.regression_predictions = model.predict(all_subject_features)
         # For debugging (in Jupyter)
@@ -247,10 +259,10 @@ class UserRecommenderProfile(object):
         # self.coefficients = (model.coef_, model.intercept_)
 
     @staticmethod
-    def build(username, subject_arrays, all_subject_features, ratings, roads, courses_of_study, semester):
+    def build(username, subject_arrays, all_subject_features, subject_distances, subject_id_map, ratings, roads, courses_of_study, semester):
         """Builds a UserRecommenderProfile object."""
         profile = UserRecommenderProfile(username, ratings, roads, courses_of_study, semester)
-        profile.compute_regression_predictions(subject_arrays, all_subject_features)
+        profile.compute_regression_predictions(subject_arrays, all_subject_features, subject_distances, subject_id_map)
         return profile
 
 ### Helpers
@@ -339,6 +351,13 @@ def user_similarities(profiles):
             similarities[i, j] = val
     return similarities
 
+def subject_distances(subjects):
+    """Calculates the distance between each subject to each other subject (from
+    0 to 1), where subjects is a numpy array where each row corresponds to a
+    subject."""
+    sim = cosine_similarity(subjects)
+    return (1.0 - ((sim + 1.0) / 2.0)) ** 2
+
 def update_by_equivalent_subjects(subject, rank_list, profile, course_data):
     """Checks for equivalent subjects in the given rank list, and replaces it if
     this subject is more closely related to the given profile than the existing
@@ -356,9 +375,8 @@ def random_perturbation(value):
 
 ### Recommender Engines
 
-SELF_PROPORTION = 0.6 # Self recommendations are worth this proportion of total normalized weight
+SELF_PROPORTION = 0.7 # Self recommendations are worth this proportion of total normalized weight
 REC_MIN_COUNT = 5 # Minimum number of recommendations required to save
-BASIC_RATING_SIMILARITY_CUTOFF = 0.4
 BASIC_RATING_REC_COUNT = 15
 RANDOM_PERTURBATION = 0.05   # Multiply by a random value from (1-x) to (1+x)
 
@@ -584,9 +602,12 @@ if __name__ == '__main__':
         subject_ids = sorted(subject_arrays.keys())
         subject_id_dict = dict(zip(subject_ids, range(len(subject_ids))))
         X_test = np.vstack([subject_arrays[id] for id in subject_ids])
+        subject_dists = subject_distances(X_test)
         profiles = [UserRecommenderProfile.build(user_id,
                                                  subject_arrays,
                                                  X_test,
+                                                 subject_dists,
+                                                 subject_id_dict,
                                                  rating_data.get(user_id, {}),
                                                  road_data.get(user_id, ({}, {})),
                                                  majors_data.get(user_id, set()),
