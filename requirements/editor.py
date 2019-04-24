@@ -411,6 +411,18 @@ def review(request, edit_req):
 
     return render(request, 'requirements/review.html', params)
 
+def count_conflicts(reqs_to_deploy):
+    """Counts the number of committed changes that would override a previous pending deployment."""
+    conflicts = set()
+    list_ids = set(req.list_id for req in reqs_to_deploy.all())
+    print(list_ids)
+    for deployment in Deployment.objects.filter(date_executed=None):
+        for other_req in deployment.edit_requests.all():
+            print(other_req)
+            if other_req.list_id in list_ids:
+                conflicts.add(other_req.list_id)
+    return len(conflicts)
+
 @staff_member_required
 def review_all(request):
     """Displays all available edit requests and allows the user to commit them."""
@@ -435,6 +447,7 @@ def review_all(request):
     params['committed'] = EditRequest.objects.filter(committed=True, resolved=False).order_by('pk')
     params['pending'] = EditRequest.objects.filter(committed=False, resolved=False).order_by('pk')
     params['deployments'] = Deployment.objects.filter(date_executed=None).count()
+    params['conflicts'] = count_conflicts(params['committed'])
     return render(request, 'requirements/review_all.html', params)
 
 @staff_member_required

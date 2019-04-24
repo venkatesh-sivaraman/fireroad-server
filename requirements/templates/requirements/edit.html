@@ -64,7 +64,7 @@
   {% else %}
   <div class="col s12 m8">
   {% endif %}
-  <p>Click the Commit button below to save your changes. You will need to visit the Review page and click Deploy for these changes to be pushed to FireRoad/CourseRoad. Changes may take up to one day to be released.</p>
+  <p>Click the Commit button below to save your changes. Once you have committed all necessary requirements lists, visit the <a href="{% url 'review_all' %}">Review page</a> and click Deploy to apply the changes at the next database refresh.</p>
   </div>
   {% if action == "Create" %}
     <form id="form" method="post">

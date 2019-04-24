@@ -63,7 +63,11 @@
   </div>
 </div>
 <div class="row">
-  <div class="col s12"><p>Be sure all edit requests are correctly formatted, and add a descriptive change summary before deploying. <br/><em>Note:</em> Edit requests created later will overwrite earlier ones within the same deployment.</p></div>
+  <div class="col s12"><p>Be sure all edit requests are correctly formatted, and add a descriptive change summary before deploying.
+    {% if conflicts > 0 %}
+    <br/><strong class="red-text text-darken-4">You have committed {{ conflicts }} edit request{% if conflicts != 1 %}s{% endif %} that will overwrite a previous pending deployment.</strong>
+    {% endif %}
+  </p></div>
   <form class="col s12" id="form" method="post">
     {% csrf_token %}
       <div class="col s12 m4">
