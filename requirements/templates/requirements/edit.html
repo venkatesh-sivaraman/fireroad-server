@@ -42,6 +42,7 @@
       </div>
       <div class="col s12 m6">
       {% else %}
+      {{ form.new_list_id.as_hidden }}
       <div class="col s12 m9">
       {% endif %}
         <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Submit
@@ -101,6 +102,8 @@ $("#form").submit( function(eventObj) {
   $("#id_is_committing").val(1);
   $("#id_email_address").val("{{ request.user.username }}");
   $("#id_reason").val("Staff user modification");
+{% else %}
+  $("#id_is_committing").val(0);
 {% endif %}
 {% if action != "Create" %}
   $("#id_new_list_id").val("EMPTY");
