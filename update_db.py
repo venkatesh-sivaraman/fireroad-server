@@ -125,7 +125,7 @@ def perform_deployments():
                     continue
 
                 with open(os.path.join(CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
-                    file.write(edit_req.contents)
+                    file.write(edit_req.contents.encode('utf-8'))
 
                 edit_req.committed = False
                 edit_req.save()
