@@ -46,8 +46,11 @@
             <li><a class="dropdown-trigger" href="#!" data-target="dropdown1">GitHub</a></li>
             <li><a href="mailto:base12apps@gmail.com">Contact</a></li>
             {% if not request.user.is_authenticated %}
-            <li><a href="/login?next=admin">Admin Login</a></li>
+            <li><a href="/login?next=">Login</a></li>
             {% else %}
+            {% if request.user.is_staff %}
+            <li><a href="/admin">Admin</a></li>
+            {% endif %}
             <li><a href="/logout">Logout</a></li>
             {% endif %}
           </ul>
