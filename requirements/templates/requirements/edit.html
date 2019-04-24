@@ -7,10 +7,10 @@
   <div class="col s8 red-text text-darken-4">
     <h4>{{ action }} {{ req.medium_title }}</h4>
   </div>
-  <a id="preview-button" class="waves-effect waves-light mbtn red right" onclick="onPreviewButtonClicked()">Preview</a>
+  <a id="preview-button" class="waves-effect waves-light mbtn grey right" onclick='onPreviewButtonClicked("Edit", "#contents", "#contents")'>Preview</a>
 </div>
 <div class="card hoverable editor-card">
-  <textarea class="editor" id="contents">{{ req.contents }}</textarea>
+  <textarea class="editor" id="contents">{{ initial_text }}</textarea>
   <div id="preview" style="display: none;"></div>
   <div class="preloader-wrapper small" id="preview-loading-ind">
     <div class="spinner-layer spinner-red-only">
@@ -25,15 +25,25 @@
   </div>
 </div>
 <div class="row">
+  {% if not is_staff %}
   <div class="col s12"><p>{% if action == "Create" %}To submit a new requirements list, please enter the requirements in the box above{% else %}To submit a modification request, please modify the requirements list source displayed above{% endif %}, following the rules described in the Format Specification. Then provide your email address (in case of any clarifications) and a brief message explaining the change, and press Submit.</p></div>
   <form class="col s12" id="form" method="post">
     {% csrf_token %}
-      <div class="col s12 m4">
+      <div class="col s12 m3">
+        {{ form.is_committing.as_hidden }}
         {{ form.email_address }}
         <!--<input type="text" class="input-field" id="email" placeholder="Email address"/>-->
         {{ form.email_address.errors }}
       </div>
-      <div class="col s12 m8">
+      {% if action == "Create" %}
+      <div class="col s12 m3">
+        {{ form.new_list_id }}
+        {{ form.new_list_id.errors }}
+      </div>
+      <div class="col s12 m6">
+      {% else %}
+      <div class="col s12 m9">
+      {% endif %}
         <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Submit
           <i class="material-icons right">send</i>
         </button>
@@ -47,6 +57,37 @@
     {{ form.non_field_errors }}
     {{ form.contents }}
   </form>
+  {% else %}
+  {% if action == "Create" %}
+  <div class="col s12 m5">
+  {% else %}
+  <div class="col s12 m8">
+  {% endif %}
+  <p>Click the Commit button below to save your changes. You will need to visit the Review page and click Deploy for these changes to be pushed to FireRoad/CourseRoad. Changes may take up to one day to be released.</p>
+  </div>
+  {% if action == "Create" %}
+    <form id="form" method="post">
+    <div class="col s12 m3">
+      {{ form.new_list_id }}
+      {{ form.new_list_id.errors }}
+    </div>
+    <div class="col s12 m4">
+  {% else %}
+    <form id="form" method="post">
+      {{ form.new_list_id.as_hidden }}
+      <div class="col s12 m4">
+  {% endif %}
+      {% csrf_token %}
+      {{ form.is_committing.as_hidden }}
+      {{ form.email_address.as_hidden }}
+      {{ form.contents }}
+      {{ form.reason.as_hidden }}
+      <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Commit</button>
+      <a id="reset-button" class="waves-effect waves-light mbtn grey right" onclick="$('#contents').val('{{ req.contents|escapejs }}');" style="float: right;">Reset</a>
+    </div>
+    {{ form.non_field_errors }}
+  </form>
+  {% endif %}
   <!--<a class="col s12 m4 waves-effect waves-light mbtn red">Submit</a>-->
 </div>
 {% endblock %}
@@ -56,5 +97,13 @@ $("#form").submit( function(eventObj) {
   $('#id_contents').val($('textarea#contents').val());
   return true;
 });
+{% if is_staff %}
+  $("#id_is_committing").val(1);
+  $("#id_email_address").val("{{ request.user.username }}");
+  $("#id_reason").val("Staff user modification");
+{% endif %}
+{% if action != "Create" %}
+  $("#id_new_list_id").val("EMPTY");
+{% endif %}
 </script>
 {% endblock %}

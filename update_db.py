@@ -89,6 +89,57 @@ def update_catalog():
 
 ### REQUIREMENTS UPDATE
 
+delta_prefix = "delta-"
+delta_separator = "#,#"
+
+def write_delta_file(delta, outpath):
+    """Writes a delta file in the appropriate format in the given directory."""
+
+    # Determine version number
+    version_num = 1
+    if os.path.exists(outpath):
+        while os.path.exists(os.path.join(outpath, delta_prefix + str(version_num) + ".txt")):
+            version_num += 1
+    else:
+        os.mkdir(outpath)
+
+    delta_file_path = os.path.join(outpath, delta_prefix + str(version_num) + ".txt")
+    with open(delta_file_path, 'w') as file:
+        file.write("\n")
+        file.write(str(version_num) + "\n")
+        file.write("\n".join(delta))
+
+    print("Delta file written to {}.".format(delta_file_path))
+
+def perform_deployments():
+    """Performs any pending deployments of updated requirements files."""
+
+    delta = set()
+
+    for deployment in Deployment.objects.filter(date_executed=None).order_by('pk'):
+        print(deployment)
+        try:
+            for edit_req in deployment.edit_requests.all().order_by('pk'):
+                if len(edit_req.contents) == 0:
+                    print("Edit request {} has no contents, skipping".format(edit_req))
+                    continue
+
+                with open(os.path.join(CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
+                    file.write(edit_req.contents)
+
+                edit_req.committed = False
+                edit_req.save()
+                delta.add(edit_req.list_id)
+
+            deployment.date_executed = timezone.now()
+            deployment.save()
+        except:
+            print(traceback.format_exc())
+
+    # Write delta file
+    write_delta_file(sorted(delta), os.path.join(os.path.dirname(__file__), "courseupdater", requirements_dir))
+
+
 def update_requirements():
     """Parses the current set of requirements and adds them to the database."""
     RequirementsList.objects.all().delete()
@@ -168,6 +219,12 @@ if __name__ == '__main__':
         message += check_for_edits()
     except:
         message += "Checking for edits failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        perform_deployments()
+    except:
+        message += "Error performing requirements deployment:\n"
         message += traceback.format_exc()
 
     try:

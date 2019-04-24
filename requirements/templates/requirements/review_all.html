@@ -1,0 +1,100 @@
+{% extends "requirements/base.html" %}
+{% block title %}
+<title>Review Edit Requests</title>
+{% endblock %}
+{% block content %}
+<div class="row edit-head">
+  <div class="col s8 red-text text-darken-4">
+    <h4>Review Edit Requests</h4>
+    {% if deployments > 0 %}
+    <p class="red-text text-darken-4">{{ deployments }} deployment{% if deployments != 1 %}s{% endif %} pending execution at the next database refresh.</p>
+    {% endif %}
+  </div>
+</div>
+<div class="edit-req-list-card">
+  <div class="edit-req-list-row">
+    <div class="edit-req-list-left">
+      <h5>Pending Review</h5>
+      {% if pending %}
+      <div class="collection edit-req-list">
+        {% for edit_req in pending %}
+          <li class="collection-item" style="list-style: none;">
+            <a class="btn red-text text-darken-4 secondary-content dropdown-trigger" href="#" data-target='dropdown{{ edit_req.pk }}'><i class="material-icons">more_horiz</i></a>
+            <a class="red-text text-darken-4" href="{% url 'review' edit_req.pk %}">
+              <strong>{{ edit_req.list_id }}</strong><br/>
+            <em>{{ edit_req.email_address }}:</em> {{ edit_req.reason }}
+            </a>
+
+            <ul id='dropdown{{ edit_req.pk }}' class='dropdown-content'>
+              <li><a href="{% url 'review' edit_req.pk %}" class="red-text text-darken-4">Review...</a></li>
+              <li><a href="{% url 'commit' edit_req.pk %}" class="red-text text-darken-4">Commit</a></li>
+              <li><a href="{% url 'resolve' edit_req.pk %}" class="red-text text-darken-4">Resolve without Committing</a></li>
+            </ul>
+          </li>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No pending edit requests!</p>
+      {% endif %}
+    </div>
+    <div class="edit-req-list-right">
+      <h5>Committed</h5>
+      {% if committed %}
+      <div class="collection edit-req-list">
+        {% for edit_req in committed %}
+        <li class="collection-item" style="list-style: none;">
+          <a class="btn mbtn red waves-effect waves-light secondary-content" href="{% url 'uncommit' edit_req.pk %}">Uncommit</a>
+          <a class="red-text text-darken-4" href="{% url 'review' edit_req.pk %}">
+            <strong>{{ edit_req.list_id }}</strong><br/>
+            <em>{{ edit_req.email_address }}:</em> {{ edit_req.reason }}
+          </a>
+
+          <ul id='dropdown{{ edit_req.pk }}' class='dropdown-content'>
+            <li><a href="{% url 'review' edit_req.pk %}" class="red-text text-darken-4">Review...</a></li>
+            <li><a href="{% url 'uncommit' edit_req.pk %}" class="red-text text-darken-4">Uncommit</a></li>
+          </ul>
+          </li>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No changes committed yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col s12"><p>Be sure all edit requests are correctly formatted, and add a descriptive change summary before deploying. <br/><em>Note:</em> Edit requests created later will overwrite earlier ones within the same deployment.</p></div>
+  <form class="col s12" id="form" method="post">
+    {% csrf_token %}
+      <div class="col s12 m4">
+        {{ form.email_address }}
+        {{ form.email_address.errors }}
+      </div>
+      <div class="col s12 m8">
+        {% if num_to_deploy > 0 %}
+        <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Deploy {{ num_to_deploy }} {% if num_to_deploy == 1 %}Edit{% else %}Edits{% endif %}
+          <i class="material-icons right">cloud_upload</i>
+        </button>
+        {% else %}
+        <button class="btn mbtn grey waves-effect waves-light" style="float: right;" type="submit" name="action" disabled>Nothing to Deploy</button>
+        {% endif %}
+        <div style="overflow: hidden; padding-right: 16px;">
+          {{ form.summary }}
+          {{ form.summary.errors }}
+          <!--<input type="text" class="input-field" id="comment" placeholder="Reason for submission..."/>-->
+
+        </div>
+    </div>
+    {{ form.non_field_errors }}
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+  $('.dropdown-trigger').dropdown();
+$("#form").submit( function(eventObj) {
+  $('#id_contents').val($('textarea#contents').val());
+  return true;
+});
+</script>
+{% endblock %}

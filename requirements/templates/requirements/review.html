@@ -1,0 +1,57 @@
+{% extends "requirements/base.html" %}
+{% block title %}
+<title>{{ action }} {{ medium_title }}</title>
+{% endblock %}
+{% block content %}
+<div class="row edit-head">
+  <div class="col s8 red-text text-darken-4">
+    <h4>{{ action }} {{ medium_title }}</h4>
+  </div>
+  {% if edit_req.type == "Create" %}
+    <a id="edit-button" class="waves-effect waves-light mbtn grey right" href="{% url 'create' %}?like={{ edit_req.pk }}">Edit</a>
+  {% else %}
+    {% if edit_req.list_id %}
+    <a id="edit-button" class="waves-effect waves-light mbtn grey right" href="{% url 'requirements_edit' edit_req.list_id %}?like={{ edit_req.pk }}">Edit</a>
+    {% endif %}
+  {% endif %}
+  <a id="preview-button" class="waves-effect waves-light mbtn grey right" onclick='onPreviewButtonClicked("Diff", "#new_contents", "#contents")'>Preview</a>
+</div>
+<div class="card hoverable editor-card">
+  <textarea style="display: none;" id="new_contents">{{ edit_req.contents }}</textarea>
+  <div class="editor" style="overflow: scroll;" id="contents">{% autoescape off %}{{ diff }}{% endautoescape %}</div>
+  <div id="preview" style="display: none;"></div>
+  <div class="preloader-wrapper small" id="preview-loading-ind">
+    <div class="spinner-layer spinner-red-only">
+      <div class="circle-clipper left">
+        <div class="circle"></div>
+      </div><div class="gap-patch">
+        <div class="circle"></div>
+      </div><div class="circle-clipper right">
+        <div class="circle"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col s12 m6">
+    <p>Edit request submitted by <strong>{{ edit_req.email_address }}</strong> on <strong>{{ edit_req.timestamp|date:'M d Y' }}</strong>.</p>
+    <p>Reason: <em>{{ edit_req.reason }}</em></p>
+  </div>
+  <div class="col s12 m6">
+    {% if edit_req.committed %}
+    <a id="commit-button" class="waves-effect waves-light mbtn red right" href="/requirements/uncommit/{{ edit_req.pk }}" style="float: right;">Uncommit</a>
+    {% else %}
+    <a id="commit-button" class="waves-effect waves-light mbtn red right" href="/requirements/commit/{{ edit_req.pk }}" style="float: right;">Commit</a>
+    {% endif %}
+    <a id="ignore-button" class="waves-effect waves-light mbtn grey right" href="/requirements/ignore_edit/{{ edit_req.pk }}" style="float: right;">Cancel</a>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+$("#form").submit( function(eventObj) {
+  $('#id_contents').val($('textarea#contents').val());
+  return true;
+});
+</script>
+{% endblock %}

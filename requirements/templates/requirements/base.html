@@ -22,7 +22,7 @@
           </li>
           <ul class="sub-menu collapse {% if "major" in active_id %}in{% endif %}" id="majors">
             {% for reqlist in majors %}
-            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'requirements_edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
             {% endfor %}
           </ul>
 
@@ -31,7 +31,7 @@
           </li>
           <ul class="sub-menu collapse {% if "minor" in active_id %}in{% endif %}" id="minors">
             {% for reqlist in minors %}
-            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'requirements_edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
             {% endfor %}
           </ul>
 
@@ -40,13 +40,19 @@
           </li>
           <ul class="sub-menu collapse {% if exists and "major" not in active_id and "minor" not in active_id %}in{% endif %}" id="other">
             {% for reqlist in other %}
-            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
+            <li class="{% if active_id == reqlist.id %}active scroll-to-me{% endif %}"><a href="{% url 'requirements_edit' reqlist.id %}"><strong>{{ reqlist.short }}</strong><br/>{{ reqlist.long }}</a></li>
             {% endfor %}
           </ul>
 
           <li class="{% if active_id == "new_doc" %}active{% endif %}">
             <a href="{% url 'create' %}">New requirements list...</a>
           </li>
+
+          {% if is_staff %}
+          <li class="{% if active_id == "review_all" %}active{% endif %}">
+            <a href="{% url 'review_all' %}">Review Edit Requests</a>
+          </li>
+          {% endif %}
         </ul>
       </div>
     </div>
