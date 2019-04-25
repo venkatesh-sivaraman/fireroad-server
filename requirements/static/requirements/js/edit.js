@@ -1,15 +1,15 @@
 var previewMode = 0;
 
-function onPreviewButtonClicked() {
+function onPreviewButtonClicked(editTitle, textSelector, editorSelector) {
   if (previewMode == 0) {
     // Go to preview
-    $("#preview-button").text("Edit");
+    $("#preview-button").text(editTitle);
     $("#preview-loading-ind").addClass("active");
     previewMode = 1;
     $.ajax({
       url: "/requirements/preview/",
       type: "POST",
-      data: $("#contents").val(),
+      data: $(textSelector).val(),
       contentType:"text/plain; charset=utf-8",
       success: function(data) {
         $("#preview").html(data);
@@ -24,5 +24,5 @@ function onPreviewButtonClicked() {
     previewMode = 0;
     $("#preview").toggle();
   }
-  $("#contents").toggle();
+  $(editorSelector).toggle();
 }

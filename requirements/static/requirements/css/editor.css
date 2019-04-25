@@ -50,7 +50,7 @@
 ::-moz-placeholder { /* Firefox 19+ */ color: #996767 !important; }
 :-ms-input-placeholder { color: #996767 !important; }
 
-.real-ul li {
+.real-ul > li {
   margin-left: 20px !important;
   list-style-type: square !important;
 }
@@ -61,4 +61,62 @@
 
 body, html, .content {
   height: 100%;
+}
+
+.diff-line {
+  margin-bottom: -8px;
+  word-wrap: break-word;  
+}
+
+.insertion {
+  color: rgb(48, 162, 93);
+  background-color: rgba(82, 213, 134, 0.2);
+  padding: 2px;
+  border-radius: 2px;
+}
+
+.deletion {
+  color: rgb(179, 32, 1);
+  background-color: rgba(210, 47, 12, 0.2);
+  padding: 2px;
+  border-radius: 2px;
+  text-decoration: line-through;
+}
+
+.edit-req-list-card {
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.edit-req-list-row {
+  display: flex;
+  flex-direction: row;
+   overflow: hidden;
+}
+
+.edit-req-list-left {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  margin-right: 12px;
+}
+
+.edit-req-list-right {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+
+.edit-req-list {
+  overflow-y: scroll !important;
+}
+
+.edit-req-list > .collection-item:hover {
+    background-color: #eeeeee;
+    -webkit-transition: background-color 250ms linear;
+    -ms-transition: background-color 2500ms linear;
+    transition: background-color 250ms linear;
 }

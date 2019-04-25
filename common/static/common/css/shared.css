@@ -13,3 +13,7 @@
     display: inline-flex;
     vertical-align: top;
 }
+
+a {
+  color: rgb(224, 20, 20);
+}

@@ -167,19 +167,44 @@ class RequirementsList(RequirementsStatement):
             req.parent = self
             req.substitute_variables(variables)
 
+# Deployment
+
+REQUEST_TYPE_EDIT = "Edit"
+REQUEST_TYPE_CREATE = "Create"
+
+class DeployForm(forms.Form):
+    email_address = forms.CharField(label='Editor Email', max_length=100, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Email address'}))
+    summary = forms.CharField(label='Summary of Changes', max_length=2000, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Summary of changes...'}))
+
+class Deployment(models.Model):
+    author = models.CharField(max_length=100)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    summary = models.CharField(max_length=2000)
+    date_executed = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return "{}Deployment by {} at {} ({} edits): {}".format("(Pending) " if self.date_executed is None else "", self.author, self.timestamp, self.edit_requests.count(), self.summary)
+
+# Edit requests
 
 class EditForm(forms.Form):
+    is_committing = forms.BooleanField(label='commit')
     email_address = forms.CharField(label='Email address', max_length=100, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Email address'}))
+    new_list_id = forms.CharField(label='List ID', max_length=15, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'List ID (e.g. major2)'}))
     reason = forms.CharField(label='Reason for submission', max_length=2000, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Reason for submission...'}))
     contents = forms.CharField(label='contents', max_length=10000, widget=forms.HiddenInput(), required=False)
 
 class EditRequest(models.Model):
     type = models.CharField(max_length=10)
+    list_id = models.CharField(max_length=15, default="")
     email_address = models.CharField(max_length=100)
     reason = models.CharField(max_length=2000)
+    original_contents = models.TextField(null=True)
     contents = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
+    committed = models.BooleanField(default=False)
+    deployment = models.ForeignKey(Deployment, null=True, on_delete=models.SET_NULL, related_name='edit_requests')
 
     def __str__(self):
-        return "{}{} request by {} at {}: {}".format("(Resolved) " if self.resolved else "", self.type, self.email_address, self.timestamp, self.reason)
+        return "{}{}{} request for '{}' by {}: {}".format("(Resolved) " if self.resolved else "", "(Committed) " if self.committed else "", self.type, self.list_id, self.email_address, self.reason)

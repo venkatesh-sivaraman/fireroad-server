@@ -3,12 +3,14 @@ from django.conf.urls import url
 from . import views
 
 from django.views.generic import TemplateView
+from django.contrib.auth.views import logout
 
 urlpatterns = [
     url('verify/', views.verify, name='verify'),
     url('new_user/', views.new_user, name='new_user'),
     url('signup/', views.signup, name='signup'),
     url('login/', views.login_oauth, name='login'),
+    url('logout/', logout, {'next_page': 'index'}, name='logout'),
     url('set_semester/', views.set_semester, name='set_semester'),
     url('prefs/favorites/', views.favorites, name='favorites'),
     url('prefs/set_favorites/', views.set_favorites, name='set_favorites'),

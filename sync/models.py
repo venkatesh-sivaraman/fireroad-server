@@ -23,7 +23,7 @@ class Road(models.Model):
     last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return "{}: {}, last modified {}".format(self.user.username, self.name, self.modified_date)
+        return "{}: {}, last modified {}".format(self.user.username, self.name.encode('utf-8'), self.modified_date)
 
     @staticmethod
     def compress(road_text):
@@ -53,7 +53,7 @@ class Schedule(models.Model):
     last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return "{}: {}, last modified {}".format(self.user.username, self.name, self.modified_date)
+        return "{}: {}, last modified {}".format(self.user.username, self.name.encode('utf-8'), self.modified_date)
 
     @staticmethod
     def compress(schedule_text):
