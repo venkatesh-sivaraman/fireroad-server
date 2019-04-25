@@ -352,7 +352,7 @@ class Course(models.Model):
             data[CourseFields.not_offered_year] = self.not_offered_year
 
         if self.instructors is not None and len(self.instructors) > 0:
-            data[CourseFields.instructors] = self.instructors.split(",")
+            data[CourseFields.instructors] = self.instructors.split("\n")
         if self.communication_requirement is not None and len(self.communication_requirement) > 0:
             data[CourseFields.communication_requirement] = self.communication_requirement
         if self.hass_attribute is not None and len(self.hass_attribute) > 0:
