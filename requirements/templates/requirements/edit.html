@@ -26,7 +26,7 @@
 </div>
 <div class="row">
   {% if not is_staff %}
-  <div class="col s12"><p>{% if action == "Create" %}To submit a new requirements list, please enter the requirements in the box above{% else %}To submit a modification request, please modify the requirements list source displayed above{% endif %}, following the rules described in the Format Specification. Then provide your email address (in case of any clarifications) and a brief message explaining the change, and press Submit.</p></div>
+  <div class="col s12"><p>{% if action == "Create" %}To submit a new requirements list, please enter the requirements in the box above{% else %}To submit a modification request, please identify and/or correct the appropriate location in the above requirements definition{% endif %} (following the rules described in the <a href="{% url 'requirements_index' %}">Format Specification</a>). Then provide your email address (in case of any clarifications) and a brief message explaining the change, and press Submit.</p></div>
   <form class="col s12" id="form" method="post">
     {% csrf_token %}
       <div class="col s12 m3">
