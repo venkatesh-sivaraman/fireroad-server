@@ -2,7 +2,6 @@ from reqlist import *
 import random
 from catalog.models import Course
 
-
 def ceiling_thresh(progress, maximum):
     """Creates a progress object
     Ensures that 0 < progress < maximum"""
@@ -147,8 +146,8 @@ class RequirementsProgress(object):
         self.distinct_threshold = self.statement.get_distinct_threshold()
         self.list_path = list_path
         self.children = []
-        if self.statement.requirements.exists():
-            for index, child in enumerate(self.statement.requirements.all()):
+        if self.statement.requirement is None:
+            for index, child in enumerate(self.statement.requirements.iterator()):
                 self.children.append(RequirementsProgress(child, list_path + "." + str(index)))
 
     def courses_satisfying_req(self, courses):
@@ -314,7 +313,7 @@ class RequirementsProgress(object):
         the enclosed requirements statement, as well as progress information."""
         # Recursively decorate the JSON output of the children
         # Add custom keys indicating progress for this statement
-        stmt_json = self.statement.to_json_object()
+        stmt_json = self.statement.to_json_object(full=False)
         stmt_json[JSONProgressConstants.is_fulfilled] = self.is_fulfilled
         stmt_json[JSONProgressConstants.progress] = self.progress
         stmt_json[JSONProgressConstants.progress_max] = self.progress_max
@@ -324,7 +323,7 @@ class RequirementsProgress(object):
         if full:
             if self.children:
                 if child_fn is None:
-                    child_fn = lambda c: c.to_json_object()
+                    child_fn = lambda c: c.to_json_object(full=full)
                 stmt_json[JSONConstants.requirements] =[child_fn(child) for child in self.children]
 
         return stmt_json

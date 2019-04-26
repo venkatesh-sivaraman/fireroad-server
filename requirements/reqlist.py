@@ -276,7 +276,7 @@ class RequirementsStatement(models.Model):
 
         if self.requirement is not None:
             base[JSONConstants.requirement] = self.requirement
-        elif self.requirements.exists():
+        elif full and self.requirements.exists():
             base[JSONConstants.requirements] = [(child_fn(r) if child_fn is not None else r.to_json_object()) for r in self.requirements.all()]
             base[JSONConstants.connection_type] = self.connection_type
 

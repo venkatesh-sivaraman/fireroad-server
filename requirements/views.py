@@ -17,6 +17,9 @@ import logging
 
 REQUIREMENTS_EXT = ".reql"
 
+SUBJECT_ID_KEY = "subject_id"
+SUBJECT_ID_ALT_KEY = "id"
+
 def get_json(request, list_id):
     """Returns the raw JSON for a given requirements list, without user
     course progress."""
@@ -52,7 +55,6 @@ def compute_progress(request, list_id, course_list, progress_overrides):
                 print("Warning: course {} does not exist in the catalog".format(subject_id))
 
 
-
     # Create a progress object for the requirements list
     prog = RequirementsProgress(req, list_id)
     prog.compute(course_objs, progress_overrides)
@@ -84,9 +86,8 @@ def road_progress_get(request, list_id):
         return HttpResponseBadRequest("badly formatted road contents")
 
     progress_overrides = contents.get("progressOverrides", {})
-    course_list = [subj["id"] for subj in contents.get("selectedSubjects", []) if "id" in subj]
 
-    return compute_progress(request, list_id, course_list, progress_overrides)
+    return compute_progress(request, list_id, read_subjects(contents), progress_overrides)
 
 def road_progress_post(request, list_id):
     """Returns the raw JSON for a given requirements list including user
@@ -97,9 +98,19 @@ def road_progress_post(request, list_id):
         return HttpResponseBadRequest("badly formatted road contents")
 
     progress_overrides = contents.get("progressOverrides", {})
-    course_list = [subj["id"] for subj in contents.get("selectedSubjects", []) if "id" in subj]
 
-    return compute_progress(request, list_id, course_list, progress_overrides)
+    result = compute_progress(request, list_id, read_subjects(contents), progress_overrides)
+    return result
+
+def read_subjects(contents):
+    """Extracts a list of subjects from a given road JSON object."""
+    course_list = []
+    for subj in contents.get("selectedSubjects", []):
+        if SUBJECT_ID_KEY in subj:
+            course_list.append(subj[SUBJECT_ID_KEY])
+        elif SUBJECT_ID_ALT_KEY in subj:
+            course_list.append(subj[SUBJECT_ID_ALT_KEY])
+    return course_list
 
 @csrf_exempt
 def road_progress(request, list_id):
