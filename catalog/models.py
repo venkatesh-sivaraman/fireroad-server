@@ -198,7 +198,7 @@ EQUIVALENCE_SETS = [
 
 # Create your models here.
 class Course(models.Model):
-    subject_id = models.CharField(max_length=20, null=True)
+    subject_id = models.CharField(db_index=True, max_length=20, null=True)
     title = models.CharField(max_length=200, null=True)
 
     # Differentiates users' custom subjects from catalog subjects
