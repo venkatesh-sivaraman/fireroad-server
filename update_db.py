@@ -73,7 +73,7 @@ def update_catalog():
 
     semester = list_semesters()[-1]
     catalog_files = compute_semester_delta(semester.split("-"), 0, 0)[CATALOG_FILES_INFO_KEY]
-    print(catalog_files)
+
     related_path = None
     for path in catalog_files:
         filename = os.path.basename(path)
