@@ -112,6 +112,8 @@ class CourseFields:
     public = "public"
     creator = "creator"
     custom_color = "custom_color"
+    source_semester = "source_semester"
+    is_historical = "is_historical"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -172,7 +174,9 @@ CSV_HEADERS = {
     "Enrollment Number":        (CourseFields.enrollment_number, float_converter),
     "Enrollment":               (CourseFields.enrollment_number, float_converter),
     "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter),
-    "Custom Color":             (CourseFields.custom_color, string_converter)
+    "Custom Color":             (CourseFields.custom_color, string_converter),
+    "Source Semester":          (CourseFields.source_semester, string_converter),
+    "Historical":               (CourseFields.is_historical, bool_converter)
 }
 
 '''
@@ -202,17 +206,21 @@ class Course(models.Model):
     creator = models.ForeignKey("common.Student", null=True, on_delete=models.CASCADE, related_name="custom_courses")
     custom_color = models.CharField(max_length=15, null=True)
 
+    # Source semester
+    source_semester = models.CharField(max_length=15, default="")
+    is_historical = models.BooleanField(default=False)
+
     @classmethod
     def public_courses(cls):
         return Course.objects.filter(public=True)
 
     @classmethod
     def make_generic(cls, subject_id, unique_id):
-        """Creates a generic course that satisfies the requirements separated by 
-        spaces in the given subject ID, e.g. "CI-H HASS-A". Returns a Course whose 
-        subject ID has unique ID appended. Raises a ValueError if one or more 
+        """Creates a generic course that satisfies the requirements separated by
+        spaces in the given subject ID, e.g. "CI-H HASS-A". Returns a Course whose
+        subject ID has unique ID appended. Raises a ValueError if one or more
         generic attributes are invalid."""
-        
+
         is_generic_course = False
         if "." not in subject_id:
             #potential a generic course
@@ -329,10 +337,13 @@ class Course(models.Model):
             CourseFields.offered_IAP:           self.offered_IAP,
             CourseFields.offered_spring:        self.offered_spring,
             CourseFields.offered_summer:        self.offered_summer,
-            CourseFields.public:                self.public
+            CourseFields.public:                self.public,
         }
         if self.level is not None and len(self.level) > 0:
             data[CourseFields.level] = self.level
+        if self.is_historical:
+            data[CourseFields.source_semester] = self.source_semester
+            data[CourseFields.is_historical] = self.is_historical
 
         if self.custom_color is not None and len(self.custom_color) > 0:
             data[CourseFields.custom_color] = self.custom_color
