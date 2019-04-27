@@ -278,25 +278,25 @@ def best_diff_sequence(old, new, allow_subs=True):
     value."""
 
     memo = np.zeros((len(old) + 1, len(new) + 1))
-    memo[-1,:] = np.arange(len(new) + 1)[::-1]
-    memo[:,-1] = np.arange(len(old) + 1)[::-1]
 
     parent_pointers = np.zeros((len(old) + 1, len(new) + 1))
     parent_pointers[-1,:] = 1
     parent_pointers[:,-1] = -1
     parent_pointers[-1,-1] = 0
 
-    for i in reversed(range(len(old))):
-        for j in reversed(range(len(new))):
+    for i in reversed(range(len(old) + 1)):
+        for j in reversed(range(len(new) + 1)):
+            if i == len(old) and j == len(new): continue
+
             options = [] # Format: (score, label)
             if i < len(old) and j < len(new) and (allow_subs or old[i] == new[j]):
-                options.append((memo[i+1, j+1] + (1 if old[i] != new[j] else 0), 0))
+                options.append((memo[i+1, j+1] + (max(len(old[i]), len(new[j])) if old[i] != new[j] else 0), 0))
             if i < len(old):
-                options.append((memo[i+1, j] + 1, -1))
+                options.append((memo[i+1, j] + len(old[i]) + 1, -1))
             if j < len(new):
-                options.append((memo[i, j+1] + 1, 1))
+                options.append((memo[i, j+1] + len(new[j]) + 1, 1))
 
-            score, label = min(options)
+            score, label = min(enumerate(options), key=lambda x: (x[1], x[0]))[1]
             memo[i,j] = score
             parent_pointers[i,j] = label
 
@@ -314,6 +314,8 @@ def best_diff_sequence(old, new, allow_subs=True):
             i += 1
     return best_sequence[:-1]
 
+WORD_FINDER_REGEX = r"[\w'.-]+|[^\w'.-]"
+
 def build_diff_line(old, new):
     """Builds a single line of the diff."""
     result = "<p class=\"diff-line\">"
@@ -321,7 +323,9 @@ def build_diff_line(old, new):
     if old == new:
         result += old
     else:
-        diff_sequence = best_diff_sequence(old, new, allow_subs=False)
+        old_words = re.findall(WORD_FINDER_REGEX, old)
+        new_words = re.findall(WORD_FINDER_REGEX, new)
+        diff_sequence = best_diff_sequence(old_words, new_words, allow_subs=False)
         i = 0
         j = 0
         current_change = None
@@ -330,7 +334,7 @@ def build_diff_line(old, new):
                 if current_change is not None:
                     result += "</span>"
                     current_change = None
-                result += escape(old[i])
+                result += escape(old_words[i])
                 i += 1
                 j += 1
             elif change == 1: # Insertion
@@ -339,7 +343,7 @@ def build_diff_line(old, new):
                         result += "</span>"
                     result += "<span class=\"insertion\">"
                     current_change = 1
-                result += escape(new[j])
+                result += escape(new_words[j])
                 j += 1
             elif change == -1: # Deletion
                 if current_change != -1:
@@ -347,7 +351,7 @@ def build_diff_line(old, new):
                         result += "</span>"
                     result += "<span class=\"deletion\">"
                     current_change = -1
-                result += escape(old[i])
+                result += escape(old_words[i])
                 i += 1
         if current_change is not None:
             result += "</span>"
