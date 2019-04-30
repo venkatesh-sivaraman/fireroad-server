@@ -35,12 +35,12 @@ class RequirementsList(RequirementsStatement):
             JSONConstants.list_id: self.list_id,
             JSONConstants.short_title: self.short_title,
             JSONConstants.medium_title: self.medium_title,
-            JSONConstants.title: self.title
+            JSONConstants.title: self.title,
+            JSONConstants.title_no_degree: self.title_no_degree
         }
         if full:
             if self.requirements.exists():
                 base[JSONConstants.requirements] = [child_fn(r) if child_fn is not None else r.to_json_object() for r in self.requirements.all()]
-            base[JSONConstants.title_no_degree] = self.title_no_degree
             base[JSONConstants.description] = self.description if self.description is not None else ""
             if self.catalog_url is not None and len(self.catalog_url) > 0:
                 base[JSONConstants.catalog_url] = self.catalog_url
@@ -61,7 +61,7 @@ class RequirementsList(RequirementsStatement):
 
         # First line is the header
         first = lines.pop(0)
-        header_comps = first.split('#,#')
+        header_comps = [comp.strip() for comp in first.split('#,#')]
         if len(header_comps):
             self.short_title = header_comps.pop(0)
         if len(header_comps):
