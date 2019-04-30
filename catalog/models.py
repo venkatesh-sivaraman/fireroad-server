@@ -427,7 +427,7 @@ class Course(models.Model):
         if "CI-" in req and self.communication_requirement is not None and len(self.communication_requirement) > 0 and self.communication_requirement == req:
             return True
 
-        if self.subject_id == req or req in self.joint_subjects.split(","):
+        if self.subject_id == req or req in self.joint_subjects.split(",") or req in self.equivalent_subjects.split(","):
             return True
         for item_1, item_2 in EQUIVALENCE_PAIRS:
             if req == item_1 and self.subject_id == item_2:
