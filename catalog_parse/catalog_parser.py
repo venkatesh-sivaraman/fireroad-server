@@ -16,6 +16,7 @@ from .utils.parse_prereqs import handle_prereq, handle_coreq
 from .utils.parse_schedule import parse_schedule
 from .utils.parse_evaluations import *
 from .utils.course_nlp import write_related_and_features
+from .parse_from_api import *
 
 # On the registrar page, all subject listings are contained
 # within the HTML node specified by this XPath
@@ -407,7 +408,7 @@ def write_courses(courses, filepath, attributes):
 
 ### Main method
 
-def parse(output_dir, evaluations_path=None, write_related=True, progress_callback=None):
+def parse(output_dir, evaluations_path=None, write_related=True, progress_callback=None, semester=None):
     """
     Parses the catalog from the web and writes the files to the given directory.
 
@@ -416,6 +417,8 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
     write_related: if True, compute the related and features files as well
     progress_callback: a function that takes the current progress (from 0-100) and an
         update string
+    semester: the name of the current semester in the catalog (e.g. fall-2019) -
+        if provided, it will be used to call the MIT developer API
     """
 
     if not os.path.exists(output_dir):
@@ -459,6 +462,9 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
         write_courses(dept_courses, os.path.join(output_dir, course_code + ".txt"), ALL_ATTRIBUTES)
         all_courses += dept_courses
         courses_by_dept[course_code] = {course[CourseAttribute.subjectID]: course for course in dept_courses}
+
+        if semester is not None:
+            parse_from_api(semester, course_code, courses_by_dept[course_code])
 
     print("Writing condensed courses...")
     for i in range(CONDENSED_SPLIT_COUNT):
