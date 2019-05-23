@@ -1,8 +1,8 @@
 #!/bin/bash
 
-sentinel=${BASH_SOURCE%/*}/courseupdater/.update_sentinel
+sentinel=$1/.update_sentinel
 if [ -f "$sentinel" ]; then
-  rm sentinel
-  source ${BASH_SOURCE%/*}/../env/bin/activate
-  python update_catalog.py
+  rm $sentinel
+  source $2/../env/bin/activate
+  python $2/update_catalog.py
 fi

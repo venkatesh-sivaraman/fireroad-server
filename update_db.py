@@ -138,7 +138,7 @@ def perform_deployments():
 
     # Write delta file
     if len(delta) > 0:
-        write_delta_file(sorted(delta), os.path.join(os.path.dirname(__file__), "courseupdater", requirements_dir))
+        write_delta_file(sorted(delta), os.path.join(CATALOG_BASE_DIR, "deltas", requirements_dir))
 
 
 def update_requirements():
