@@ -8,7 +8,11 @@ django.setup()
 
 from courseupdater.views import get_current_update
 if __name__ == '__main__':
-    update = get_current_update()
+    if len(sys.argv) > 1:
+        from courseupdater.models import CatalogUpdate
+        update = CatalogUpdate(semester=sys.argv[1])
+    else:
+        update = get_current_update()
     if update is None or update.is_started or update.is_completed:
         exit(0)
     update.is_started = True

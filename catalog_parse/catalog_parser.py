@@ -323,6 +323,55 @@ def process_info_item(item, attributes):
         if CourseAttribute.description not in attributes or len(attributes[CourseAttribute.description]) < len(item):
             attributes[CourseAttribute.description] = item.strip()
 
+def expand_subject_ids(subject_id):
+    """
+    If the given subject ID represents a range of IDs, returns a list of all
+    of them. For example:
+    6.S193-6.S198 ==> [6.S193, 6.S194, 6.S195, 6.S196, 6.S197, 6.S198]
+    """
+
+    match = re.match(r'([A-Z0-9.]+[^0-9])([0-9]+)-[A-Z0-9.]+[^0-9]([0-9]+)', subject_id)
+    if "6.S" in subject_id:
+        print(subject_id, match)
+    if match is not None:
+        base = match.group(1)
+        start_num = int(match.group(2))
+        end_num = int(match.group(3))
+        return [base + str(num).zfill(len(match.group(2))) for num in range(start_num, end_num + 1)]
+    return [subject_id]
+
+def merge_duplicates(courses):
+    """
+    Merges any duplicate courses so that most extracted information is preserved.
+    Given two courses, keeps the value for each course attribute with the greater
+    string length. Returns a new list of courses.
+    """
+    merged_courses = []
+    merged_courses_set = set()
+    course_dict = {}
+    for course in courses:
+        if CourseAttribute.subjectID not in course: continue
+        course_dict.setdefault(course[CourseAttribute.subjectID], []).append(course)
+
+    for course in courses:
+        if CourseAttribute.subjectID not in course: continue
+        subject_id = course[CourseAttribute.subjectID]
+        if subject_id in merged_courses_set: continue
+
+        if len(course_dict[subject_id]) > 1:
+            total_course = {}
+            keys = set().union(*(other.keys() for other in course_dict[subject_id]))
+            for key in keys:
+                vals = [other.get(key, '') for other in course_dict[subject_id]]
+                best_val = max(vals, key=lambda x: len(str(x)))
+                total_course[key] = best_val
+            merged_courses.append(total_course)
+        else:
+            merged_courses.append(course)
+        merged_courses_set.add(subject_id)
+
+    return merged_courses
+
 def courses_from_dept_code(dept_code):
     """
     Loads courses from the catalog for the given department code (department +
@@ -349,7 +398,15 @@ def courses_from_dept_code(dept_code):
         attribs[CourseAttribute.URL] = catalog_url + "#" + id
         for prop in props:
             process_info_item(prop, attribs)
-        courses.append(attribs)
+
+        subject_ids = expand_subject_ids(id)
+        if len(subject_ids) > 1:
+            for other_id in subject_ids:
+                copied_course = {key: val for key, val in attribs.items()}
+                copied_course[CourseAttribute.subjectID] = other_id
+                courses.append(copied_course)
+        else:
+            courses.append(attribs)
 
         # Autofill regions that were empty with the subsequent course information
         # For example, 6.260, 6.261 Advanced Topics in Communications
@@ -454,6 +511,8 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
         # Add in eval information
         if eval_data is not None:
             parse_evaluations(eval_data, dept_courses)
+
+        dept_courses = merge_duplicates(dept_courses)
 
         # Write department-specific file
         write_courses(dept_courses, os.path.join(output_dir, course_code + ".txt"), ALL_ATTRIBUTES)
