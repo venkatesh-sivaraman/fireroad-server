@@ -151,6 +151,10 @@ def update_catalog(request):
     """
     Shows a page that allows the user to start a catalog update, view the
     progress of the current update, or commit the completed update.
+
+    To trigger an update, this method creates a file called '.update_sentinel'
+    in the courseupdater directory. A background process should detect the presence
+    of this file and begin the update, using the update_catalog.py script.
     """
     current_update = get_current_update()
     if current_update is None:
@@ -159,7 +163,7 @@ def update_catalog(request):
             if form.is_valid():
                 update = CatalogUpdate(semester=form.cleaned_data['semester'])
                 update.save()
-                with open(os.path.join(BASE_DIR, '.update_sentinel'), "w") as file:
+                with open(os.path.join(os.path.dirname(__file__), '.update_sentinel'), "w") as file:
                     pass
                 return render(request, 'courseupdater/update_progress.html', {'update': update})
 

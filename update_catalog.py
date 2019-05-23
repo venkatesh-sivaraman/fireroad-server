@@ -1,12 +1,4 @@
 import os
-
-# Check whether an update is demanded
-UPDATE_SENTINEL = '.update_sentinel'
-if __name__ == '__main__':
-    if not os.path.exists(UPDATE_SENTINEL):
-        exit(0)
-    os.remove(UPDATE_SENTINEL)
-
 import re
 import sys
 import shutil
@@ -74,7 +66,7 @@ if __name__ == '__main__':
     update.save()
 
     try:
-        semester = sys.argv[1]
+        semester = update.semester
         out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
         evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
         cp.parse(out_path, evaluations_path, progress_callback=update_progress)
