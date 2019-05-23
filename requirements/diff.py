@@ -2,7 +2,7 @@ import re
 import numpy as np
 from django.utils.html import escape
 
-def best_diff_sequence(old, new, allow_subs=True):
+def best_diff_sequence(old, new, allow_subs=True, max_delta=None):
     """Compute the best diff sequence between the old and new requirements list
     contents. Uses a simple DP-based edit distance algorithm. If allow subs is
     True, the diff sequence may use 0 to denote either substitutions or the same
@@ -18,6 +18,15 @@ def best_diff_sequence(old, new, allow_subs=True):
     for i in reversed(range(len(old) + 1)):
         for j in reversed(range(len(new) + 1)):
             if i == len(old) and j == len(new): continue
+            if max_delta is not None:
+                if i - j >= max_delta:
+                    parent_pointers[i,j] = 1
+                    memo[i,j] = memo[i, j+1] + len(new[j]) + 1
+                    continue
+                elif j - i >= max_delta:
+                    parent_pointers[i,j] = -1
+                    memo[i,j] = memo[i+1, j] + len(old[i]) + 1
+                    continue
 
             options = [] # Format: (score, label)
             if i < len(old) and j < len(new) and (allow_subs or old[i] == new[j]):
@@ -47,7 +56,7 @@ def best_diff_sequence(old, new, allow_subs=True):
 
 WORD_FINDER_REGEX = r"[\w'.-]+|[^\w'.-]"
 
-def build_diff_line(old, new):
+def build_diff_line(old, new, max_delta=None):
     """Builds a single line of the diff."""
     result = "<p class=\"diff-line\">"
 
@@ -56,7 +65,7 @@ def build_diff_line(old, new):
     else:
         old_words = re.findall(WORD_FINDER_REGEX, old)
         new_words = re.findall(WORD_FINDER_REGEX, new)
-        diff_sequence = best_diff_sequence(old_words, new_words, allow_subs=False)
+        diff_sequence = best_diff_sequence(old_words, new_words, allow_subs=False, max_delta=max_delta)
         i = 0
         j = 0
         current_change = None
@@ -86,28 +95,30 @@ def build_diff_line(old, new):
                 i += 1
         if current_change is not None:
             result += "</span>"
-    result += "</p>"
+    result += "</p>\n"
     return result
 
-def build_diff(old, new):
+def build_diff(old, new, changed_lines_only=False, max_line_delta=None, max_word_delta=None):
     """
     Generates HTML to render a diff between the given two strings.
     """
     old_lines = re.split(r'\r?\n', old)
     new_lines = re.split(r'\r?\n', new + '\n')
-    diff_sequence = best_diff_sequence(old_lines, new_lines)
+    diff_sequence = best_diff_sequence(old_lines, new_lines, max_delta=max_line_delta)
+    print("Done diffing lines")
     result = ""
     i = 0
     j = 0
     for change in diff_sequence:
         if change == 0: # Same character (since allow subs is False)
-            result += build_diff_line(old_lines[i], new_lines[j])
+            if old_lines[i] != new_lines[j]:
+                result += build_diff_line(old_lines[i], new_lines[j], max_delta=max_word_delta)
             i += 1
             j += 1
         elif change == 1: # Insertion
-            result += "<p class=\"diff-line\"><span class=\"insertion\">" + escape(new_lines[j]) + "</span></p>"
+            result += "<p class=\"diff-line\"><span class=\"insertion\">" + escape(new_lines[j]) + "</span></p>\n"
             j += 1
         elif change == -1: # Deletion
-            result += "<p class=\"diff-line\"><span class=\"deletion\">" + escape(old_lines[i]) + "</span></p>"
+            result += "<p class=\"diff-line\"><span class=\"deletion\">" + escape(old_lines[i]) + "</span></p>\n"
             i += 1
     return result

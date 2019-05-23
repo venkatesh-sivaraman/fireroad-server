@@ -1,0 +1,26 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Catalog Update</title>
+{% endblock %}
+
+{% block pagebody %}
+  <div class="center">
+    There is currently no catalog update in progress. Enter a semester name to start one.
+    <br/>
+    <br/>
+    <form id="form" method="post">
+      {% csrf_token %}
+      {{ form.semester }}
+      <br/>
+      <button class="btn mbtn red waves-effect waves-light" type="submit" name="action">Start</button>
+      <div style="overflow: hidden; padding-right: 16px;">
+        {{ form.reason }}
+        {{ form.reason.errors }}
+
+      </div>
+      {{ form.non_field_errors }}
+      {{ form.contents }}
+    </form>
+  </div>
+{% endblock %}

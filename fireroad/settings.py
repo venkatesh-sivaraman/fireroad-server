@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'common',
     'sync',
     'requirements',
+    'courseupdater',
     'catalog'
 ]
 

@@ -1,0 +1,39 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Catalog Update</title>
+{% endblock %}
+
+{% block pagebody %}
+  <div class="center">
+    {% if not update.is_started %}
+    <p id="progress_message">Waiting to start update...</p>
+    {% else %}
+    <p id="progress_message">{{ update.progress_message }}</p>
+    {% endif %}
+    <div class="progress">
+      <div class="determinate" id="progress_bar" style="width: {{ update.progress }}%"></div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block pagescripts %}
+<script type="text/javascript">
+  $(document).ready(function () {
+    var intervalID = setInterval(function(){
+      $.ajax({
+        url: "/courseupdater/update_progress/",
+        data: null,
+        success: function (result) {
+          if (result.progress > 99.0) {
+            location.reload(false);
+          } else if (result.progress > 0.01) {
+            $('#progress_message').text(result.progress_message);
+            $('#progress_bar').css('width', result.progress + '%');
+          }
+        }
+      });
+    }, 1000);
+  });
+</script>
+{% endblock %}
