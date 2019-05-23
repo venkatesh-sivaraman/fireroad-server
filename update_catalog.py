@@ -84,7 +84,7 @@ if __name__ == '__main__':
         semester = 'sem-' + update.semester
         out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
         evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
-        cp.parse(out_path, evaluations_path, write_related=False, progress_callback=update_progress)
+        cp.parse(out_path, evaluations_path, progress_callback=update_progress)
 
         consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):
