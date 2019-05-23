@@ -12,7 +12,8 @@
     <p id="progress_message">{{ update.progress_message }}</p>
     {% endif %}
     <div class="progress">
-      <div class="determinate" id="progress_bar" style="width: {{ update.progress }}%"></div>
+      <div class="indeterminate" id="progress_bar_ind" style="visibility: {% if not update.is_started %}visible{% else %}hidden{% endif %}"></div>
+      <div class="determinate" id="progress_bar" style="visibility: {% if update.is_started %}visible{% else %}hidden{% endif %}; width: {{ update.progress }}%"></div>
     </div>
   </div>
 {% endblock %}
@@ -29,7 +30,12 @@
             location.reload(false);
           } else if (result.progress > 0.01) {
             $('#progress_message').text(result.progress_message);
+            $('#progress_bar').css('visibility', 'visible');
+            $('#progress_bar_ind').css('visibility', 'hidden');
             $('#progress_bar').css('width', result.progress + '%');
+          } else {
+            $('#progress_bar').css('visibility', 'hidden');
+            $('#progress_bar_ind').css('visibility', 'visible');
           }
         }
       });

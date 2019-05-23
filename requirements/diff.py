@@ -21,11 +21,11 @@ def best_diff_sequence(old, new, allow_subs=True, max_delta=None):
             if max_delta is not None:
                 if i - j >= max_delta:
                     parent_pointers[i,j] = 1
-                    memo[i,j] = memo[i, j+1] + len(new[j]) + 1
+                    memo[i,j] = 1e4
                     continue
                 elif j - i >= max_delta:
                     parent_pointers[i,j] = -1
-                    memo[i,j] = memo[i+1, j] + len(old[i]) + 1
+                    memo[i,j] = 1e4
                     continue
 
             options = [] # Format: (score, label)
@@ -55,6 +55,11 @@ def best_diff_sequence(old, new, allow_subs=True, max_delta=None):
     return best_sequence[:-1]
 
 WORD_FINDER_REGEX = r"[\w'.-]+|[^\w'.-]"
+
+def delete_insert_diff_line(old, new):
+    """Builds a basic diff line in which the old text is deleted and the new text
+    is inserted."""
+    return "<p class=\"diff-line\"><span class=\"deletion\">{}</span><span class=\"insertion\">{}</span></p>".format(old, new)
 
 def build_diff_line(old, new, max_delta=None):
     """Builds a single line of the diff."""

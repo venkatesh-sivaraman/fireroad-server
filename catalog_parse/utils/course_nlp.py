@@ -194,7 +194,7 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
                     for other_course in courses[id].get(equiv_key, []):
                         if '.' not in other_course: continue
                         depts.add(other_course[:other_course.find('.')])
-                file.write(",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n")
+                file.write((",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n").encode('utf-8'))
 
 def find_related_regions(related_matrix, min_count=5, threshold=0.2):
     """
@@ -314,12 +314,12 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
                 ranks = [[x, "{:.3f}".format(y)] for x, y in ranks if y > 0]
                 file.write(','.join([id] + [item for sublist in ranks for item in sublist]) + '\n')
             progress += 1
-            if round(progress / len(courses_by_dept) * 10.0) == progress_stepwise + 1:
+            if round(float(progress) / len(courses_by_dept) * 10.0) == progress_stepwise + 1:
                 progress_stepwise += 1
 
                 if progress_callback is not None:
                     start = progress_start if progress_start is not None else 0.0
-                    progress_callback(start + (0.2 + progress_stepwise / 17) * (100.0 - start), "Writing related courses...")
+                    progress_callback(start + (0.2 + progress_stepwise / 17.0) * (100.0 - start), "Writing related courses ({}%)...".format(progress_stepwise * 10))
                 print("{}% complete...".format(progress_stepwise * 10))
 
     # Divide every element in the relation matrix by the maximum attained value
@@ -328,6 +328,6 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
 
     if progress_callback is not None:
         start = progress_start if progress_start is not None else 0.0
-        progress_callback(start + 0.9 * (100.0 - start), "Computing course features...")
+        progress_callback(start + 0.8 * (100.0 - start), "Computing course features...")
     print("Computing course features...")
     write_course_features(courses_by_dept, tf_lists, related_matrix, os.path.join(dest, "features.txt"))

@@ -54,4 +54,4 @@ def parse_evaluations(evals, courses):
 
         for eval_key, course_key in KEYS_TO_AVERAGE.items():
             if eval_key not in averaging_data: continue
-            course_attribs[course_key] = sum(averaging_data[eval_key]) / len(averaging_data[eval_key])
+            course_attribs[course_key] = sum(averaging_data[eval_key]) / float(len(averaging_data[eval_key]))

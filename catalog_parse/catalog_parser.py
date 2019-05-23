@@ -431,7 +431,7 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
     courses_by_dept = {}
     for i, course_code in enumerate(COURSE_NUMBERS):
         if progress_callback is not None:
-            progress_callback(i / len(COURSE_NUMBERS) * 50, "Parsing course {} ({} of {})...".format(course_code, i + 1, len(COURSE_NUMBERS)))
+            progress_callback(float(i) / len(COURSE_NUMBERS) * 50, "Parsing course {} ({} of {})...".format(course_code, i + 1, len(COURSE_NUMBERS)))
 
         dept_courses = []
         original_html = None

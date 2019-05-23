@@ -151,10 +151,6 @@ def update_catalog(request):
     """
     Shows a page that allows the user to start a catalog update, view the
     progress of the current update, or commit the completed update.
-
-    To trigger an update, this method creates a file called '.update_sentinel'
-    in the catalogs directory. A background process should detect the presence
-    of this file and begin the update, using the update_catalog.py script.
     """
     current_update = get_current_update()
     if current_update is None:
@@ -163,8 +159,6 @@ def update_catalog(request):
             if form.is_valid():
                 update = CatalogUpdate(semester=form.cleaned_data['semester'])
                 update.save()
-                with open(os.path.join(CATALOG_BASE_DIR, '.update_sentinel'), "w") as file:
-                    pass
                 return render(request, 'courseupdater/update_progress.html', {'update': update})
 
         form = CatalogUpdateStartForm()
@@ -173,24 +167,14 @@ def update_catalog(request):
         if request.method == 'POST':
             form = CatalogUpdateDeployForm(request.POST)
             if form.is_valid():
-                # Commit this update
-                new_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + current_update.semester + '-new')
-                old_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + current_update.semester)
-                try:
-                    delta = cp.make_delta(new_path, old_path)
-                    cp.commit_delta(new_path, old_path, os.path.join(CATALOG_BASE_DIR, deltas_directory), delta)
-                    response = render(request, 'courseupdater/update_success.html', {'form': form})
-                except Exception as e:
-                    response = render(request, 'courseupdater/update_error.html', {'error': str(e)})
-                finally:
-                    current_update.is_completed = True
-                    current_update.save()
-                    return response
+                return render(request, 'courseupdater/update_success.html', {'form': form})
+                current_update.is_completed = True
+                current_update.save()
 
         diff_path = os.path.join(CATALOG_BASE_DIR, "diff.txt")
         if os.path.exists(diff_path):
             with open(diff_path, 'r') as file:
-                diffs = file.readlines()[:-1]
+                diffs = [line for line in file.readlines() if len(line)]
         else:
             diffs = []
         form = CatalogUpdateDeployForm()
@@ -211,9 +195,6 @@ def reset_update(request):
     """Removes the current update's results."""
     current_update = get_current_update()
     if current_update is not None:
-        semester_location = os.path.join(CATALOG_BASE_DIR, "sem-" + current_update.semester + "-new")
-        if os.path.exists(semester_location):
-            shutil.rmtree(semester_location)
         current_update.is_completed = True
         current_update.save()
     return redirect(reverse('update_catalog'))

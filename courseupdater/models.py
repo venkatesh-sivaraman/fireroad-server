@@ -11,12 +11,15 @@ class CatalogUpdate(models.Model):
     progress = models.FloatField(default=0.0)
     progress_message = models.CharField(default="", max_length=50)
     is_completed = models.BooleanField(default=False)
+    is_staged = models.BooleanField(default=False)
     is_started = models.BooleanField(default=False)
 
     def __str__(self):
         base = "Catalog update for {} on {}".format(self.semester, self.creation_date)
         if self.is_completed:
             base += " (completed)"
+        elif self.is_staged:
+            base += " (staged)"
         elif self.is_started:
             base += " ({:.2f}% complete - {})".format(self.progress, self.progress_message)
         return base

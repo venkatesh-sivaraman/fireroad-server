@@ -7,6 +7,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 
 from courseupdater.views import *
+from courseupdater.models import CatalogUpdate
+import catalog_parse as cp
 from requirements.models import *
 from catalog.models import *
 from django.db import DatabaseError, transaction
@@ -30,6 +32,20 @@ CATALOG_FILES_INFO_KEY = "delta"
 EXCLUDED_FILENAMES = ["condensed", "courses", "features", "enrollment", "departments"]
 
 ### CATALOG UPDATE
+
+def deploy_catalog_updates():
+    """Deploys any staged catalog update if one exists."""
+    for update in CatalogUpdate.objects.filter(is_staged=True):
+        # Commit this update
+        new_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester + '-new')
+        old_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester)
+
+        delta = cp.make_delta(new_path, old_path)
+        cp.commit_delta(new_path, old_path, os.path.join(CATALOG_BASE_DIR, deltas_directory), delta)
+
+        update.is_completed = True
+        update.save()
+        print("Successfully deployed {}".format(update))
 
 def update_catalog_with_file(path, semester):
     """Updates the catalog database using the given CSV file path."""
@@ -232,6 +248,12 @@ if __name__ == '__main__':
         update_requirements()
     except:
         message += "Updating requirements DB failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        deploy_catalog_updates()
+    except:
+        message += "Deploying catalog updates failed:\n"
         message += traceback.format_exc()
 
     try:

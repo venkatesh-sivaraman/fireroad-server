@@ -6,12 +6,19 @@ import django
 os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 
+from courseupdater.views import get_current_update
+if __name__ == '__main__':
+    update = get_current_update()
+    if update is None or update.is_started or update.is_completed:
+        exit(0)
+    update.is_started = True
+    update.save()
+
 from fireroad.settings import CATALOG_BASE_DIR, FR_EMAIL_ENABLED, EMAIL_HOST_USER
 from django.core.mail import send_mail
 import traceback
 from django.core.exceptions import ObjectDoesNotExist
 import catalog_parse as cp
-from courseupdater.views import get_current_update
 from requirements.diff import *
 
 def email_results(message, recipients):
@@ -48,28 +55,36 @@ def write_diff(old_path, new_path, diff_path):
     old_file = open(old_path, 'r')
     new_file = open(new_path, 'r')
 
-    old_contents = old_file.read()
-    new_contents = new_file.read()
-    if sys.version_info < (3, 0):
-        old_contents = old_contents.decode('utf-8')
-        new_contents = new_contents.decode('utf-8')
+    old_contents = old_file.read().decode('utf-8')
+    new_contents = new_file.read().decode('utf-8')
 
-    diff = build_diff(old_contents, new_contents, max_line_delta=10)
-    diff_file.write(diff)
+    old_courses = {line[:line.find(",")]: line for line in old_contents.split('\n')}
+    new_courses = {line[:line.find(",")]: line for line in new_contents.split('\n')}
+    ids = sorted(set(old_courses.keys()) | set(new_courses.keys()))
+    for i, id in enumerate(ids):
+        if i % 100 == 0:
+            print(i, "of", len(ids))
+        old_course = old_courses.get(id, "")
+        new_course = new_courses.get(id, "")
+
+        if old_course != new_course:
+            if abs(len(new_course) - len(old_course)) >= 25:
+                diff = delete_insert_diff_line(old_course.encode('utf-8'), new_course.encode('utf-8'))
+            else:
+                diff = build_diff_line(old_course, new_course, max_delta=10).encode('utf-8')
+            diff_file.write(diff)
+
     old_file.close()
     new_file.close()
     diff_file.close()
 
 if __name__ == '__main__':
-    update = get_current_update()
-    update.is_started = True
-    update.save()
-
+    # update is loaded at the top of the script for efficiency
     try:
-        semester = update.semester
+        semester = 'sem-' + update.semester
         out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
         evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
-        cp.parse(out_path, evaluations_path, progress_callback=update_progress)
+        cp.parse(out_path, evaluations_path, write_related=False, progress_callback=update_progress)
 
         consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):
@@ -96,7 +111,8 @@ if __name__ == '__main__':
             print(message)
 
     except:
-        print("An error occurred while executing the update.")
+        print("An error occurred while executing the update:")
+        traceback.print_exc()
 
     update = get_current_update()
     update.progress = 100.0
