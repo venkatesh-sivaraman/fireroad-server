@@ -71,6 +71,7 @@ if [[ $ready != "y" ]]; then
   echo
   echo "    python manage.py migrate"
   echo
+  exit 0
 fi
 python manage.py migrate
 
