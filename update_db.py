@@ -35,7 +35,7 @@ EXCLUDED_FILENAMES = ["condensed", "courses", "features", "enrollment", "departm
 
 def deploy_catalog_updates():
     """Deploys any staged catalog update if one exists."""
-    for update in CatalogUpdate.objects.filter(is_staged=True):
+    for update in CatalogUpdate.objects.filter(is_staged=True, is_completed=False):
         # Commit this update
         new_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester + '-new')
         old_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester)
@@ -68,7 +68,7 @@ def update_catalog_with_file(path, semester):
                 for key, val in info.items():
                     if key not in CSV_HEADERS: continue
                     prop, converter = CSV_HEADERS[key]
-                    setattr(course, prop, converter(val))
+                    setattr(course, prop, converter(val.decode('utf-8')))
                 course.save()
 
 def parse_related_file(path):

@@ -32,7 +32,7 @@ CONDENSED_SPLIT_COUNT = 4
 
 subject_id_regex = r'([A-Z0-9.-]+)\s+'
 course_id_list_regex = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
-instructor_regex = r"(?:^|[^A-z0-9])[A-Z]\. \w+"
+instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
 
 # For type checking str or unicode in Python 2 and 3
 try:
@@ -182,8 +182,9 @@ def extract_course_properties(elements):
 
 def subject_title_regex(subject_id):
     """Makes a regex that detects a subject title when the subject ID is present,
-    for example, "6.006 Introduction to Algorithms"."""
-    return "{}({})?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
+    for example, "6.006 Introduction to Algorithms". Also detects parenthesized
+    additional subjects that this subject title may contain."""
+    return "{}(?:{})?\\s*(\\([A-Z0-9.,\s-]+\\))?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
 
 def process_info_item(item, attributes):
     """Determines the type of the given info item and adds it into the
@@ -222,7 +223,10 @@ def process_info_item(item, attributes):
 
     # Subject title
     elif CourseAttribute.subjectID in attributes and re.search(course_id_list_regex, item) is not None and re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item) is not None and len(item) <= 125:
-        end = re.search(course_id_list_regex, item).end(0)
+        match = re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item)
+        if match.group(1) is not None and len(match.group(1)) > 0:
+            attributes[CourseAttribute.subjectID] = match.group(0).strip()
+        end = match.end(0)
         attributes[CourseAttribute.title] = item[end:].replace(CatalogConstants.joint_class, "").strip()
         def_not_desc = True
 
@@ -302,7 +306,7 @@ def process_info_item(item, attributes):
         attributes[CourseAttribute.GIR] = CatalogConstants.gir_requirements[item.strip()]
 
     # Instructors
-    elif re.search(instructor_regex, item) is not None:
+    elif len(item) < 100 and re.search(instructor_regex, item) is not None:
         new_comp = item.strip().replace("\n", "")
         if CourseAttribute.instructors in attributes and (CatalogConstants.fall in attributes[CourseAttribute.instructors].lower() or CatalogConstants.spring in new_comp.lower()):
             attributes[CourseAttribute.instructors] += '\n' + new_comp
@@ -323,6 +327,70 @@ def process_info_item(item, attributes):
     if len(item) > 30 and not def_not_desc:
         if CourseAttribute.description not in attributes or len(attributes[CourseAttribute.description]) < len(item):
             attributes[CourseAttribute.description] = item.strip()
+
+def expand_subject_ids(subject_id):
+    """
+    If the given subject ID represents a range of IDs, returns a list of all
+    of them. For example:
+    6.S193-6.S198 ==> [6.S193, 6.S194, 6.S195, 6.S196, 6.S197, 6.S198]
+    10.81 (10.83, 10.85, 10.87) ==> [10.81, 10.83, 10.85, 10.87]
+    """
+
+    # Matches 6.S193-6.S198
+    match = re.match(r'([A-Z0-9.]+[^0-9])([0-9]+)-[A-Z0-9.]+[^0-9]([0-9]+)', subject_id)
+    if match is not None:
+        base = match.group(1)
+        start_num = int(match.group(2))
+        end_num = int(match.group(3))
+        return [base + str(num).zfill(len(match.group(2))) for num in range(start_num, end_num + 1)]
+
+    # Matches 10.81 (10.83, 10.85, 10.87)
+    match = re.match(r'([A-Z0-9.]+)\s*\(((?:[A-Z0-9.]+,\s*)*(?:[A-Z0-9.]+\s*))\)', subject_id)
+    if match is not None:
+        base = match.group(1)
+        alternatives = match.group(2).split(',')
+        return [base.strip()] + [alt.strip() for alt in alternatives]
+
+    return [subject_id]
+
+def merge_duplicates(courses):
+    """
+    Merges any duplicate courses so that most extracted information is preserved.
+    Given two courses, keeps the value for each course attribute with the greater
+    string length. Returns a new list of courses.
+    """
+    merged_courses = []
+    merged_courses_set = set()
+    course_dict = {}
+    for course in courses:
+        if CourseAttribute.subjectID not in course: continue
+        course_dict.setdefault(course[CourseAttribute.subjectID], []).append(course)
+
+    for course in courses:
+        if CourseAttribute.subjectID not in course: continue
+        subject_id = course[CourseAttribute.subjectID]
+        if subject_id in merged_courses_set: continue
+
+        if len(course_dict[subject_id]) > 1:
+            total_course = {}
+            keys = set().union(*(other.keys() for other in course_dict[subject_id]))
+            for key in keys:
+                vals = [other.get(key, '') for other in course_dict[subject_id]]
+
+                if key == CourseAttribute.URL:
+                    # Choose a URL without the hyphen in the link name
+                    correct_val = next((val for val in vals if len(val) and '-' not in val[val.rfind('#'):]), None)
+                    if correct_val is not None:
+                        total_course[key] = correct_val
+
+                best_val = max(vals, key=lambda x: len(str(x)))
+                total_course[key] = best_val
+            merged_courses.append(total_course)
+        else:
+            merged_courses.append(course)
+        merged_courses_set.add(subject_id)
+
+    return merged_courses
 
 def courses_from_dept_code(dept_code):
     """
@@ -350,7 +418,17 @@ def courses_from_dept_code(dept_code):
         attribs[CourseAttribute.URL] = catalog_url + "#" + id
         for prop in props:
             process_info_item(prop, attribs)
-        courses.append(attribs)
+
+        # the subject ID might have changed during parsing
+        id = attribs[CourseAttribute.subjectID]
+        subject_ids = expand_subject_ids(id)
+        if len(subject_ids) > 1:
+            for other_id in subject_ids:
+                copied_course = {key: val for key, val in attribs.items()}
+                copied_course[CourseAttribute.subjectID] = other_id
+                courses.append(copied_course)
+        else:
+            courses.append(attribs)
 
         # Autofill regions that were empty with the subsequent course information
         # For example, 6.260, 6.261 Advanced Topics in Communications
@@ -457,6 +535,8 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
         # Add in eval information
         if eval_data is not None:
             parse_evaluations(eval_data, dept_courses)
+
+        dept_courses = merge_duplicates(dept_courses)
 
         # Write department-specific file
         write_courses(dept_courses, os.path.join(output_dir, course_code + ".txt"), ALL_ATTRIBUTES)

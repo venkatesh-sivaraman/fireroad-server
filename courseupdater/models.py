@@ -27,5 +27,26 @@ class CatalogUpdate(models.Model):
 class CatalogUpdateStartForm(forms.Form):
     semester = forms.CharField(label='Semester', max_length=30, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'e.g. fall-2019'}))
 
+    def clean_semester(self):
+        """
+        Ensures that the entered semester is of the form 'season-year'.
+        """
+        semester = self.cleaned_data['semester']
+        comps = semester.split('-')
+        if len(comps) != 2:
+            raise forms.ValidationError("Semester must be in the format 'season-year'.")
+        season, year = comps
+        if season not in ('fall', 'spring'):
+            raise forms.ValidationError("Season must be fall or spring.")
+        try:
+            year = int(year)
+        except:
+            raise forms.ValidationError("Year should be a number.")
+        else:
+            if year < 2000 or year > 3000:
+                raise forms.ValidationError("Invalid year.")
+        return semester
+
+
 class CatalogUpdateDeployForm(forms.Form):
     pass

@@ -20,7 +20,7 @@
     {% endfor %}
   </div>
   <div class="row">
-    <div class="col s12"><p>Review the changes above, then press Deploy Update to commit the update. The changes will be reflected after the next nightly database refresh.</p></div>
+    <div class="col s12"><p>Review the changes above, then press Deploy Update to publish the changes at the next nightly database refresh.</p></div>
     <form class="col s12" id="form" method="post">
       {% csrf_token %}
         <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Deploy Update

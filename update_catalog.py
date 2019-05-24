@@ -8,7 +8,11 @@ django.setup()
 
 from courseupdater.views import get_current_update
 if __name__ == '__main__':
-    update = get_current_update()
+    if len(sys.argv) > 1:
+        from courseupdater.models import CatalogUpdate
+        update = CatalogUpdate(semester=sys.argv[1])
+    else:
+        update = get_current_update()
     if update is None or update.is_started or update.is_completed:
         exit(0)
     update.is_started = True
@@ -40,6 +44,9 @@ def update_progress(progress, message):
         update.progress = progress
         update.progress_message = message
         update.save()
+    else:
+        # The update was canceled
+        raise KeyboardInterrupt
 
 def write_diff(old_path, new_path, diff_path):
     if not os.path.exists(old_path):
@@ -71,7 +78,7 @@ def write_diff(old_path, new_path, diff_path):
             if abs(len(new_course) - len(old_course)) >= 25:
                 diff = delete_insert_diff_line(old_course.encode('utf-8'), new_course.encode('utf-8'))
             else:
-                diff = build_diff_line(old_course, new_course, max_delta=10).encode('utf-8')
+                diff = build_diff_line(old_course, new_course, max_delta=20).encode('utf-8')
             diff_file.write(diff)
 
     old_file.close()
@@ -115,6 +122,7 @@ if __name__ == '__main__':
         traceback.print_exc()
 
     update = get_current_update()
-    update.progress = 100.0
-    update.progress_message = "Done processing."
-    update.save()
+    if update is not None:
+        update.progress = 100.0
+        update.progress_message = "Done processing."
+        update.save()
