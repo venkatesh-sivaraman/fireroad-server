@@ -163,13 +163,15 @@ def update_catalog(request):
 
         form = CatalogUpdateStartForm()
         return render(request, 'courseupdater/start_update.html', {'form': form})
+    elif current_update.is_staged:
+        return render(request, 'courseupdater/update_success.html')
     elif current_update.progress == 100.0:
         if request.method == 'POST':
             form = CatalogUpdateDeployForm(request.POST)
             if form.is_valid():
-                return render(request, 'courseupdater/update_success.html', {'form': form})
-                current_update.is_completed = True
+                current_update.is_staged = True
                 current_update.save()
+                return render(request, 'courseupdater/update_success.html')
 
         diff_path = os.path.join(CATALOG_BASE_DIR, "diff.txt")
         if os.path.exists(diff_path):
