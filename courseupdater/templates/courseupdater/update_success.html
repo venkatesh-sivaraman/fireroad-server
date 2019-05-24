@@ -1,0 +1,15 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Catalog Update</title>
+<link href="{% static "courseupdater/css/style.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block pagebody %}
+  <div class="center vertical-center">
+    The catalog has been scheduled to update at the next database refresh.
+    <br/>
+    <a class="btn mbtn grey waves-effect waves-light" href="/courseupdater/reset_update/">Cancel Update</a>
+    <a class="btn mbtn red waves-effect waves-light" href="/">Home</a>
+  </div>
+{% endblock %}

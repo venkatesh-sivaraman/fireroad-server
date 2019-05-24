@@ -1,15 +1,22 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, HttpResponseBadRequest
 import os
 import json
+import shutil
+from .models import *
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.admin.views.decorators import staff_member_required
+from fireroad.settings import BASE_DIR, CATALOG_BASE_DIR
+from requirements.diff import *
+import catalog_parse as cp
 
 version_recursion_threshold = 100
 separator = "#,#"
-module_dir = os.path.dirname(__file__)  # get current directory
 global_file_names = ["departments", "enrollment"]
 requirements_dir = "requirements"
 semester_dir_prefix = "sem-"
 delta_file_prefix = "delta-"
+deltas_directory = "deltas"
 
 def index(request):
     return HttpResponse("Hello, world. You're at the courseupdater index.")
@@ -53,7 +60,7 @@ def compute_updated_files(version, base_dir):
 
 """Returns the numerical version for the given semester, e.g. "fall-2017"."""
 def current_version_for_semester(semester):
-    semester_dir = os.path.join(module_dir, semester_dir_prefix + semester)
+    semester_dir = os.path.join(CATALOG_BASE_DIR, deltas_directory, semester_dir_prefix + semester)
     max_version = 0
     for path in os.listdir(semester_dir):
         if path.find(delta_file_prefix) == 0:
@@ -66,7 +73,7 @@ def current_version_for_semester(semester):
 def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
     # Walk through the delta files
     semester_dir = semester_dir_prefix + semester_comps[0] + '-' + semester_comps[1]
-    updated_files, updated_version = compute_updated_files(version_num, os.path.join(module_dir, semester_dir))
+    updated_files, updated_version = compute_updated_files(version_num, os.path.join(CATALOG_BASE_DIR, deltas_directory, semester_dir))
 
     # Write out the updated files to JSON
     def url_comp(x):
@@ -78,7 +85,7 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
 
     # Check requirements also, if necessary
     if req_version_num != -1:
-        updated_files, updated_version = compute_updated_files(req_version_num, os.path.join(module_dir, requirements_dir))
+        updated_files, updated_version = compute_updated_files(req_version_num, os.path.join(CATALOG_BASE_DIR, deltas_directory, requirements_dir))
         urls_to_update = list(map(lambda x: requirements_dir + '/' + x + '.reql', sorted(list(updated_files))))
         resp['rv'] = updated_version
         resp['r_delta'] = urls_to_update
@@ -86,7 +93,7 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
 
 def list_semesters():
     sems = []
-    for path in os.listdir(module_dir):
+    for path in os.listdir(os.path.join(CATALOG_BASE_DIR, deltas_directory)):
         if path.find(semester_dir_prefix) == 0:
             sems.append(path[len(semester_dir_prefix):])
     def semester_sort_key(x):
@@ -128,3 +135,69 @@ def semesters(request):
     sems = list_semesters()
     resp = list(map(lambda x: {"sem": x, "v": current_version_for_semester(x)}, sems))
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
+### Catalog parser UI
+
+def get_current_update():
+    """Gets the current catalog update if one is currently uncompleted, otherwise
+    returns None."""
+    try:
+        return CatalogUpdate.objects.filter(is_completed=False).latest('creation_date')
+    except ObjectDoesNotExist:
+        return None
+
+@staff_member_required
+def update_catalog(request):
+    """
+    Shows a page that allows the user to start a catalog update, view the
+    progress of the current update, or commit the completed update.
+    """
+    current_update = get_current_update()
+    if current_update is None:
+        if request.method == 'POST':
+            form = CatalogUpdateStartForm(request.POST)
+            if form.is_valid():
+                update = CatalogUpdate(semester=form.cleaned_data['semester'])
+                update.save()
+                return render(request, 'courseupdater/update_progress.html', {'update': update})
+        else:
+            form = CatalogUpdateStartForm()
+        return render(request, 'courseupdater/start_update.html', {'form': form})
+    elif current_update.is_staged:
+        return render(request, 'courseupdater/update_success.html')
+    elif current_update.progress == 100.0:
+        if request.method == 'POST':
+            form = CatalogUpdateDeployForm(request.POST)
+            if form.is_valid():
+                current_update.is_staged = True
+                current_update.save()
+                return render(request, 'courseupdater/update_success.html')
+        else:
+            form = CatalogUpdateDeployForm()
+
+        diff_path = os.path.join(CATALOG_BASE_DIR, "diff.txt")
+        if os.path.exists(diff_path):
+            with open(diff_path, 'r') as file:
+                diffs = [line for line in file.readlines() if len(line)]
+        else:
+            diffs = []
+        return render(request, 'courseupdater/review_update.html', {'diffs': diffs, 'form': form})
+    else:
+        print(current_update)
+        return render(request, 'courseupdater/update_progress.html', {'update': current_update})
+
+def update_progress(request):
+    """Returns the current update progress as a JSON."""
+    current_update = get_current_update()
+    if current_update is None:
+        return HttpResponse(json.dumps({'progress': 100.0, 'progress_message': 'No update pending.'}), content_type='application/json')
+    return HttpResponse(json.dumps({'progress': current_update.progress, 'progress_message': current_update.progress_message}), content_type='application/json')
+
+@staff_member_required
+def reset_update(request):
+    """Removes the current update's results."""
+    current_update = get_current_update()
+    if current_update is not None:
+        current_update.is_completed = True
+        current_update.save()
+    return redirect(reverse('update_catalog'))

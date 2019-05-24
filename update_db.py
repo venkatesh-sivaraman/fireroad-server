@@ -7,6 +7,8 @@ os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 
 from courseupdater.views import *
+from courseupdater.models import CatalogUpdate
+import catalog_parse as cp
 from requirements.models import *
 from catalog.models import *
 from django.db import DatabaseError, transaction
@@ -31,6 +33,20 @@ EXCLUDED_FILENAMES = ["condensed", "courses", "features", "enrollment", "departm
 
 ### CATALOG UPDATE
 
+def deploy_catalog_updates():
+    """Deploys any staged catalog update if one exists."""
+    for update in CatalogUpdate.objects.filter(is_staged=True, is_completed=False):
+        # Commit this update
+        new_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester + '-new')
+        old_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester)
+
+        delta = cp.make_delta(new_path, old_path)
+        cp.commit_delta(new_path, old_path, os.path.join(CATALOG_BASE_DIR, deltas_directory), delta)
+
+        update.is_completed = True
+        update.save()
+        print("Successfully deployed {}".format(update))
+
 def update_catalog_with_file(path, semester):
     """Updates the catalog database using the given CSV file path."""
     with open(path, 'r') as file:
@@ -52,7 +68,7 @@ def update_catalog_with_file(path, semester):
                 for key, val in info.items():
                     if key not in CSV_HEADERS: continue
                     prop, converter = CSV_HEADERS[key]
-                    setattr(course, prop, converter(val))
+                    setattr(course, prop, converter(val.decode('utf-8')))
                 course.save()
 
 def parse_related_file(path):
@@ -138,7 +154,7 @@ def perform_deployments():
 
     # Write delta file
     if len(delta) > 0:
-        write_delta_file(sorted(delta), os.path.join(os.path.dirname(__file__), "courseupdater", requirements_dir))
+        write_delta_file(sorted(delta), os.path.join(CATALOG_BASE_DIR, "deltas", requirements_dir))
 
 
 def update_requirements():
@@ -232,6 +248,12 @@ if __name__ == '__main__':
         update_requirements()
     except:
         message += "Updating requirements DB failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        deploy_catalog_updates()
+    except:
+        message += "Deploying catalog updates failed:\n"
         message += traceback.format_exc()
 
     try:

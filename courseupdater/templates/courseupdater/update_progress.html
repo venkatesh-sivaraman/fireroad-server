@@ -1,0 +1,48 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Catalog Update</title>
+<link href="{% static "courseupdater/css/style.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block pagebody %}
+  <div class="center vertical-center">
+    {% if not update.is_started %}
+    <p id="progress_message">Waiting to start update...</p>
+    {% else %}
+    <p id="progress_message">{{ update.progress_message }}</p>
+    {% endif %}
+    <div class="progress">
+      <div class="indeterminate" id="progress_bar_ind" style="visibility: {% if not update.is_started %}visible{% else %}hidden{% endif %}"></div>
+      <div class="determinate" id="progress_bar" style="visibility: {% if update.is_started %}visible{% else %}hidden{% endif %}; width: {{ update.progress }}%"></div>
+    </div>
+    <br/>
+    <a class="btn mbtn grey waves-effect waves-light" href="/courseupdater/reset_update/">Cancel Update</a>
+  </div>
+{% endblock %}
+
+{% block pagescripts %}
+<script type="text/javascript">
+  $(document).ready(function () {
+    var intervalID = setInterval(function(){
+      $.ajax({
+        url: "/courseupdater/update_progress/",
+        data: null,
+        success: function (result) {
+          if (result.progress > 99.0) {
+            location.reload(false);
+          } else if (result.progress > 0.01) {
+            $('#progress_message').text(result.progress_message);
+            $('#progress_bar').css('visibility', 'visible');
+            $('#progress_bar_ind').css('visibility', 'hidden');
+            $('#progress_bar').css('width', result.progress + '%');
+          } else {
+            $('#progress_bar').css('visibility', 'hidden');
+            $('#progress_bar_ind').css('visibility', 'visible');
+          }
+        }
+      });
+    }, 1000);
+  });
+</script>
+{% endblock %}

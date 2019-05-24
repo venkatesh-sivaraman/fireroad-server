@@ -6,23 +6,23 @@ The `master` branch of this repo is intended to be checked out and run by the pr
 
 ## Cloning and Setup
 
-Follow these instructions to set up and run your own instance of the FireRoad server. *This repo is currently designed to work with Python 2.7 and Django 1.7.10.*
+Follow these instructions to set up and run your own instance of the FireRoad server. You may want to create a new virtual environment using `conda`, for example:
 
-Once you have checked out the repo, you will need to generate a secret key, for example:
+```
+conda create -n fireroad python=2.7
+source activate fireroad
+```
+
+Then, enter the repo directory and run the setup script, which will install any necessary packages and set up the database.
 
 ```
 $ cd fireroad-server
-$ openssl rand -base64 80 > fireroad/secret.txt
+$ ./setup.sh
 ```
 
-You will need a SQL server - we use SQLite for local testing and MySQL for production. (If using MySQL, follow instructions in the MySQL note below *before* running the migration commands. If using SQLite, a database file will be automatically created.) Using an environment with the appropriate Python/Django versions, run the following commands to build the database:
+Note that we use SQLite for local testing and MySQL for production - you will need to comment/uncomment the appropriate settings in `fireroad/settings.py`. If the setup script detects you are using a MySQL database, it will walk you through the creation of a `fireroad/dbcreds.py` file that specifies the necessary authentication info.
 
-```
-python manage.py makemigrations common catalog sync recommend requirements
-python manage.py migrate
-```
-
-**MySQL note:** To set up a MySQL database, you will need to create a file called `dbcreds.py` within the (inner) `fireroad` directory that defines the following variables: `dbname`, `username`, `password`, and `host`. These are used to initialize the MySQL database in `settings.py`. To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
+To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
 
 ### Merging Notes
 

@@ -28,11 +28,22 @@
   flex-direction: column;
   margin-bottom: 12px;
 }
+.content-full-screen {
+  margin-left: 32px;
+  margin-right: 32px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
 @media (min-width: 767px) {
   .edit-head {
     margin-top: 12px;
   }
   .content {
+    margin-top: -64px;
+    padding-top: 64px;
+  }
+  .content-full-screen {
     margin-top: -64px;
     padding-top: 64px;
   }
@@ -59,13 +70,13 @@
   background-color: #f46565;
 }
 
-body, html, .content {
+body, html, .content, .content-full-screen {
   height: 100%;
 }
 
 .diff-line {
   margin-bottom: -8px;
-  word-wrap: break-word;  
+  word-wrap: break-word;
 }
 
 .insertion {

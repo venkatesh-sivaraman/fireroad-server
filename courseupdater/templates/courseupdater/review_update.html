@@ -1,0 +1,35 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Catalog Update</title>
+<link href="{% static "courseupdater/css/style.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block pagebody %}
+<div class="content-full-screen">
+  <div class="row edit-head">
+    <div class="col s8 red-text text-darken-4">
+      <h4>Review Catalog Update</h4>
+    </div>
+  </div>
+  <div class="collection diff-list">
+    {% for diff in diffs %}
+      <li class="collection-item code" style="list-style: none; padding-bottom: 24px;">
+        {% autoescape off %}{{ diff }}{% endautoescape %}
+      </li>
+    {% endfor %}
+  </div>
+  <div class="row">
+    <div class="col s12"><p>Review the changes above, then press Deploy Update to publish the changes at the next nightly database refresh.</p></div>
+    <form class="col s12" id="form" method="post">
+      {% csrf_token %}
+        <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Deploy Update
+          <i class="material-icons right">cloud_upload</i>
+        </button>
+        <a class="btn mbtn grey waves-effect waves-light" style="float: right;" href="/courseupdater/reset_update/">Reset</a>
+      {{ form.non_field_errors }}
+      {{ form.contents }}
+    </form>
+  </div>
+</div>
+{% endblock %}
