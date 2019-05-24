@@ -2,10 +2,11 @@
 {% load static %}
 {% block title %}
 <title>FireRoad Catalog Update</title>
+<link href="{% static "courseupdater/css/style.css" %}" rel="stylesheet" />
 {% endblock %}
 
 {% block pagebody %}
-  <div class="center">
+  <div class="center vertical-center">
     {% if not update.is_started %}
     <p id="progress_message">Waiting to start update...</p>
     {% else %}
@@ -15,6 +16,8 @@
       <div class="indeterminate" id="progress_bar_ind" style="visibility: {% if not update.is_started %}visible{% else %}hidden{% endif %}"></div>
       <div class="determinate" id="progress_bar" style="visibility: {% if update.is_started %}visible{% else %}hidden{% endif %}; width: {{ update.progress }}%"></div>
     </div>
+    <br/>
+    <a class="btn mbtn grey waves-effect waves-light" href="/courseupdater/reset_update/">Cancel Update</a>
   </div>
 {% endblock %}
 

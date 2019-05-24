@@ -160,8 +160,8 @@ def update_catalog(request):
                 update = CatalogUpdate(semester=form.cleaned_data['semester'])
                 update.save()
                 return render(request, 'courseupdater/update_progress.html', {'update': update})
-
-        form = CatalogUpdateStartForm()
+        else:
+            form = CatalogUpdateStartForm()
         return render(request, 'courseupdater/start_update.html', {'form': form})
     elif current_update.is_staged:
         return render(request, 'courseupdater/update_success.html')
@@ -172,6 +172,8 @@ def update_catalog(request):
                 current_update.is_staged = True
                 current_update.save()
                 return render(request, 'courseupdater/update_success.html')
+        else:
+            form = CatalogUpdateDeployForm()
 
         diff_path = os.path.join(CATALOG_BASE_DIR, "diff.txt")
         if os.path.exists(diff_path):
@@ -179,7 +181,6 @@ def update_catalog(request):
                 diffs = [line for line in file.readlines() if len(line)]
         else:
             diffs = []
-        form = CatalogUpdateDeployForm()
         return render(request, 'courseupdater/review_update.html', {'diffs': diffs, 'form': form})
     else:
         print(current_update)

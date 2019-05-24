@@ -44,6 +44,9 @@ def update_progress(progress, message):
         update.progress = progress
         update.progress_message = message
         update.save()
+    else:
+        # The update was canceled
+        raise KeyboardInterrupt
 
 def write_diff(old_path, new_path, diff_path):
     if not os.path.exists(old_path):
@@ -119,6 +122,7 @@ if __name__ == '__main__':
         traceback.print_exc()
 
     update = get_current_update()
-    update.progress = 100.0
-    update.progress_message = "Done processing."
-    update.save()
+    if update is not None:
+        update.progress = 100.0
+        update.progress_message = "Done processing."
+        update.save()

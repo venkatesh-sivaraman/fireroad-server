@@ -2,10 +2,11 @@
 {% load static %}
 {% block title %}
 <title>FireRoad Catalog Update</title>
+<link href="{% static "courseupdater/css/style.css" %}" rel="stylesheet" />
 {% endblock %}
 
 {% block pagebody %}
-  <div class="center">
+  <div class="center vertical-center">
     There was an error updating the catalog: {{ error }}
     <br/>
     <a class="btn mbtn red waves-effect waves-light" href="/courseupdater/update_catalog">Try Again</a>
