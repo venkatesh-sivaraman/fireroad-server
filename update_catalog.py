@@ -75,7 +75,7 @@ def write_diff(old_path, new_path, diff_path):
             if abs(len(new_course) - len(old_course)) >= 25:
                 diff = delete_insert_diff_line(old_course.encode('utf-8'), new_course.encode('utf-8'))
             else:
-                diff = build_diff_line(old_course, new_course, max_delta=10).encode('utf-8')
+                diff = build_diff_line(old_course, new_course, max_delta=20).encode('utf-8')
             diff_file.write(diff)
 
     old_file.close()

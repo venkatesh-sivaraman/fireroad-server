@@ -181,8 +181,9 @@ def extract_course_properties(elements):
 
 def subject_title_regex(subject_id):
     """Makes a regex that detects a subject title when the subject ID is present,
-    for example, "6.006 Introduction to Algorithms"."""
-    return "{}({})?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
+    for example, "6.006 Introduction to Algorithms". Also detects parenthesized
+    additional subjects that this subject title may contain."""
+    return "{}(?:{})?\\s*(\\([A-Z0-9.,\s-]+\\))?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
 
 def process_info_item(item, attributes):
     """Determines the type of the given info item and adds it into the
@@ -221,7 +222,10 @@ def process_info_item(item, attributes):
 
     # Subject title
     elif CourseAttribute.subjectID in attributes and re.search(course_id_list_regex, item) is not None and re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item) is not None and len(item) <= 125:
-        end = re.search(course_id_list_regex, item).end(0)
+        match = re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item)
+        if match.group(1) is not None and len(match.group(1)) > 0:
+            attributes[CourseAttribute.subjectID] = match.group(0).strip()
+        end = match.end(0)
         attributes[CourseAttribute.title] = item[end:].replace(CatalogConstants.joint_class, "").strip()
         def_not_desc = True
 
@@ -301,7 +305,7 @@ def process_info_item(item, attributes):
         attributes[CourseAttribute.GIR] = CatalogConstants.gir_requirements[item.strip()]
 
     # Instructors
-    elif re.search(instructor_regex, item) is not None:
+    elif len(item) < 150 and re.search(instructor_regex, item) is not None:
         new_comp = item.strip().replace("\n", "")
         if CourseAttribute.instructors in attributes and (CatalogConstants.fall in attributes[CourseAttribute.instructors].lower() or CatalogConstants.spring in new_comp.lower()):
             attributes[CourseAttribute.instructors] += '\n' + new_comp
@@ -328,16 +332,24 @@ def expand_subject_ids(subject_id):
     If the given subject ID represents a range of IDs, returns a list of all
     of them. For example:
     6.S193-6.S198 ==> [6.S193, 6.S194, 6.S195, 6.S196, 6.S197, 6.S198]
+    10.81 (10.83, 10.85, 10.87) ==> [10.81, 10.83, 10.85, 10.87]
     """
 
+    # Matches 6.S193-6.S198
     match = re.match(r'([A-Z0-9.]+[^0-9])([0-9]+)-[A-Z0-9.]+[^0-9]([0-9]+)', subject_id)
-    if "6.S" in subject_id:
-        print(subject_id, match)
     if match is not None:
         base = match.group(1)
         start_num = int(match.group(2))
         end_num = int(match.group(3))
         return [base + str(num).zfill(len(match.group(2))) for num in range(start_num, end_num + 1)]
+
+    # Matches 10.81 (10.83, 10.85, 10.87)
+    match = re.match(r'([A-Z0-9.]+)\s*\(((?:[A-Z0-9.]+,\s*)*(?:[A-Z0-9.]+\s*))\)', subject_id)
+    if match is not None:
+        base = match.group(1)
+        alternatives = match.group(2).split(',')
+        return [base.strip()] + [alt.strip() for alt in alternatives]
+
     return [subject_id]
 
 def merge_duplicates(courses):
@@ -363,6 +375,13 @@ def merge_duplicates(courses):
             keys = set().union(*(other.keys() for other in course_dict[subject_id]))
             for key in keys:
                 vals = [other.get(key, '') for other in course_dict[subject_id]]
+
+                if key == CourseAttribute.URL:
+                    # Choose a URL without the hyphen in the link name
+                    correct_val = next((val for val in vals if len(val) and '-' not in val[val.rfind('#'):]), None)
+                    if correct_val is not None:
+                        total_course[key] = correct_val
+
                 best_val = max(vals, key=lambda x: len(str(x)))
                 total_course[key] = best_val
             merged_courses.append(total_course)
@@ -399,6 +418,8 @@ def courses_from_dept_code(dept_code):
         for prop in props:
             process_info_item(prop, attribs)
 
+        # the subject ID might have changed during parsing
+        id = attribs[CourseAttribute.subjectID]
         subject_ids = expand_subject_ids(id)
         if len(subject_ids) > 1:
             for other_id in subject_ids:
