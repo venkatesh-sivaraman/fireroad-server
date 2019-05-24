@@ -31,7 +31,7 @@ CONDENSED_SPLIT_COUNT = 4
 
 subject_id_regex = r'([A-Z0-9.-]+)\s+'
 course_id_list_regex = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
-instructor_regex = r"(?:^|[^A-z0-9])[A-Z]\. \w+"
+instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
 
 # For type checking str or unicode in Python 2 and 3
 try:
@@ -305,7 +305,7 @@ def process_info_item(item, attributes):
         attributes[CourseAttribute.GIR] = CatalogConstants.gir_requirements[item.strip()]
 
     # Instructors
-    elif len(item) < 150 and re.search(instructor_regex, item) is not None:
+    elif len(item) < 100 and re.search(instructor_regex, item) is not None:
         new_comp = item.strip().replace("\n", "")
         if CourseAttribute.instructors in attributes and (CatalogConstants.fall in attributes[CourseAttribute.instructors].lower() or CatalogConstants.spring in new_comp.lower()):
             attributes[CourseAttribute.instructors] += '\n' + new_comp
