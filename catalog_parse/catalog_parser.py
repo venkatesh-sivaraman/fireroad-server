@@ -82,7 +82,8 @@ def load_course_elements(url):
 
     course_elements = tree.xpath(SUBJECT_CONTENT_XPATH)
 
-    # Group by anchor elements (<a name="subject id">)
+    # Group by anchor elements (<a name="subject id">) or h3 (in case the links are missing
+    # or out of order)
     course_ids = []
     courses = []
     for element in course_elements[0].getchildren():
@@ -382,6 +383,7 @@ def merge_duplicates(courses):
                     if correct_val is not None:
                         total_course[key] = correct_val
 
+                # The 'best' value is the longest value
                 best_val = max(vals, key=lambda x: len(str(x)))
                 total_course[key] = best_val
             merged_courses.append(total_course)
@@ -418,8 +420,10 @@ def courses_from_dept_code(dept_code):
         for prop in props:
             process_info_item(prop, attribs)
 
-        # the subject ID might have changed during parsing
+        # The subject ID might have changed during parsing
         id = attribs[CourseAttribute.subjectID]
+
+        # Apply the subject content to multiple subject IDs if they are contained within this entry
         subject_ids = expand_subject_ids(id)
         if len(subject_ids) > 1:
             for other_id in subject_ids:
@@ -440,8 +444,6 @@ def courses_from_dept_code(dept_code):
                 courses.append(copied_course)
             autofill_ids = []
 
-    parse_evaluations("evaluations.js", courses)
-    #print("\n".join(str(c) for c in courses if c[CourseAttribute.subjectID] == "6.006"))
     return courses
 
 ### Writing courses

@@ -123,6 +123,10 @@ class CourseAttribute:
     raterCount = "Rater Count"
     enrollment = "Enrollment"
 
+    # post-parsing keys
+    sourceSemester = "Source Semester"
+    isHistorical = "Historical"
+
 ALL_ATTRIBUTES = [
     CourseAttribute.subjectID,
     CourseAttribute.title,

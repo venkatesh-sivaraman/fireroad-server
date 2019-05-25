@@ -24,6 +24,7 @@ from django.conf import settings
 import traceback
 import csv
 from django.core.exceptions import ObjectDoesNotExist
+from catalog_parse.utils.catalog_constants import CourseAttribute
 
 REQUIREMENTS_INFO_KEY = "r_delta"
 CATALOG_FILES_INFO_KEY = "delta"
@@ -53,16 +54,16 @@ def update_catalog_with_file(path, semester):
         reader = csv.reader(file)
         headers = None
         for comps in reader:
-            if "Subject Id" in comps:
+            if CourseAttribute.subjectID in comps:
                 headers = comps
                 continue
             if headers is None:
                 print("Can't read CSV file {} - no headers".format(path))
             info = dict(zip(headers, comps))
             try:
-                course = Course.public_courses().get(subject_id=info["Subject Id"])
+                course = Course.public_courses().get(subject_id=info[CourseAttribute.subjectID])
             except ObjectDoesNotExist:
-                course = Course.objects.create(public=True, subject_id=info["Subject Id"])
+                course = Course.objects.create(public=True, subject_id=info[CourseAttribute.subjectID])
             finally:
                 course.catalog_semester = semester
                 for key, val in info.items():

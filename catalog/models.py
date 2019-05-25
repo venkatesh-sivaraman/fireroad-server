@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from django.db import models
 from common.models import Student
+from catalog_parse.utils.catalog_constants import *
 
 class Attribute:
     """
@@ -135,48 +136,47 @@ def list_converter(value):
     else:
         return modified
 
+# Converts from CSV header to JSON key (and value conversion function)
 CSV_HEADERS = {
-    "Subject Id":               (CourseFields.subject_id, string_converter),
-    "Subject Title":            (CourseFields.title, string_converter),
-    "Subject Level":            (CourseFields.level, string_converter),
-    "Subject Description":      (CourseFields.description, string_converter),
-    "Department Name":          (CourseFields.department, string_converter),
-    "Equivalent Subjects":      (CourseFields.equivalent_subjects, list_converter),
-    "Joint Subjects":           (CourseFields.joint_subjects, list_converter),
-    "Meets With Subjects":      (CourseFields.meets_with_subjects, list_converter),
-    "Prereqs":                  (CourseFields.prerequisites, list_converter),
-    "Coreqs":                   (CourseFields.corequisites, list_converter),
-    "Gir Attribute":            (CourseFields.gir_attribute, string_converter),
-    "Comm Req Attribute":       (CourseFields.communication_requirement, string_converter),
-    "Hass Attribute":           (CourseFields.hass_attribute, string_converter),
-    "Instructors":              (CourseFields.instructors, list_converter),
-    "Is Offered Fall Term":     (CourseFields.offered_fall, bool_converter),
-    "Is Offered Iap":           (CourseFields.offered_IAP, bool_converter),
-    "Is Offered Spring Term":   (CourseFields.offered_spring, bool_converter),
-    "Is Offered Summer Term":   (CourseFields.offered_summer, bool_converter),
-    "Is Offered This Year":     (CourseFields.offered_this_year, bool_converter),
-    "Total Units":              (CourseFields.total_units, int_converter),
-    "Is Variable Units":        (CourseFields.is_variable_units, bool_converter),
-    "Lab Units":                (CourseFields.lab_units, int_converter),
-    "Lecture Units":            (CourseFields.lecture_units, int_converter),
-    "Design Units":             (CourseFields.design_units, int_converter),
-    "Preparation Units":        (CourseFields.preparation_units, int_converter),
-    "PDF Option":               (CourseFields.pdf_option, bool_converter),
-    "Has Final":                (CourseFields.has_final, bool_converter),
-    "Not Offered Year":         (CourseFields.not_offered_year, string_converter),
-    "Quarter Information":      (CourseFields.quarter_information, string_converter),
-    "Related Subjects":         (CourseFields.related_subjects, string_converter),
-    "Schedule":                 (CourseFields.schedule, string_converter),
-    "URL":                      (CourseFields.url, string_converter),
-    "Rating":                   (CourseFields.rating, float_converter),
-    "In-Class Hours":           (CourseFields.in_class_hours, float_converter),
-    "Out-of-Class Hours":       (CourseFields.out_of_class_hours, float_converter),
-    "Enrollment Number":        (CourseFields.enrollment_number, float_converter),
-    "Enrollment":               (CourseFields.enrollment_number, float_converter),
-    "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter),
-    "Custom Color":             (CourseFields.custom_color, string_converter),
-    "Source Semester":          (CourseFields.source_semester, string_converter),
-    "Historical":               (CourseFields.is_historical, bool_converter)
+    CourseAttribute.subjectID:                  (CourseFields.subject_id, string_converter),
+    CourseAttribute.title:                      (CourseFields.title, string_converter),
+    CourseAttribute.subjectLevel:               (CourseFields.level, string_converter),
+    CourseAttribute.description:                (CourseFields.description, string_converter),
+    CourseAttribute.equivalentSubjects:         (CourseFields.equivalent_subjects, list_converter),
+    CourseAttribute.jointSubjects:              (CourseFields.joint_subjects, list_converter),
+    CourseAttribute.meetsWithSubjects:          (CourseFields.meets_with_subjects, list_converter),
+    CourseAttribute.prerequisites:              (CourseFields.prerequisites, list_converter),
+    CourseAttribute.corequisites:               (CourseFields.corequisites, list_converter),
+    CourseAttribute.GIR:                        (CourseFields.gir_attribute, string_converter),
+    CourseAttribute.communicationRequirement:   (CourseFields.communication_requirement, string_converter),
+    CourseAttribute.hassRequirement:            (CourseFields.hass_attribute, string_converter),
+    CourseAttribute.instructors:                (CourseFields.instructors, list_converter),
+    CourseAttribute.offeredFall:                (CourseFields.offered_fall, bool_converter),
+    CourseAttribute.offeredIAP:                 (CourseFields.offered_IAP, bool_converter),
+    CourseAttribute.offeredSpring:              (CourseFields.offered_spring, bool_converter),
+    CourseAttribute.offeredSummer:              (CourseFields.offered_summer, bool_converter),
+    CourseAttribute.totalUnits:                 (CourseFields.total_units, int_converter),
+    CourseAttribute.isVariableUnits:            (CourseFields.is_variable_units, bool_converter),
+    CourseAttribute.labUnits:                   (CourseFields.lab_units, int_converter),
+    CourseAttribute.lectureUnits:               (CourseFields.lecture_units, int_converter),
+    CourseAttribute.preparationUnits:           (CourseFields.preparation_units, int_converter),
+    CourseAttribute.pdfOption:                  (CourseFields.pdf_option, bool_converter),
+    CourseAttribute.hasFinal:                   (CourseFields.has_final, bool_converter),
+    CourseAttribute.notOfferedYear:             (CourseFields.not_offered_year, string_converter),
+    CourseAttribute.quarterInformation:         (CourseFields.quarter_information, string_converter),
+    CourseAttribute.schedule:                   (CourseFields.schedule, string_converter),
+    CourseAttribute.URL:                        (CourseFields.url, string_converter),
+    CourseAttribute.averageRating:              (CourseFields.rating, float_converter),
+    CourseAttribute.averageInClassHours:        (CourseFields.in_class_hours, float_converter),
+    CourseAttribute.averageOutOfClassHours:     (CourseFields.out_of_class_hours, float_converter),
+    CourseAttribute.enrollment:                 (CourseFields.enrollment_number, float_converter),
+    CourseAttribute.eitherPrereqOrCoreq:        (CourseFields.either_prereq_or_coreq, bool_converter),
+    CourseAttribute.sourceSemester:             (CourseFields.source_semester, string_converter),
+    CourseAttribute.isHistorical:               (CourseFields.is_historical, bool_converter),
+    "Design Units":                             (CourseFields.design_units, int_converter),
+    "Related Subjects":                         (CourseFields.related_subjects, string_converter),
+    "Enrollment Number":                        (CourseFields.enrollment_number, float_converter),
+    "Custom Color":                             (CourseFields.custom_color, string_converter)
 }
 
 '''
