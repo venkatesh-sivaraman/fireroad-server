@@ -68,6 +68,7 @@ def write_diff(old_path, new_path, diff_path):
     old_courses = {line[:line.find(",")]: line for line in old_contents.split('\n')}
     new_courses = {line[:line.find(",")]: line for line in new_contents.split('\n')}
     ids = sorted(set(old_courses.keys()) | set(new_courses.keys()))
+    wrote_to_file = False
     for i, id in enumerate(ids):
         if i % 100 == 0:
             print(i, "of", len(ids))
@@ -80,7 +81,11 @@ def write_diff(old_path, new_path, diff_path):
             else:
                 diff = build_diff_line(old_course, new_course, max_delta=20).encode('utf-8')
             diff_file.write(diff)
+            wrote_to_file = True
 
+    if not wrote_to_file:
+        diff_file.write("No files changed due to this update.")
+        
     old_file.close()
     new_file.close()
     diff_file.close()

@@ -30,11 +30,15 @@ def make_corrections(base_path, consensus):
     corrections_df = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
     corrections_df.set_index(CourseAttribute.subjectID, inplace=True)
     for subject_id, row in corrections_df.iterrows():
-        consensus_row = consensus.ix[subject_id]
-        for col in corrections_df.columns:
-            if len(row[col]) > 0:
-                print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
-                consensus_row[col] = row[col]
+        if subject_id not in consensus.index:
+            print("Correction: adding subject {}".format(subject_id))
+            consensus.loc[subject_id] = row
+        else:
+            consensus_row = consensus.ix[subject_id]
+            for col in corrections_df.columns:
+                if len(row[col]) > 0:
+                    print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
+                    consensus_row[col] = row[col]
 
 def build_consensus(base_path, out_path):
     if not os.path.exists(out_path):
