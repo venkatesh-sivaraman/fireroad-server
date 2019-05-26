@@ -115,6 +115,8 @@ class CourseFields:
     custom_color = "custom_color"
     source_semester = "source_semester"
     is_historical = "is_historical"
+    parent = "parent"
+    children = "children"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -173,28 +175,13 @@ CSV_HEADERS = {
     CourseAttribute.eitherPrereqOrCoreq:        (CourseFields.either_prereq_or_coreq, bool_converter),
     CourseAttribute.sourceSemester:             (CourseFields.source_semester, string_converter),
     CourseAttribute.isHistorical:               (CourseFields.is_historical, bool_converter),
+    CourseAttribute.parent:                     (CourseFields.parent, string_converter),
+    CourseAttribute.children:                   (CourseFields.children, string_converter),
     "Design Units":                             (CourseFields.design_units, int_converter),
     "Related Subjects":                         (CourseFields.related_subjects, string_converter),
     "Enrollment Number":                        (CourseFields.enrollment_number, float_converter),
     "Custom Color":                             (CourseFields.custom_color, string_converter)
 }
-
-'''
-The first item is the requirement, the second is the subject ID required to
-satisfy the requirement.
-'''
-EQUIVALENCE_PAIRS = [
-    ("6.0001", "6.00"),
-    ("6.0002", "6.00")
-]
-
-"""
-The first item is a list of subject IDs of courses, and the second item is
-the requirement string.
-"""
-EQUIVALENCE_SETS = [
-    (["6.0001", "6.0002"], "6.00")
-]
 
 # Create your models here.
 class Course(models.Model):
@@ -209,6 +196,9 @@ class Course(models.Model):
     # Source semester
     source_semester = models.CharField(max_length=15, default="")
     is_historical = models.BooleanField(default=False)
+
+    parent = models.CharField(max_length=15, null=True)
+    children = models.CharField(max_length=50, null=True)
 
     @classmethod
     def public_courses(cls):
@@ -371,6 +361,11 @@ class Course(models.Model):
         if self.gir_attribute is not None and len(self.gir_attribute) > 0:
             data[CourseFields.gir_attribute] = self.gir_attribute
 
+        if self.parent is not None and len(self.parent) > 0:
+            data[CourseFields.parent] = self.parent
+        if self.children is not None and len(self.children) > 0:
+            data[CourseFields.children] = self.children.split(",")
+
         if not full: return data
 
         data[CourseFields.lecture_units] = self.lecture_units
@@ -429,16 +424,19 @@ class Course(models.Model):
 
         if self.subject_id == req or req in self.joint_subjects.split(",") or req in self.equivalent_subjects.split(","):
             return True
-        for item_1, item_2 in EQUIVALENCE_PAIRS:
-            if req == item_1 and self.subject_id == item_2:
-                return True
 
-        if all_courses is not None:
-            ids = set(c.subject_id for c in all_courses)
-            for eq_reqs, eq_req in EQUIVALENCE_SETS:
-                if eq_req == req and all(subreq in ids for subreq in eq_reqs):
+        # For example: 6.00 satisfies the 6.0001 requirement
+        if self.children is not None and req in self.children.split(","):
+            return True
+
+        # For example: 6.0001 and 6.0002 together satsify the 6.00 requirement
+        if all_courses is not None and self.parent is not None and req == self.parent:
+            try:
+                parent_course = Course.public_courses().get(subject_id=self.parent)
+                ids = set(c.subject_id for c in all_courses)
+                if parent_course.children is not None and all((child in ids) for child in parent_course.children.split(",")):
                     return True
-
-
+            except:
+                pass
 
         return False

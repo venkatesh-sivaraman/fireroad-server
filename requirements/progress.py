@@ -152,7 +152,7 @@ class RequirementsProgress(object):
 
     def courses_satisfying_req(self, courses):
         if self.statement.requirement is not None:
-            return set([c for c in courses if c.satisfies(self.statement.requirement)])
+            return set([c for c in courses if c.satisfies(self.statement.requirement, courses)])
         return []
 
     def compute(self, courses, progress_overrides):

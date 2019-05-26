@@ -16,19 +16,31 @@ CORRECTIONS = 'corrections'
 KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
 
 def semester_sort_key(x):
-    if x == CORRECTIONS:
-        return 1e9
     comps = x.split('-')
     return int(comps[2]) * 10 + (5 if comps[1] == "fall" else 0)
+
+def make_corrections(base_path, consensus):
+    """Looks for a corrections.txt file in the base_path directory, and if one
+    is found, modifies the appropriate fields in the given consensus dataframe
+    as specified by the corrections CSV file."""
+    corrections_path = os.path.join(base_path, CORRECTIONS + '.txt')
+    if not os.path.exists(corrections_path):
+        return
+
+    corrections_df = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
+    corrections_df.set_index(CourseAttribute.subjectID, inplace=True)
+    for subject_id, row in corrections_df.iterrows():
+        consensus_row = consensus.ix[subject_id]
+        for col in corrections_df.columns:
+            if len(row[col]) > 0:
+                print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
+                consensus_row[col] = row[col]
 
 def build_consensus(base_path, out_path):
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
     semester_data = {}
-    corrections_path = os.path.join(base_path, CORRECTIONS + '.txt')
-    if os.path.exists(corrections_path):
-        semester_data[CORRECTIONS] = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
 
     for semester in os.listdir(base_path):
         if 'sem-' not in semester: continue
@@ -46,24 +58,21 @@ def build_consensus(base_path, out_path):
     last_size = 0
     i = 0
     for semester, data in semester_data:
-        if semester == CORRECTIONS:
-            data[CourseAttribute.sourceSemester] = semester
-            data[CourseAttribute.isHistorical] = ""
-        else:
-            data[CourseAttribute.sourceSemester] = semester[semester.find("-") + 1:]
-            data[CourseAttribute.isHistorical] = "Y" if (i != 0) else ""
+        data[CourseAttribute.sourceSemester] = semester[semester.find("-") + 1:]
+        data[CourseAttribute.isHistorical] = "Y" if (i != 0) else ""
 
         if consensus is None:
             consensus = data
         else:
-            consensus = pd.concat([consensus, data])
+            consensus = pd.concat([consensus, data], sort=False)
 
         consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
         print("Added {} courses with {}.".format(len(consensus) - last_size, semester))
         last_size = len(consensus)
-        if semester != CORRECTIONS:
-            i += 1
+        i += 1
+
     consensus.set_index(CourseAttribute.subjectID, inplace=True)
+    make_corrections(base_path, consensus)
 
     print("Writing courses...")
     seen_departments = set()

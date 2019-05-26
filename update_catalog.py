@@ -91,7 +91,15 @@ if __name__ == '__main__':
         semester = 'sem-' + update.semester
         out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
         evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
-        cp.parse(out_path, evaluations_path, progress_callback=update_progress)
+        if not os.path.exists(evaluations_path):
+            print("No evaluations file found - consider adding one (see catalog_parse/utils/parse_evaluations.py).")
+            evaluations_path = None
+        equivalences_path = os.path.join(CATALOG_BASE_DIR, "equivalences.json")
+        if not os.path.exists(equivalences_path):
+            print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
+            equivalences_path = None
+
+        cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress)
 
         consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):

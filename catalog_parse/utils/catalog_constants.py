@@ -28,9 +28,11 @@ class CatalogConstants:
     hassH = "hass humanities"
     hassA = "hass arts"
     hassS = "hass social sciences"
+    hassE = "hass elective"
     hassABasic = "arts"
     hassHBasic = "humanities"
     hassSBasic = "social sciences"
+    hassEBasic = "elective"
 
     ciH = "communication intensive hass"
     ciHW = "communication intensive writing"
@@ -39,6 +41,7 @@ class CatalogConstants:
     hassH_abbreviation = "HASS-H"
     hassA_abbreviation = "HASS-A"
     hassS_abbreviation = "HASS-S"
+    hassE_abbreviation = "HASS-E"
 
     schedule_ignore = [r"for audition info go to:\.?\s+.+?\.\s+"]
 
@@ -50,12 +53,16 @@ class CatalogConstants:
             return CatalogConstants.hassA_abbreviation
         elif attribute.lower() == CatalogConstants.hassS:
             return CatalogConstants.hassS_abbreviation
+        elif attribute.lower() == CatalogConstants.hassE:
+            return CatalogConstants.hassE_abbreviation
         if attribute.lower() == CatalogConstants.hassHBasic:
             return CatalogConstants.hassH_abbreviation
         elif attribute.lower() == CatalogConstants.hassABasic:
             return CatalogConstants.hassA_abbreviation
         elif attribute.lower() == CatalogConstants.hassSBasic:
             return CatalogConstants.hassS_abbreviation
+        elif attribute.lower() == CatalogConstants.hassEBasic:
+            return CatalogConstants.hassE_abbreviation
         elif attribute.lower() == CatalogConstants.ciH:
             return CatalogConstants.ciH_abbreviation
         elif attribute.lower() == CatalogConstants.ciHW:
@@ -123,6 +130,10 @@ class CourseAttribute:
     raterCount = "Rater Count"
     enrollment = "Enrollment"
 
+    # Equivalences
+    parent = "Parent"
+    children = "Children"
+
     # post-parsing keys
     sourceSemester = "Source Semester"
     isHistorical = "Historical"
@@ -161,7 +172,9 @@ ALL_ATTRIBUTES = [
     CourseAttribute.averageRating,
     CourseAttribute.averageInClassHours,
     CourseAttribute.averageOutOfClassHours,
-    CourseAttribute.enrollment
+    CourseAttribute.enrollment,
+    CourseAttribute.parent,
+    CourseAttribute.children
 ]
 
 CONDENSED_ATTRIBUTES = [
@@ -189,5 +202,7 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.GIR,
     CourseAttribute.averageInClassHours,
     CourseAttribute.averageOutOfClassHours,
-    CourseAttribute.enrollment
+    CourseAttribute.enrollment,
+    CourseAttribute.parent,
+    CourseAttribute.children
 ]
