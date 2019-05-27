@@ -181,6 +181,10 @@ def update_catalog(request):
                 diffs = [line for line in file.readlines() if len(line)]
         else:
             diffs = []
+        if len(diffs) > 1000:
+            message = "<p class=\"center\">{} more lines not shown</p>".format(len(diffs) - 1000)
+            diffs = diffs[:1000]
+            diffs.append(message)
         return render(request, 'courseupdater/review_update.html', {'diffs': diffs, 'form': form})
     else:
         print(current_update)

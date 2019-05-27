@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from django.db import models
 from common.models import Student
+from catalog_parse.utils.catalog_constants import *
 
 class Attribute:
     """
@@ -114,6 +115,8 @@ class CourseFields:
     custom_color = "custom_color"
     source_semester = "source_semester"
     is_historical = "is_historical"
+    parent = "parent"
+    children = "children"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -135,66 +138,50 @@ def list_converter(value):
     else:
         return modified
 
+# Converts from CSV header to JSON key (and value conversion function)
 CSV_HEADERS = {
-    "Subject Id":               (CourseFields.subject_id, string_converter),
-    "Subject Title":            (CourseFields.title, string_converter),
-    "Subject Level":            (CourseFields.level, string_converter),
-    "Subject Description":      (CourseFields.description, string_converter),
-    "Department Name":          (CourseFields.department, string_converter),
-    "Equivalent Subjects":      (CourseFields.equivalent_subjects, list_converter),
-    "Joint Subjects":           (CourseFields.joint_subjects, list_converter),
-    "Meets With Subjects":      (CourseFields.meets_with_subjects, list_converter),
-    "Prereqs":                  (CourseFields.prerequisites, list_converter),
-    "Coreqs":                   (CourseFields.corequisites, list_converter),
-    "Gir Attribute":            (CourseFields.gir_attribute, string_converter),
-    "Comm Req Attribute":       (CourseFields.communication_requirement, string_converter),
-    "Hass Attribute":           (CourseFields.hass_attribute, string_converter),
-    "Instructors":              (CourseFields.instructors, list_converter),
-    "Is Offered Fall Term":     (CourseFields.offered_fall, bool_converter),
-    "Is Offered Iap":           (CourseFields.offered_IAP, bool_converter),
-    "Is Offered Spring Term":   (CourseFields.offered_spring, bool_converter),
-    "Is Offered Summer Term":   (CourseFields.offered_summer, bool_converter),
-    "Is Offered This Year":     (CourseFields.offered_this_year, bool_converter),
-    "Total Units":              (CourseFields.total_units, int_converter),
-    "Is Variable Units":        (CourseFields.is_variable_units, bool_converter),
-    "Lab Units":                (CourseFields.lab_units, int_converter),
-    "Lecture Units":            (CourseFields.lecture_units, int_converter),
-    "Design Units":             (CourseFields.design_units, int_converter),
-    "Preparation Units":        (CourseFields.preparation_units, int_converter),
-    "PDF Option":               (CourseFields.pdf_option, bool_converter),
-    "Has Final":                (CourseFields.has_final, bool_converter),
-    "Not Offered Year":         (CourseFields.not_offered_year, string_converter),
-    "Quarter Information":      (CourseFields.quarter_information, string_converter),
-    "Related Subjects":         (CourseFields.related_subjects, string_converter),
-    "Schedule":                 (CourseFields.schedule, string_converter),
-    "URL":                      (CourseFields.url, string_converter),
-    "Rating":                   (CourseFields.rating, float_converter),
-    "In-Class Hours":           (CourseFields.in_class_hours, float_converter),
-    "Out-of-Class Hours":       (CourseFields.out_of_class_hours, float_converter),
-    "Enrollment Number":        (CourseFields.enrollment_number, float_converter),
-    "Enrollment":               (CourseFields.enrollment_number, float_converter),
-    "Prereq or Coreq":          (CourseFields.either_prereq_or_coreq, bool_converter),
-    "Custom Color":             (CourseFields.custom_color, string_converter),
-    "Source Semester":          (CourseFields.source_semester, string_converter),
-    "Historical":               (CourseFields.is_historical, bool_converter)
+    CourseAttribute.subjectID:                  (CourseFields.subject_id, string_converter),
+    CourseAttribute.title:                      (CourseFields.title, string_converter),
+    CourseAttribute.subjectLevel:               (CourseFields.level, string_converter),
+    CourseAttribute.description:                (CourseFields.description, string_converter),
+    CourseAttribute.equivalentSubjects:         (CourseFields.equivalent_subjects, list_converter),
+    CourseAttribute.jointSubjects:              (CourseFields.joint_subjects, list_converter),
+    CourseAttribute.meetsWithSubjects:          (CourseFields.meets_with_subjects, list_converter),
+    CourseAttribute.prerequisites:              (CourseFields.prerequisites, list_converter),
+    CourseAttribute.corequisites:               (CourseFields.corequisites, list_converter),
+    CourseAttribute.GIR:                        (CourseFields.gir_attribute, string_converter),
+    CourseAttribute.communicationRequirement:   (CourseFields.communication_requirement, string_converter),
+    CourseAttribute.hassRequirement:            (CourseFields.hass_attribute, string_converter),
+    CourseAttribute.instructors:                (CourseFields.instructors, list_converter),
+    CourseAttribute.offeredFall:                (CourseFields.offered_fall, bool_converter),
+    CourseAttribute.offeredIAP:                 (CourseFields.offered_IAP, bool_converter),
+    CourseAttribute.offeredSpring:              (CourseFields.offered_spring, bool_converter),
+    CourseAttribute.offeredSummer:              (CourseFields.offered_summer, bool_converter),
+    CourseAttribute.totalUnits:                 (CourseFields.total_units, int_converter),
+    CourseAttribute.isVariableUnits:            (CourseFields.is_variable_units, bool_converter),
+    CourseAttribute.labUnits:                   (CourseFields.lab_units, int_converter),
+    CourseAttribute.lectureUnits:               (CourseFields.lecture_units, int_converter),
+    CourseAttribute.preparationUnits:           (CourseFields.preparation_units, int_converter),
+    CourseAttribute.pdfOption:                  (CourseFields.pdf_option, bool_converter),
+    CourseAttribute.hasFinal:                   (CourseFields.has_final, bool_converter),
+    CourseAttribute.notOfferedYear:             (CourseFields.not_offered_year, string_converter),
+    CourseAttribute.quarterInformation:         (CourseFields.quarter_information, string_converter),
+    CourseAttribute.schedule:                   (CourseFields.schedule, string_converter),
+    CourseAttribute.URL:                        (CourseFields.url, string_converter),
+    CourseAttribute.averageRating:              (CourseFields.rating, float_converter),
+    CourseAttribute.averageInClassHours:        (CourseFields.in_class_hours, float_converter),
+    CourseAttribute.averageOutOfClassHours:     (CourseFields.out_of_class_hours, float_converter),
+    CourseAttribute.enrollment:                 (CourseFields.enrollment_number, float_converter),
+    CourseAttribute.eitherPrereqOrCoreq:        (CourseFields.either_prereq_or_coreq, bool_converter),
+    CourseAttribute.sourceSemester:             (CourseFields.source_semester, string_converter),
+    CourseAttribute.isHistorical:               (CourseFields.is_historical, bool_converter),
+    CourseAttribute.parent:                     (CourseFields.parent, string_converter),
+    CourseAttribute.children:                   (CourseFields.children, string_converter),
+    "Design Units":                             (CourseFields.design_units, int_converter),
+    "Related Subjects":                         (CourseFields.related_subjects, string_converter),
+    "Enrollment Number":                        (CourseFields.enrollment_number, float_converter),
+    "Custom Color":                             (CourseFields.custom_color, string_converter)
 }
-
-'''
-The first item is the requirement, the second is the subject ID required to
-satisfy the requirement.
-'''
-EQUIVALENCE_PAIRS = [
-    ("6.0001", "6.00"),
-    ("6.0002", "6.00")
-]
-
-"""
-The first item is a list of subject IDs of courses, and the second item is
-the requirement string.
-"""
-EQUIVALENCE_SETS = [
-    (["6.0001", "6.0002"], "6.00")
-]
 
 # Create your models here.
 class Course(models.Model):
@@ -209,6 +196,9 @@ class Course(models.Model):
     # Source semester
     source_semester = models.CharField(max_length=15, default="")
     is_historical = models.BooleanField(default=False)
+
+    parent = models.CharField(max_length=15, null=True)
+    children = models.CharField(max_length=50, null=True)
 
     @classmethod
     def public_courses(cls):
@@ -371,6 +361,11 @@ class Course(models.Model):
         if self.gir_attribute is not None and len(self.gir_attribute) > 0:
             data[CourseFields.gir_attribute] = self.gir_attribute
 
+        if self.parent is not None and len(self.parent) > 0:
+            data[CourseFields.parent] = self.parent
+        if self.children is not None and len(self.children) > 0:
+            data[CourseFields.children] = self.children.split(",")
+
         if not full: return data
 
         data[CourseFields.lecture_units] = self.lecture_units
@@ -429,16 +424,19 @@ class Course(models.Model):
 
         if self.subject_id == req or req in self.joint_subjects.split(",") or req in self.equivalent_subjects.split(","):
             return True
-        for item_1, item_2 in EQUIVALENCE_PAIRS:
-            if req == item_1 and self.subject_id == item_2:
-                return True
 
-        if all_courses is not None:
-            ids = set(c.subject_id for c in all_courses)
-            for eq_reqs, eq_req in EQUIVALENCE_SETS:
-                if eq_req == req and all(subreq in ids for subreq in eq_reqs):
+        # For example: 6.00 satisfies the 6.0001 requirement
+        if self.children is not None and req in self.children.split(","):
+            return True
+
+        # For example: 6.0001 and 6.0002 together satsify the 6.00 requirement
+        if all_courses is not None and self.parent is not None and req == self.parent:
+            try:
+                parent_course = Course.public_courses().get(subject_id=self.parent)
+                ids = set(c.subject_id for c in all_courses)
+                if parent_course.children is not None and all((child in ids) for child in parent_course.children.split(",")):
                     return True
-
-
+            except:
+                pass
 
         return False

@@ -9,54 +9,42 @@ import sys
 import csv
 import pandas as pd
 import numpy as np
+from .utils.catalog_constants import *
 
-SUBJECT_ID_KEY = 'Subject Id'
 CORRECTIONS = 'corrections'
 
-CONDENSED_KEYS = [
-        #"Subject Id",  included by default
-        "Subject Title",
-        "Subject Level",
-        "Total Units",
-        "Prereqs",
-        "Coreqs",
-        "Prerequisites",
-        "Corequisites",
-        "Prereq or Coreq",
-        "Joint Subjects",
-        "Equivalent Subjects",
-        "Meets With Subjects",
-        "Not Offered Year",
-        "Is Offered Fall Term",
-        "Is Offered Iap",
-        "Is Offered Spring Term",
-        "Is Offered Summer Term",
-        "Quarter Information",
-        "Instructors",
-        "Comm Req Attribute",
-        "Hass Attribute",
-        "Gir Attribute",
-        "In-Class Hours",
-        "Out-of-Class Hours",
-        "Enrollment",
-        "Source Semester",
-        "Historical"
-]
+KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
 
 def semester_sort_key(x):
-    if x == CORRECTIONS:
-        return 1e9
     comps = x.split('-')
     return int(comps[2]) * 10 + (5 if comps[1] == "fall" else 0)
+
+def make_corrections(base_path, consensus):
+    """Looks for a corrections.txt file in the base_path directory, and if one
+    is found, modifies the appropriate fields in the given consensus dataframe
+    as specified by the corrections CSV file."""
+    corrections_path = os.path.join(base_path, CORRECTIONS + '.txt')
+    if not os.path.exists(corrections_path):
+        return
+
+    corrections_df = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
+    corrections_df.set_index(CourseAttribute.subjectID, inplace=True)
+    for subject_id, row in corrections_df.iterrows():
+        if subject_id not in consensus.index:
+            print("Correction: adding subject {}".format(subject_id))
+            consensus.loc[subject_id] = row
+        else:
+            consensus_row = consensus.ix[subject_id]
+            for col in corrections_df.columns:
+                if len(row[col]) > 0:
+                    print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
+                    consensus_row[col] = row[col]
 
 def build_consensus(base_path, out_path):
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
     semester_data = {}
-    corrections_path = os.path.join(base_path, CORRECTIONS + '.txt')
-    if os.path.exists(corrections_path):
-        semester_data[CORRECTIONS] = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
 
     for semester in os.listdir(base_path):
         if 'sem-' not in semester: continue
@@ -74,24 +62,21 @@ def build_consensus(base_path, out_path):
     last_size = 0
     i = 0
     for semester, data in semester_data:
-        if semester == CORRECTIONS:
-            data['Source Semester'] = semester
-            data['Historical'] = ""
-        else:
-            data['Source Semester'] = semester[semester.find("-") + 1:]
-            data['Historical'] = "Y" if (i != 0) else ""
+        data[CourseAttribute.sourceSemester] = semester[semester.find("-") + 1:]
+        data[CourseAttribute.isHistorical] = "Y" if (i != 0) else ""
 
         if consensus is None:
             consensus = data
         else:
-            consensus = pd.concat([consensus, data])
+            consensus = pd.concat([consensus, data], sort=False)
 
-        consensus = consensus.drop_duplicates(subset=[SUBJECT_ID_KEY], keep='first')
+        consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
         print("Added {} courses with {}.".format(len(consensus) - last_size, semester))
         last_size = len(consensus)
-        if semester != CORRECTIONS:
-            i += 1
-    consensus.set_index(SUBJECT_ID_KEY, inplace=True)
+        i += 1
+
+    consensus.set_index(CourseAttribute.subjectID, inplace=True)
+    make_corrections(base_path, consensus)
 
     print("Writing courses...")
     seen_departments = set()
@@ -107,24 +92,26 @@ def build_consensus(base_path, out_path):
     write_df(consensus, os.path.join(out_path, "courses.txt"))
     write_condensed_files(consensus, out_path)
 
-    # Copy related file
-    related_path = os.path.join(base_path, semester_data[0][0], "related.txt")
-    if os.path.exists(related_path):
-        with open(related_path, 'r') as file:
-            with open(os.path.join(out_path, "related.txt"), 'w') as outfile:
-                for line in file:
-                    outfile.write(line)
+    # Copy the first available related file
+    for semester, data in semester_data:
+        related_path = os.path.join(base_path, semester, "related.txt")
+        if os.path.exists(related_path):
+            with open(related_path, 'r') as file:
+                with open(os.path.join(out_path, "related.txt"), 'w') as outfile:
+                    for line in file:
+                        outfile.write(line)
+            break
 
 def write_condensed_files(consensus, out_path, split_count=4):
     for i in range(split_count):
         lower_bound = int(i / 4.0 * len(consensus))
         upper_bound = min(len(consensus), int((i + 1) / 4.0 * len(consensus)))
-        write_df(consensus[CONDENSED_KEYS].iloc[lower_bound:upper_bound], os.path.join(out_path, "condensed_{}.txt".format(i)))
+        write_df(consensus[KEYS_TO_WRITE].iloc[lower_bound:upper_bound], os.path.join(out_path, "condensed_{}.txt".format(i)))
 
 def write_df(df, path):
     """Writes the df to the given path with appropriate quoting."""
     with open(path, 'w') as file:
-        file.write(','.join(['Subject Id'] + list(df.columns)) + '\n')
+        file.write(','.join([CourseAttribute.subjectID] + list(df.columns)) + '\n')
         file.write(df.to_csv(header=False, quoting=csv.QUOTE_NONNUMERIC).replace('""', ''))
 
 if __name__ == "__main__":

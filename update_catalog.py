@@ -68,6 +68,7 @@ def write_diff(old_path, new_path, diff_path):
     old_courses = {line[:line.find(",")]: line for line in old_contents.split('\n')}
     new_courses = {line[:line.find(",")]: line for line in new_contents.split('\n')}
     ids = sorted(set(old_courses.keys()) | set(new_courses.keys()))
+    wrote_to_file = False
     for i, id in enumerate(ids):
         if i % 100 == 0:
             print(i, "of", len(ids))
@@ -80,7 +81,11 @@ def write_diff(old_path, new_path, diff_path):
             else:
                 diff = build_diff_line(old_course, new_course, max_delta=20).encode('utf-8')
             diff_file.write(diff)
+            wrote_to_file = True
 
+    if not wrote_to_file:
+        diff_file.write("No files changed due to this update.")
+        
     old_file.close()
     new_file.close()
     diff_file.close()
@@ -91,7 +96,15 @@ if __name__ == '__main__':
         semester = 'sem-' + update.semester
         out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
         evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
-        cp.parse(out_path, evaluations_path, progress_callback=update_progress)
+        if not os.path.exists(evaluations_path):
+            print("No evaluations file found - consider adding one (see catalog_parse/utils/parse_evaluations.py).")
+            evaluations_path = None
+        equivalences_path = os.path.join(CATALOG_BASE_DIR, "equivalences.json")
+        if not os.path.exists(equivalences_path):
+            print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
+            equivalences_path = None
+
+        cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress)
 
         consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):

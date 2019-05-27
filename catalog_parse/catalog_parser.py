@@ -11,11 +11,7 @@ import re
 import sys
 import os
 
-from .utils.catalog_constants import *
-from .utils.parse_prereqs import handle_prereq, handle_coreq
-from .utils.parse_schedule import parse_schedule
-from .utils.parse_evaluations import *
-from .utils.course_nlp import write_related_and_features
+from .utils import *
 
 # On the registrar page, all subject listings are contained
 # within the HTML node specified by this XPath
@@ -82,7 +78,8 @@ def load_course_elements(url):
 
     course_elements = tree.xpath(SUBJECT_CONTENT_XPATH)
 
-    # Group by anchor elements (<a name="subject id">)
+    # Group by anchor elements (<a name="subject id">) or h3 (in case the links are missing
+    # or out of order)
     course_ids = []
     courses = []
     for element in course_elements[0].getchildren():
@@ -288,11 +285,11 @@ def process_info_item(item, attributes):
             attributes[CourseAttribute.totalUnits] = int(comps[0]) + int(comps[1]) + int(comps[2])
 
     # HASS requirement
-    elif any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassH, CatalogConstants.hassA, CatalogConstants.hassS]):
+    elif any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassH, CatalogConstants.hassA, CatalogConstants.hassS, CatalogConstants.hassE]):
         attributes[CourseAttribute.hassRequirement] = CatalogConstants.abbreviation(item.strip())
 
     # Multiple HASS requirements
-    elif "+" in item and len(item) < 50 and any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassHBasic, CatalogConstants.hassABasic, CatalogConstants.hassSBasic]):
+    elif "+" in item and len(item) < 50 and any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassHBasic, CatalogConstants.hassABasic, CatalogConstants.hassSBasic, CatalogConstants.hassEBasic]):
         comps = item.split("+")
         attributes[CourseAttribute.hassRequirement] = ','.join([CatalogConstants.abbreviation(comp.strip()) for comp in comps])
 
@@ -382,6 +379,7 @@ def merge_duplicates(courses):
                     if correct_val is not None:
                         total_course[key] = correct_val
 
+                # The 'best' value is the longest value
                 best_val = max(vals, key=lambda x: len(str(x)))
                 total_course[key] = best_val
             merged_courses.append(total_course)
@@ -418,8 +416,10 @@ def courses_from_dept_code(dept_code):
         for prop in props:
             process_info_item(prop, attribs)
 
-        # the subject ID might have changed during parsing
+        # The subject ID might have changed during parsing
         id = attribs[CourseAttribute.subjectID]
+
+        # Apply the subject content to multiple subject IDs if they are contained within this entry
         subject_ids = expand_subject_ids(id)
         if len(subject_ids) > 1:
             for other_id in subject_ids:
@@ -440,8 +440,6 @@ def courses_from_dept_code(dept_code):
                 courses.append(copied_course)
             autofill_ids = []
 
-    parse_evaluations("evaluations.js", courses)
-    #print("\n".join(str(c) for c in courses if c[CourseAttribute.subjectID] == "6.006"))
     return courses
 
 ### Writing courses
@@ -485,12 +483,14 @@ def write_courses(courses, filepath, attributes):
 
 ### Main method
 
-def parse(output_dir, evaluations_path=None, write_related=True, progress_callback=None):
+def parse(output_dir, evaluations_path=None, equivalences_path=None, write_related=True, progress_callback=None):
     """
     Parses the catalog from the web and writes the files to the given directory.
 
     output_dir: path to a directory into which to write the results
     evaluations_path: path to a JS file containing subject evaluations
+    equivalences_path: path to a JSON file containing equivalences, i.e.
+        [[["6.0001", "6.0002"], "6.00"], ...]
     write_related: if True, compute the related and features files as well
     progress_callback: a function that takes the current progress (from 0-100) and an
         update string
@@ -534,11 +534,16 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
             parse_evaluations(eval_data, dept_courses)
 
         dept_courses = merge_duplicates(dept_courses)
+        course_dict = {course[CourseAttribute.subjectID]: course for course in dept_courses}
+
+        # Add in equivalences
+        if equivalences_path is not None:
+            parse_equivalences(equivalences_path, course_dict)
 
         # Write department-specific file
         write_courses(dept_courses, os.path.join(output_dir, course_code + ".txt"), ALL_ATTRIBUTES)
         all_courses += dept_courses
-        courses_by_dept[course_code] = {course[CourseAttribute.subjectID]: course for course in dept_courses}
+        courses_by_dept[course_code] = course_dict
 
     print("Writing condensed courses...")
     for i in range(CONDENSED_SPLIT_COUNT):
@@ -555,7 +560,7 @@ def parse(output_dir, evaluations_path=None, write_related=True, progress_callba
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: python catalog_parser.py output-dir [evaluations-file]")
+        print("Usage: python catalog_parser.py output-dir [evaluations-file] [equivalences-file]")
         exit(1)
 
     output_dir = sys.argv[1]
@@ -564,4 +569,9 @@ if __name__ == '__main__':
     else:
         eval_path = None
 
-    parse(output_dir, eval_path, not '-norel' in sys.argv)
+    if len(sys.argv) > 3:
+        equiv_path = sys.argv[3]
+    else:
+        equiv_path = None
+
+    parse(output_dir, eval_path, equiv_path, write_related=(not '-norel' in sys.argv))
