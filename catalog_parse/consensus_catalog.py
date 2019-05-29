@@ -7,6 +7,7 @@ of each course. The related file is copied directly from the most recent semeste
 import os
 import sys
 import csv
+import re
 import pandas as pd
 import numpy as np
 from .utils.catalog_constants import *
@@ -30,15 +31,31 @@ def make_corrections(base_path, consensus):
     corrections_df = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
     corrections_df.set_index(CourseAttribute.subjectID, inplace=True)
     for subject_id, row in corrections_df.iterrows():
-        if subject_id not in consensus.index:
-            print("Correction: adding subject {}".format(subject_id))
-            consensus.loc[subject_id] = row
-        else:
+        if '*' in subject_id:
+            # Use regex matching to find appropriate rows
+            regex = re.escape(subject_id).replace('\*', '.*')
+            consensus_rows = consensus[consensus.index.str.match(regex)]
+            for idx, consensus_row in consensus_rows.iterrows():
+                for col in corrections_df.columns:
+                    if len(row[col]) > 0:
+                        if col not in consensus.columns:
+                            consensus[col] = ""
+                        print("Correction for {}: {} ==> {}".format(idx, col, row[col]))
+                        consensus.ix[idx][col] = row[col]
+
+        elif subject_id in consensus.index:
+            # Find the subject in the consensus dataframe
             consensus_row = consensus.ix[subject_id]
             for col in corrections_df.columns:
                 if len(row[col]) > 0:
                     print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
                     consensus_row[col] = row[col]
+
+        else:
+            # Add the subject
+            print("Correction: adding subject {}".format(subject_id))
+            consensus.loc[subject_id] = row
+
 
 def build_consensus(base_path, out_path):
     if not os.path.exists(out_path):
