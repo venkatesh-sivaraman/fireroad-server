@@ -137,6 +137,7 @@ class CourseAttribute:
     # post-parsing keys
     sourceSemester = "Source Semester"
     isHistorical = "Historical"
+    halfClass = "Half Class"
 
 ALL_ATTRIBUTES = [
     CourseAttribute.subjectID,
@@ -147,6 +148,7 @@ ALL_ATTRIBUTES = [
     CourseAttribute.preparationUnits,
     CourseAttribute.totalUnits,
     CourseAttribute.isVariableUnits,
+    CourseAttribute.halfClass,
     CourseAttribute.hasFinal,
     CourseAttribute.GIR,
     CourseAttribute.communicationRequirement,
@@ -182,6 +184,7 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.title,
     CourseAttribute.subjectLevel,
     CourseAttribute.totalUnits,
+    CourseAttribute.halfClass,
     CourseAttribute.prerequisites,
     CourseAttribute.corequisites,
     CourseAttribute.oldPrerequisites,

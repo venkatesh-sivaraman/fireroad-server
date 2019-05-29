@@ -151,15 +151,33 @@ class RequirementsProgress(object):
                 self.children.append(RequirementsProgress(child, list_path + "." + str(index)))
 
     def courses_satisfying_req(self, courses):
+        """
+        Returns the whole courses and the half courses satisfying this requirement
+        separately.
+        """
         if self.statement.requirement is not None:
-            return set([c for c in courses if c.satisfies(self.statement.requirement, courses)])
-        return []
+            req = self.statement.requirement
+            if "GIR:" in req or "HASS" in req or "CI-" in req:
+                # Separate whole and half courses
+                whole_courses = []
+                half_courses = []
+                for c in courses:
+                    if not c.satisfies(req, courses):
+                        continue
+                    if c.is_half_class:
+                        half_courses.append(c)
+                    else:
+                        whole_courses.append(c)
+                return whole_courses, half_courses
+            else:
+                return [c for c in courses if c.satisfies(req, courses)]
+
+        return [], []
 
     def compute(self, courses, progress_overrides):
         """Computes and stores the status of the requirements statement using the
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps' computeRequirementsStatus method
-        courses = list(set(courses))
         satisfied_courses = set()
 
         if self.list_path in progress_overrides:
@@ -193,11 +211,13 @@ class RequirementsProgress(object):
 
             else:
                 #Example: requirement CI-H, we want to show how many have been fulfilled
-                satisfied_courses = self.courses_satisfying_req(courses)
+                whole_courses, half_courses = self.courses_satisfying_req(courses)
+                satisfied_courses = whole_courses + half_courses
+                print(whole_courses, half_courses)
 
                 if not self.threshold is None:
                     #A specific number of courses is required
-                    subject_progress = ceiling_thresh(len(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
+                    subject_progress = ceiling_thresh(len(whole_courses) + len(half_courses) // 2, self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                     unit_progress = ceiling_thresh(total_units(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_UNITS))
                     is_fulfilled = self.threshold.is_satisfied_by(subject_progress.progress, unit_progress.progress)
                 else:

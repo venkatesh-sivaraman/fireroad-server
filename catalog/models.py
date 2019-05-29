@@ -117,6 +117,7 @@ class CourseFields:
     is_historical = "is_historical"
     parent = "parent"
     children = "children"
+    is_half_class = "is_half_class"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -162,6 +163,7 @@ CSV_HEADERS = {
     CourseAttribute.labUnits:                   (CourseFields.lab_units, int_converter),
     CourseAttribute.lectureUnits:               (CourseFields.lecture_units, int_converter),
     CourseAttribute.preparationUnits:           (CourseFields.preparation_units, int_converter),
+    CourseAttribute.halfClass:                  (CourseFields.is_half_class, bool_converter),
     CourseAttribute.pdfOption:                  (CourseFields.pdf_option, bool_converter),
     CourseAttribute.hasFinal:                   (CourseFields.has_final, bool_converter),
     CourseAttribute.notOfferedYear:             (CourseFields.not_offered_year, string_converter),
@@ -294,6 +296,7 @@ class Course(models.Model):
     design_units = models.IntegerField(default=0)
     lab_units = models.IntegerField(default=0)
     preparation_units = models.IntegerField(default=0)
+    is_half_class = models.BooleanField(default=False)
     has_final = models.BooleanField(default=False)
     pdf_option = models.BooleanField(default=False)
     not_offered_year = models.CharField(max_length=15, null=True)
@@ -373,6 +376,7 @@ class Course(models.Model):
         data[CourseFields.design_units] = self.design_units
         data[CourseFields.preparation_units] = self.preparation_units
         data[CourseFields.is_variable_units] = self.is_variable_units
+        data[CourseFields.is_half_class] = self.is_half_class
         data[CourseFields.pdf_option] = self.pdf_option
         data[CourseFields.has_final] = self.has_final
 
