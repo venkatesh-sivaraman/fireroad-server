@@ -116,7 +116,7 @@ def build_diff(old, new, changed_lines_only=False, max_line_delta=None, max_word
     j = 0
     for change in diff_sequence:
         if change == 0: # Same character (since allow subs is False)
-            if old_lines[i] != new_lines[j]:
+            if not changed_lines_only or old_lines[i] != new_lines[j]:
                 result += build_diff_line(old_lines[i], new_lines[j], max_delta=max_word_delta)
             i += 1
             j += 1
