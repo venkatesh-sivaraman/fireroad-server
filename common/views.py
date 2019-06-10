@@ -37,19 +37,18 @@ def login_oauth(request):
 
     # Save the user's profile, check if there are any other accounts
     email = result.get(u'email', None)
-    if email is None:
-        return login_error_response(request, 'Please try again and allow FireRoad to access your email address.')
-
     sub = result.get(u'sub', None)
     if sub is None:
         return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
-    password = generate_random_string(32)
+
     try:
         student = Student.objects.get(unique_id=sub)
     except:
-        user = User.objects.create_user(username=random.getrandbits(32), password=password)
+        user = make_new_user()
         user.save()
-        #Recommendation.objects.create(user=user, rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects='{}')
+
+        if email is None:
+            email = "user{}@fireroad.mit.edu".format(user.username)
         student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
         student.current_semester = info.get('sem', '0')
         student.save()
@@ -58,9 +57,13 @@ def login_oauth(request):
         if len(info.get('sem', '')) > 0 and int(info['sem']) != 0:
             student.current_semester = info['sem']
         if student.user is None:
-            user = User.objects.create_user(username=random.getrandbits(32), password=password)
+            user = make_new_user()
             user.save()
             student.user = user
+
+        if email is not None: # In case the student's email has appeared now
+            student.academic_id = email
+
         student.save()
 
     student.user.backend = 'django.contrib.auth.backends.ModelBackend'
@@ -77,6 +80,15 @@ def login_oauth(request):
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
+
+def make_new_user():
+    """Creates a new user using a random unique username and a long alphanumeric
+    password."""
+    password = generate_random_string(32)
+    username = random.getrandbits(32)
+    while User.objects.filter(username=username).exists():
+        username = random.getrandbits(32)
+    return User.objects.create_user(username=username, password=password)
 
 def login_error_response(request, message):
     params = {'message': message}
