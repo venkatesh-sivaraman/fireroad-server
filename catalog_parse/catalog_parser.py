@@ -89,10 +89,15 @@ def load_course_elements(url):
             courses.append([])
         else:
             match = re.match(subject_id_regex, element.text_content())
-            if element.tag == "h3" and match is not None and (len(course_ids) == 0 or match.group(1) != course_ids[-1]):
-                subject_id = match.group(1)
-                course_ids.append(subject_id)
-                courses.append([element])
+            if element.tag == "h3":
+                if match is not None:
+                    if len(course_ids) == 0 or match.group(1) != course_ids[-1]:
+                        subject_id = match.group(1)
+                        course_ids.append(subject_id)
+                        courses.append([element])
+                    elif len(courses) > 0:
+                        courses[-1].append(element)
+                # if no match with subject ID, ignore this h3!
             elif len(courses) > 0:
                 courses[-1].append(element)
 
