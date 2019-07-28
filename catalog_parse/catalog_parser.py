@@ -25,7 +25,7 @@ URL_LAST_PREFIX = "m"
 
 CONDENSED_SPLIT_COUNT = 4
 
-subject_id_regex = r'([A-Z0-9.-]+)\s+'
+subject_id_regex = r'([A-Z0-9.-]+)(\[J\])?\s+'
 course_id_list_regex = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
 instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
 
