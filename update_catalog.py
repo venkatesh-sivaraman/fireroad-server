@@ -76,16 +76,16 @@ def write_diff(old_path, new_path, diff_path):
         new_course = new_courses.get(id, "")
 
         if old_course != new_course:
-            if abs(len(new_course) - len(old_course)) >= 25:
+            if abs(len(new_course) - len(old_course)) >= 40:
                 diff = delete_insert_diff_line(old_course.encode('utf-8'), new_course.encode('utf-8'))
             else:
-                diff = build_diff_line(old_course, new_course, max_delta=20).encode('utf-8')
+                diff = build_diff_line(old_course, new_course, max_delta=40).encode('utf-8')
             diff_file.write(diff)
             wrote_to_file = True
 
     if not wrote_to_file:
         diff_file.write("No files changed due to this update.")
-        
+
     old_file.close()
     new_file.close()
     diff_file.close()

@@ -25,7 +25,7 @@ URL_LAST_PREFIX = "m"
 
 CONDENSED_SPLIT_COUNT = 4
 
-subject_id_regex = r'([A-Z0-9.-]+)\s+'
+subject_id_regex = r'([A-Z0-9.-]+)(\[J\])?(,?)\s+'
 course_id_list_regex = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
 instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
 
@@ -89,10 +89,15 @@ def load_course_elements(url):
             courses.append([])
         else:
             match = re.match(subject_id_regex, element.text_content())
-            if element.tag == "h3" and match is not None and (len(course_ids) == 0 or match.group(1) != course_ids[-1]):
-                subject_id = match.group(1)
-                course_ids.append(subject_id)
-                courses.append([element])
+            if element.tag == "h3":
+                if match is not None:
+                    if len(course_ids) == 0 or (match.group(1) != course_ids[-1] and not match.group(3)):
+                        subject_id = match.group(1)
+                        course_ids.append(subject_id)
+                        courses.append([element])
+                    elif len(courses) > 0:
+                        courses[-1].append(element)
+                # if no match with subject ID, ignore this h3!
             elif len(courses) > 0:
                 courses[-1].append(element)
 
@@ -420,24 +425,32 @@ def courses_from_dept_code(dept_code):
         id = attribs[CourseAttribute.subjectID]
 
         # Apply the subject content to multiple subject IDs if they are contained within this entry
-        subject_ids = expand_subject_ids(id)
+        subject_ids = expand_subject_ids(id) + autofill_ids
+
         if len(subject_ids) > 1:
+            # Possibly split up schedules by subject
+            schedules = attribs.get(CourseAttribute.schedule, {})
+            if "" in schedules:
+                # Only one schedule for all
+                schedules = {other_id: schedules[""] for other_id in subject_ids}
+
             for other_id in subject_ids:
                 copied_course = {key: val for key, val in attribs.items()}
                 copied_course[CourseAttribute.subjectID] = other_id
+                if other_id in schedules:
+                    copied_course[CourseAttribute.schedule] = schedules[other_id]
+                elif CourseAttribute.schedule in copied_course:
+                    del copied_course[CourseAttribute.schedule]
                 courses.append(copied_course)
         else:
+            # Use only the first item in the schedule dictionary
+            if CourseAttribute.schedule in attribs:
+                attribs[CourseAttribute.schedule] = list(attribs[CourseAttribute.schedule].values())[0]
             courses.append(attribs)
 
         # Autofill regions that were empty with the subsequent course information
         # For example, 6.260, 6.261 Advanced Topics in Communications
         if len(autofill_ids) > 0:
-            for other_id in autofill_ids:
-                copied_course = {key: val for key, val in attribs.items()}
-                copied_course[CourseAttribute.subjectID] = other_id
-                if CourseAttribute.schedule in copied_course:
-                    del copied_course[CourseAttribute.schedule]
-                courses.append(copied_course)
             autofill_ids = []
 
     return courses
