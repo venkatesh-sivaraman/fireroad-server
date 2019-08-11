@@ -283,6 +283,12 @@ class Course(models.Model):
     communication_requirement = models.CharField(max_length=30, null=True)
     hass_attribute = models.CharField(max_length=20, null=True)
 
+    def get_hass_attributes(self):
+        """Returns a list of HASS attributes stored in the hass_attribute field."""
+        if not self.hass_attribute:
+            return []
+        return self.hass_attribute.split(",")
+
     instructors = models.TextField(null=True)
     offered_fall = models.BooleanField(default=False)
     offered_IAP = models.BooleanField(default=False)
@@ -420,7 +426,8 @@ class Course(models.Model):
         if "GIR:" in requirement and self.gir_attribute is not None and len(self.gir_attribute) > 0 and self.gir_attribute == req:
             return True
 
-        if "HASS" in req and self.hass_attribute is not None and len(self.hass_attribute) > 0 and (self.hass_attribute == req or req=="HASS"):
+        hasses = self.get_hass_attributes()
+        if "HASS" in req and hasses and (req in hasses or req == "HASS"):
             return True
 
         if "CI-" in req and self.communication_requirement is not None and len(self.communication_requirement) > 0 and self.communication_requirement == req:
