@@ -222,6 +222,8 @@ def get_field_value(form_data, field):
             return None
     return new_value
 
+CORRECTION_DIFF_EXCLUDE = set(["id", "subject_id", "author", "date_added", "offered_this_year"])
+
 def view_corrections(request):
     """Creates the page that displays all current catalog corrections."""
     diffs = {}
@@ -232,13 +234,13 @@ def view_corrections(request):
         diff = {}
         if changed_course:
             for field in changed_course:
-                if field == "id" or "ptr" in field: continue
-                if field not in correction or not correction[field]: continue
-                if changed_course[field] != correction[field]:
+                if field in CORRECTION_DIFF_EXCLUDE or "ptr" in field: continue
+                if field not in correction: continue
+                if correction[field]:
                     diff[field] = (changed_course[field], correction[field])
         else:
             for field in correction:
-                if field in ("id", "author", "date_added") or "ptr" in field: continue
+                if field in CORRECTION_DIFF_EXCLUDE or "ptr" in field: continue
                 if not correction[field]: continue
                 diff[field] = (None, correction[field])
         diffs[subject_id] = {"id": correction["id"], "diff": diff}

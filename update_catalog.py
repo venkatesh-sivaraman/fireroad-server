@@ -63,7 +63,7 @@ def get_corrections():
     for corr in raw_corrections:
         new_corr = {}
         for k, v in corr.items():
-            if k in FIELD_TO_CSV and format(v):
+            if k in FIELD_TO_CSV and k != "offered_this_year" and format(v):
                 new_corr[FIELD_TO_CSV[k]] = format(v)
         corrections.append(new_corr)
     return corrections
