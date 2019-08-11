@@ -13,3 +13,21 @@
   width: 400px;
   height: 100px;
 }
+
+@media (min-width: 767px) {
+  .corrections-body {
+    padding: 12px 30px 30px 30px;
+  }
+
+  .bottom-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .corrections-body {
+    padding: 12px 12px 36px 12px;
+  }
+}

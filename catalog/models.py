@@ -185,6 +185,8 @@ CSV_HEADERS = {
     "Custom Color":                             (CourseFields.custom_color, string_converter)
 }
 
+FIELD_TO_CSV = {field_name: csv_header for csv_header, (field_name, _) in CSV_HEADERS.items()}
+
 # Create your models here.
 class Course(models.Model):
     subject_id = models.CharField(db_index=True, max_length=20, null=True)

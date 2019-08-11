@@ -12,52 +12,46 @@ import pandas as pd
 import numpy as np
 from .utils.catalog_constants import *
 
-CORRECTIONS = 'corrections'
-
 KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
 
 def semester_sort_key(x):
     comps = x.split('-')
     return int(comps[2]) * 10 + (5 if comps[1] == "fall" else 0)
 
-def make_corrections(base_path, consensus):
-    """Looks for a corrections.txt file in the base_path directory, and if one
-    is found, modifies the appropriate fields in the given consensus dataframe
-    as specified by the corrections CSV file."""
-    corrections_path = os.path.join(base_path, CORRECTIONS + '.txt')
-    if not os.path.exists(corrections_path):
-        return
-
-    corrections_df = pd.read_csv(corrections_path, dtype=str).replace(np.nan, '', regex=True)
-    corrections_df.set_index(CourseAttribute.subjectID, inplace=True)
-    for subject_id, row in corrections_df.iterrows():
+def make_corrections(corrections, consensus):
+    """Based on the given correction dictionary objects, modifies
+    the appropriate fields in the given consensus dataframe."""
+    for correction in corrections:
+        subject_id = correction["Subject Id"]
         if '*' in subject_id:
             # Use regex matching to find appropriate rows
-            regex = re.escape(subject_id).replace('\*', '.*')
+            regex = re.escape(subject_id).replace('\*', '.')
             consensus_rows = consensus[consensus.index.str.match(regex)]
             for idx, consensus_row in consensus_rows.iterrows():
-                for col in corrections_df.columns:
-                    if len(row[col]) > 0:
+                for col in correction:
+                    if col == "Subject Id": continue
+                    if correction[col]:
                         if col not in consensus.columns:
                             consensus[col] = ""
-                        print("Correction for {}: {} ==> {}".format(idx, col, row[col]))
-                        consensus.ix[idx][col] = row[col]
+                        print("Correction for {}: {} ==> {}".format(idx, col, correction[col]))
+                        consensus.ix[idx][col] = correction[col]
 
         elif subject_id in consensus.index:
             # Find the subject in the consensus dataframe
             consensus_row = consensus.ix[subject_id]
-            for col in corrections_df.columns:
-                if len(row[col]) > 0:
-                    print("Correction for {}: {} ==> {}".format(subject_id, col, row[col]))
-                    consensus_row[col] = row[col]
+            for col in correction:
+                if col == "Subject Id": continue
+                if correction[col]:
+                    print("Correction for {}: {} ==> {}".format(subject_id, col, correction[col]))
+                    consensus_row[col] = correction[col]
 
         else:
             # Add the subject
             print("Correction: adding subject {}".format(subject_id))
-            consensus.loc[subject_id] = row
+            consensus.loc[subject_id] = {col: correction.get(col, None) for col in consensus.columns}
 
 
-def build_consensus(base_path, out_path):
+def build_consensus(base_path, out_path, corrections=None):
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
@@ -93,7 +87,7 @@ def build_consensus(base_path, out_path):
         i += 1
 
     consensus.set_index(CourseAttribute.subjectID, inplace=True)
-    make_corrections(base_path, consensus)
+    make_corrections(corrections, consensus)
 
     print("Writing courses...")
     seen_departments = set()

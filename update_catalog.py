@@ -24,6 +24,8 @@ import traceback
 from django.core.exceptions import ObjectDoesNotExist
 import catalog_parse as cp
 from requirements.diff import *
+from courseupdater.models import CatalogCorrection
+from catalog.models import FIELD_TO_CSV
 
 def email_results(message, recipients):
     """
@@ -48,6 +50,24 @@ def update_progress(progress, message):
         # The update was canceled
         raise KeyboardInterrupt
 
+def get_corrections():
+    """Gets the corrections from the CatalogCorrection table and formats them
+    appropriately."""
+    raw_corrections = CatalogCorrection.objects.all().values()
+    corrections = []
+    def format(value):
+        if isinstance(value, bool):
+            return "Y" if value else None
+        return value if value else None
+
+    for corr in raw_corrections:
+        new_corr = {}
+        for k, v in corr.items():
+            if k in FIELD_TO_CSV and format(v):
+                new_corr[FIELD_TO_CSV[k]] = format(v)
+        corrections.append(new_corr)
+    return corrections
+
 def write_diff(old_path, new_path, diff_path):
     if not os.path.exists(old_path):
         with open(diff_path, 'w') as file:
@@ -65,8 +85,15 @@ def write_diff(old_path, new_path, diff_path):
     old_contents = old_file.read().decode('utf-8')
     new_contents = new_file.read().decode('utf-8')
 
-    old_courses = {line[:line.find(",")]: line for line in old_contents.split('\n')}
-    new_courses = {line[:line.find(",")]: line for line in new_contents.split('\n')}
+    old_lines = old_contents.split('\n')
+    new_lines = new_contents.split('\n')
+
+    # Subject ID comes first
+    old_headings = old_lines[0].split(",")[1:]
+    new_headings = new_lines[0].split(",")[1:]
+
+    old_courses = {line[:line.find(",")]: line for line in old_lines[1:]}
+    new_courses = {line[:line.find(",")]: line for line in new_lines[1:]}
     ids = sorted(set(old_courses.keys()) | set(new_courses.keys()))
     wrote_to_file = False
     for i, id in enumerate(ids):
@@ -104,12 +131,14 @@ if __name__ == '__main__':
             print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
             equivalences_path = None
 
-        cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress)
+        cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress, write_related=False)
 
         consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):
             shutil.rmtree(consensus_path)
-        cp.build_consensus(os.path.join(CATALOG_BASE_DIR, "raw"), consensus_path)
+
+        # Get corrections and convert from field names to CSV headings
+        cp.build_consensus(os.path.join(CATALOG_BASE_DIR, "raw"), consensus_path, corrections=get_corrections())
 
         # Write a diff so it's easier to visualize changes
         update_progress(95.0, "Finding differences...")
