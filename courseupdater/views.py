@@ -226,8 +226,8 @@ CORRECTION_DIFF_EXCLUDE = set(["id", "subject_id", "author", "date_added", "offe
 
 def view_corrections(request):
     """Creates the page that displays all current catalog corrections."""
-    diffs = {}
-    for correction in CatalogCorrection.objects.values():
+    diffs = []
+    for correction in CatalogCorrection.objects.order_by("subject_id").values():
         subject_id = correction["subject_id"]
         changed_course = Course.public_courses().filter(subject_id=subject_id).values().first()
 
@@ -243,7 +243,7 @@ def view_corrections(request):
                 if field in CORRECTION_DIFF_EXCLUDE or "ptr" in field: continue
                 if not correction[field]: continue
                 diff[field] = (None, correction[field])
-        diffs[subject_id] = {"id": correction["id"], "diff": diff}
+        diffs.append({"subject_id": subject_id, "id": correction["id"], "diff": diff})
 
     print(diffs)
     return render(request, "courseupdater/corrections.html", {"diffs": diffs})

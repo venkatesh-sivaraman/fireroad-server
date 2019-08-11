@@ -16,11 +16,11 @@
   </div>
   <div class="row">
     <ul class="collection">
-      {% for subject_id, correction in diffs.items %}
+      {% for correction in diffs %}
       <li class="collection-item">
         <a href="delete/{{ correction.id }}" class="btn waves-effect waves-light mbtn red darken-2 right">Delete</a>
         <a href="edit/{{ correction.id }}" class="btn waves-effect waves-light mbtn grey right">Edit</a>
-        <h6>{{ subject_id }}</h6>
+        <h6>{{ correction.subject_id }}</h6>
         {% for key, diff in correction.diff.items %}
         <p><strong>{{ key }}</strong>&nbsp;&nbsp;{% if diff.0 %}<span class="deletion">{{ diff.0 }}</span>{% endif %}<span class="insertion">{{ diff.1 }}</span></p>
         {% endfor %}
