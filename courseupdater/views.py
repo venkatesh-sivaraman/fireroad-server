@@ -224,6 +224,7 @@ def get_field_value(form_data, field):
 
 CORRECTION_DIFF_EXCLUDE = set(["id", "subject_id", "author", "date_added", "offered_this_year"])
 
+@staff_member_required
 def view_corrections(request):
     """Creates the page that displays all current catalog corrections."""
     diffs = []
@@ -245,9 +246,9 @@ def view_corrections(request):
                 diff[field] = (None, correction[field])
         diffs.append({"subject_id": subject_id, "id": correction["id"], "diff": diff})
 
-    print(diffs)
     return render(request, "courseupdater/corrections.html", {"diffs": diffs})
 
+@staff_member_required
 def new_correction(request):
     """Allows the user to create a new catalog correction."""
     if request.method == 'POST':
@@ -269,6 +270,7 @@ def new_correction(request):
 
     return render(request, "courseupdater/edit_correction.html", {"is_new": True, "form": form})
 
+@staff_member_required
 def edit_correction(request, id):
     """Allows the user to edit an existing catalog correction."""
     try:
@@ -297,6 +299,7 @@ def edit_correction(request, id):
 
     return render(request, "courseupdater/edit_correction.html", {"is_new": False, "form": form})
 
+@staff_member_required
 def delete_correction(request, id):
     """Deletes the given catalog correction."""
     try:
