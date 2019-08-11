@@ -121,8 +121,11 @@ def road_progress(request, list_id):
 
     if request.method == 'POST':
         return road_progress_post(request, list_id)
-    else:
+    elif 'road' in request.GET:
         return road_progress_get(request, list_id)
+    else:
+        # Empty course list
+        return progress(request, list_id, "")
 
 def progress(request, list_id, courses):
     """Returns the raw JSON for a given requirements list including user

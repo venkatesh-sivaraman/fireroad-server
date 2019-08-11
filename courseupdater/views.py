@@ -4,8 +4,10 @@ import os
 import json
 import shutil
 from .models import *
+from catalog.models import Course
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.admin.views.decorators import staff_member_required
+from django.forms.models import model_to_dict
 from fireroad.settings import BASE_DIR, CATALOG_BASE_DIR
 from requirements.diff import *
 import catalog_parse as cp
@@ -205,3 +207,101 @@ def reset_update(request):
         current_update.is_completed = True
         current_update.save()
     return redirect(reverse('update_catalog'))
+
+### Corrections
+
+def get_field_value(form_data, field):
+    """Gets a form value in the appropriate type (uses the field name)."""
+    new_value = form_data[field]
+    if "offered" in field or "is_" in field:
+        new_value = True if new_value == "on" else False
+    elif field.endswith("units"):
+        try:
+            new_value = int(new_value)
+        except ValueError:
+            return None
+    return new_value
+
+CORRECTION_DIFF_EXCLUDE = set(["id", "subject_id", "author", "date_added", "offered_this_year"])
+
+def view_corrections(request):
+    """Creates the page that displays all current catalog corrections."""
+    diffs = []
+    for correction in CatalogCorrection.objects.order_by("subject_id").values():
+        subject_id = correction["subject_id"]
+        changed_course = Course.public_courses().filter(subject_id=subject_id).values().first()
+
+        diff = {}
+        if changed_course:
+            for field in changed_course:
+                if field in CORRECTION_DIFF_EXCLUDE or "ptr" in field: continue
+                if field not in correction: continue
+                if correction[field]:
+                    diff[field] = (changed_course[field], correction[field])
+        else:
+            for field in correction:
+                if field in CORRECTION_DIFF_EXCLUDE or "ptr" in field: continue
+                if not correction[field]: continue
+                diff[field] = (None, correction[field])
+        diffs.append({"subject_id": subject_id, "id": correction["id"], "diff": diff})
+
+    print(diffs)
+    return render(request, "courseupdater/corrections.html", {"diffs": diffs})
+
+def new_correction(request):
+    """Allows the user to create a new catalog correction."""
+    if request.method == 'POST':
+        form = CatalogCorrectionForm(request.POST)
+        correction = CatalogCorrection.objects.create()
+        try:
+            correction.author = request.user.student.academic_id
+        except:
+            pass
+        fields = CatalogCorrectionForm._meta.fields
+        for field in fields:
+            new_value = get_field_value(form.data, field)
+            if new_value:
+                setattr(correction, field, new_value)
+        correction.save()
+        return redirect(reverse("catalog_corrections"))
+    else:
+        form = CatalogCorrectionForm()
+
+    return render(request, "courseupdater/edit_correction.html", {"is_new": True, "form": form})
+
+def edit_correction(request, id):
+    """Allows the user to edit an existing catalog correction."""
+    try:
+        correction = CatalogCorrection.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return redirect(reverse("catalog_corrections"))
+
+    if request.method == 'POST':
+        form = CatalogCorrectionForm(request.POST)
+        # Save only the values that are different than the original correction
+        fields = CatalogCorrectionForm._meta.fields
+        for field in fields:
+            if field not in form.data: continue
+            existing = getattr(correction, field)
+            new_value = get_field_value(form.data, field)
+            if new_value != existing and new_value is not None:
+                setattr(correction, field, new_value)
+        try:
+            correction.author = request.user.student.academic_id
+        except:
+            pass
+        correction.save()
+        return redirect(reverse("catalog_corrections"))
+    else:
+        form = CatalogCorrectionForm(data=model_to_dict(correction))
+
+    return render(request, "courseupdater/edit_correction.html", {"is_new": False, "form": form})
+
+def delete_correction(request, id):
+    """Deletes the given catalog correction."""
+    try:
+        correction = CatalogCorrection.objects.get(id=id)
+    except ObjectDoesNotExist:
+        return redirect(reverse("catalog_corrections"))
+    correction.delete()
+    return redirect(reverse("catalog_corrections"))

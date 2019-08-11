@@ -34,7 +34,7 @@
 </div>
 <div class="row">
   <div class="col s12 m6">
-    <p>Edit request submitted by <strong>{{ edit_req.email_address }}</strong> on <strong>{{ edit_req.timestamp|date:'M d Y' }}</strong>.</p>
+    <p>Edit request submitted by <strong>{{ edit_req.email_address|urlize }}</strong> on <strong>{{ edit_req.timestamp|date:'M d Y' }}</strong>.</p>
     <p>Reason: <em>{{ edit_req.reason|urlize }}</em></p>
   </div>
   <div class="col s12 m6">

@@ -1,5 +1,6 @@
 from django.db import models
 from django import forms
+from catalog.models import Course
 
 # Create your models here.
 class CatalogUpdate(models.Model):
@@ -50,3 +51,31 @@ class CatalogUpdateStartForm(forms.Form):
 
 class CatalogUpdateDeployForm(forms.Form):
     pass
+
+class CatalogCorrection(Course):
+    date_added = models.DateTimeField(auto_now_add=True)
+    author = models.CharField(max_length=25, null=True)
+
+    def __str__(self):
+        return "Correction to {} by {} on {}".format(self.subject_id, self.author, self.date_added)
+
+class CatalogCorrectionForm(forms.ModelForm):
+
+    class Meta:
+        model = CatalogCorrection
+        fields = ["subject_id", "title", "parent", "children", "description", "instructors", "gir_attribute", "communication_requirement", "hass_attribute", "total_units", "lecture_units", "lab_units", "preparation_units", "design_units", "offered_fall", "offered_IAP", "offered_spring", "offered_summer", "is_variable_units", "is_half_class"]
+        labels = {
+            "gir_attribute": "GIR Attribute (e.g. PHY1, REST)",
+            "communication_requirement": "Communication Requirement (e.g. CI-H)",
+            "hass_attribute": "HASS Attribute (comma-separated)",
+            "is_variable_units": "Variable units",
+            "is_half_class": "Half class"
+        }
+        widgets = {
+            "description": forms.TextInput,
+            "instructors": forms.TextInput,
+            "offered_fall": forms.CheckboxInput,
+            "offered_IAP": forms.CheckboxInput,
+            "offered_spring": forms.CheckboxInput,
+            "offered_summer": forms.CheckboxInput,
+        }
