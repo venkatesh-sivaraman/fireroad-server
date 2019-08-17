@@ -293,7 +293,7 @@ class RequirementsProgress(object):
                         if child.statement.connection_type == CONNECTION_TYPE_ALL:
                             num_courses_satisfied += (child.is_fulfilled and len(child.satisfied_courses) > 0)
                         else:
-                            num_courses_satisfied += satisfied_by_category[i]
+                            num_courses_satisfied += len(satisfied_by_category[i])
 
                 if self.threshold is None and self.distinct_threshold is not None:
                     #Required number of statements
