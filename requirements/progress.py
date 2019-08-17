@@ -170,7 +170,7 @@ class RequirementsProgress(object):
                         whole_courses.append(c)
                 return whole_courses, half_courses
             else:
-                return [c for c in courses if c.satisfies(req, courses)]
+                return [c for c in courses if c.satisfies(req, courses)], []
 
         return [], []
 
