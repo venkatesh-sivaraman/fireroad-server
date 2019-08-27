@@ -25,7 +25,10 @@ class RequestCounterMiddleware(object):
 
         tally = RequestCount.objects.create()
         tally.path = request.path
-        tally.user_agent = request.META["HTTP_USER_AGENT"]
+        user_agent = request.META["HTTP_USER_AGENT"]
+        if len(user_agent) > 150:
+            user_agent = user_agent[:150]
+        tally.user_agent = user_agent
         if request.user and request.user.is_authenticated():
             tally.is_authenticated = True
             try:

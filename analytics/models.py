@@ -5,7 +5,7 @@ class RequestCount(models.Model):
 
     path = models.CharField(max_length=50, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    user_agent = models.CharField(max_length=75, null=True)
+    user_agent = models.CharField(max_length=150, null=True)
     is_authenticated = models.BooleanField(default=False)
     student_unique_id = models.CharField(max_length=50, null=True)
     student_semester = models.CharField(max_length=25, null=True)
