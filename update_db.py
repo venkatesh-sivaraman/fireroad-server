@@ -25,6 +25,8 @@ import traceback
 import csv
 from django.core.exceptions import ObjectDoesNotExist
 from catalog_parse.utils.catalog_constants import CourseAttribute
+from django.utils import timezone
+from analytics.models import RequestCount
 
 REQUIREMENTS_INFO_KEY = "r_delta"
 CATALOG_FILES_INFO_KEY = "delta"
@@ -189,6 +191,34 @@ def check_for_edits():
         message += "\n"
     return message
 
+### ANALYTICS
+
+def log_analytics_summary(output_path, num_hours=26):
+    """Logs basic summary statistics over the past num_hours hours."""
+    if not os.path.exists(output_path):
+        with open(output_path, "w") as file:
+            file.write("UTC Time\tTotal Requests\tLogged-in Requests\tStudents\tUser Agents\n")
+
+    # Count up total summary statistics over the past num_hours hours
+    out_file = open(output_path, "a")
+    for offset in reversed(range(1, 25)):
+        early_time = timezone.now() - timezone.timedelta(hours=offset)
+        early_time = early_time.replace(minute=0)
+        late_time = timezone.now() - timezone.timedelta(hours=offset - 1)
+        late_time = late_time.replace(minute=0)
+
+        requests = RequestCount.objects.filter(timestamp__range=(early_time, late_time))
+        total_count = requests.count()
+        logged_in_count = requests.filter(is_authenticated=True).count()
+        with_student_requests = requests.filter(student_unique_id__isnull=False)
+        student_count = with_student_requests.values("student_unique_id").distinct().count()
+        user_agent_count = requests.values("user_agent").distinct().count()
+        out_file.write("{}\t{}\t{}\t{}\t{}\n".format(
+            timezone.localtime(early_time).strftime("%m/%d/%Y %H:%M"),
+            total_count, logged_in_count, student_count, user_agent_count
+        ))
+    out_file.close()
+
 ### CLEAN UP
 
 def clean_db():
@@ -263,6 +293,13 @@ if __name__ == '__main__':
         message += "Updating catalog DB failed:\n"
         message += traceback.format_exc()
 
-    if len(message) > 0 and len(sys.argv) > 1:
-        email_results(message, sys.argv[1:])
+    if len(sys.argv) > 1:
+        try:
+            log_analytics_summary(sys.argv[1])
+        except:
+            message += "Logging analytics failed:\n"
+            message += traceback.format_exc()
+
+    if len(message) > 0 and len(sys.argv) > 2:
+        email_results(message, sys.argv[2:])
     print(message)
