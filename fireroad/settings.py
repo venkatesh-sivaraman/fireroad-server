@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'sync',
     'requirements',
     'courseupdater',
-    'catalog'
+    'catalog',
+    'analytics'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -59,6 +60,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'analytics.request_counter.RequestCounterMiddleware'
 ]
 
 AUTHENTICATION_BACKENDS = [

@@ -213,7 +213,6 @@ class RequirementsProgress(object):
                 #Example: requirement CI-H, we want to show how many have been fulfilled
                 whole_courses, half_courses = self.courses_satisfying_req(courses)
                 satisfied_courses = whole_courses + half_courses
-                print(whole_courses, half_courses)
 
                 if not self.threshold is None:
                     #A specific number of courses is required
@@ -239,18 +238,27 @@ class RequirementsProgress(object):
             num_reqs_satisfied = 0
             satisfied_by_category = []
             satisfied_courses = set()
+            num_courses_satisfied = 0
 
             for req_progress in self.children:
                 req_progress.compute(courses, progress_overrides)
                 req_satisfied_courses = req_progress.satisfied_courses
 
-                if(req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0):
+                if req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0:
                     num_reqs_satisfied += 1
 
                 satisfied_courses.update(req_satisfied_courses)
                 satisfied_by_category.append(list(req_satisfied_courses))
 
-            satisfied_by_cateogry = [sat for prog, sat in sorted(zip(self.children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
+                # For thresholded ANY statements, children that are ALL statements
+                # count as a single satisfied course. ANY children count for
+                # all of their satisfied courses.
+                if req_progress.statement.connection_type == CONNECTION_TYPE_ALL:
+                    num_courses_satisfied += req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0
+                else:
+                    num_courses_satisfied += len(req_satisfied_courses)
+
+            satisfied_by_category = [sat for prog, sat in sorted(zip(self.children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
             sorted_progresses = sorted(self.children, key = lambda req: req.fraction_fulfilled, reverse = True)
 
             if self.threshold is None and self.distinct_threshold is None:
@@ -278,9 +286,14 @@ class RequirementsProgress(object):
                     sorted_progresses = sorted_progresses[:num_progresses_to_count]
                     satisfied_by_category = satisfied_by_category[:num_progresses_to_count]
                     satisfied_courses = set()
+                    num_courses_satisfied = 0
 
-                    for i in range(num_progresses_to_count):
+                    for i, child in zip(range(num_progresses_to_count), self.children):
                         satisfied_courses.update(satisfied_by_category[i])
+                        if child.statement.connection_type == CONNECTION_TYPE_ALL:
+                            num_courses_satisfied += (child.is_fulfilled and len(child.satisfied_courses) > 0)
+                        else:
+                            num_courses_satisfied += len(satisfied_by_category[i])
 
                 if self.threshold is None and self.distinct_threshold is not None:
                     #Required number of statements
@@ -294,7 +307,7 @@ class RequirementsProgress(object):
 
                 elif self.threshold is not None:
                     #Required number of subjects or units
-                    subject_progress = Progress(len(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
+                    subject_progress = Progress(num_courses_satisfied, self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
                     unit_progress = Progress(total_units(satisfied_courses), self.threshold.cutoff_for_criterion(CRITERION_UNITS))
 
                     if self.distinct_threshold is not None and (self.distinct_threshold.type == THRESHOLD_TYPE_GT or self.distinct_threshold.type == THRESHOLD_TYPE_GTE):

@@ -103,7 +103,7 @@ def hass_filter(hass_value):
     elif hass_value == "any":
         return ~Q(hass_attribute="")
     elif hass_value in {"a", "s", "h"}:
-        return Q(hass_attribute="HASS-" + hass_value.upper())
+        return Q(hass_attribute__icontains="HASS-" + hass_value.upper())
     else:
         raise ValueError
 
