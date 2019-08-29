@@ -47,5 +47,5 @@ class RequestCounterMiddleware(object):
                 pass
             else:
                 tally.student_unique_id = student.unique_id
-                tally.student_semester = student.semester
+                tally.student_semester = student.current_semester
         tally.save()
