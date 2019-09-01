@@ -1,0 +1,38 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Analytics</title>
+<link href="{% static "common/css/Chart.min.css" %}" rel="stylesheet" />
+<link href="{% static "analytics/css/styles.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block pagebody %}
+<div class="analytics-body">
+  <div class="row edit-head">
+    <div class="col s8 red-text text-darken-4">
+      <h4>Analytics</h4>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>Total Requests</h5>
+        <canvas id="total-requests-chart"></canvas>
+      </div>
+    </div>
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>User Agents</h5>
+        <canvas id="user-agents-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block pagescripts %}
+<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script> -->
+<script src="{% static "common/js/Chart.bundle.min.js" %}"></script>
+<script src="{% static "analytics/js/analytics.js" %}"></script>
+</script>
+{% endblock %}
