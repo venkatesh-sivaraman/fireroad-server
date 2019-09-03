@@ -154,3 +154,13 @@ def user_semesters(request, time_frame=None):
     labels = SEMESTERS
     data = [sum(item.get(semester, 0) for _, item in data) for semester in SEMESTERS]
     return HttpResponse(json.dumps({"labels": labels, "data": data}), content_type="application/json")
+
+@staff_member_required
+def request_paths(request, time_frame=None):
+    """Returns data for the Chart.js chart showing counts for various request paths."""
+    early_time, delta, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.path)
+    labels = set.union(*(set(item.keys()) for _, item in data))
+    counts = {label: sum(item.get(label, 0) for _, item in data) for label in labels}
+    labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
+    return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")

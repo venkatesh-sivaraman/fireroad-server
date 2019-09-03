@@ -21,6 +21,7 @@ var totalRequestsChart = null;
 var userAgentsChart = null;
 var loggedInUsersChart = null;
 var semestersChart = null;
+var requestPathsChart = null;
 
 function makeBarChartOptions(show_all) {
   return {
@@ -163,6 +164,34 @@ function reloadData() {
       } else {
         semestersChart.data = data;
         semestersChart.update();
+      }
+    }
+  });
+
+  $.ajax({
+    url: "/analytics/request_paths/" + timeframe,
+    data: null,
+    success: function (result) {
+      var ctx = document.getElementById('request-paths-chart').getContext('2d');
+      var data = {
+          labels: result.labels,
+          datasets: [{
+            label: "# of Requests",
+            data: result.data,
+            backgroundColor: graphBackgroundColors[0],
+            borderColor: graphBorderColors[0],
+            borderWidth: 1
+          }]
+      }
+      if (!requestPathsChart) {
+        requestPathsChart = new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: makeBarChartOptions(true)
+        });
+      } else {
+        requestPathsChart.data = data;
+        requestPathsChart.update();
       }
     }
   });
