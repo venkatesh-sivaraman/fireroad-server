@@ -19,25 +19,29 @@ var timeframe = "day";
 
 var totalRequestsChart = null;
 var userAgentsChart = null;
+var loggedInUsersChart = null;
+var semestersChart = null;
 
-var barChartOptions = {
-  scales: {
-    yAxes: [{
-      ticks: {
-        beginAtZero: true
-      },
-      stacked: true,
-    }],
-    xAxes: [{
-      ticks: {
-        autoSkip: true,
-        maxTicksLimit: 10
-      },
-      barPercentage: 1.0,
-      stacked: true,
-    }]
-  },
-  aspectRatio: 1.6
+function makeBarChartOptions(show_all) {
+  return {
+    scales: {
+      yAxes: [{
+        ticks: {
+          beginAtZero: true
+        },
+        stacked: true,
+      }],
+      xAxes: [{
+        ticks: show_all ? {} : {
+          autoSkip: true,
+          maxTicksLimit: 10
+        },
+        barPercentage: 1.0,
+        stacked: true,
+      }]
+    },
+    aspectRatio: 1.6
+  }
 }
 
 // Reloads the data from the server with a specific time frame.
@@ -61,11 +65,39 @@ function reloadData() {
         totalRequestsChart = new Chart(ctx, {
           type: 'bar',
           data: data,
-          options: barChartOptions
+          options: makeBarChartOptions(false)
         });
       } else {
         totalRequestsChart.data = data;
         totalRequestsChart.update();
+      }
+    }
+  });
+
+  $.ajax({
+    url: "/analytics/logged_in_users/" + timeframe,
+    data: null,
+    success: function (result) {
+      var ctx = document.getElementById('unique-users-chart').getContext('2d');
+      var data = {
+        labels: result.labels,
+        datasets: [{
+          label: 'Unique Users',
+          data: result.data,
+          backgroundColor: graphBackgroundColors[0],
+          borderColor: graphBorderColors[0],
+          borderWidth: 1
+        }]
+      }
+      if (!loggedInUsersChart) {
+        loggedInUsersChart = new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: makeBarChartOptions(false)
+        });
+      } else {
+        loggedInUsersChart.data = data;
+        loggedInUsersChart.update();
       }
     }
   });
@@ -98,11 +130,39 @@ function reloadData() {
         userAgentsChart = new Chart(ctx, {
           type: 'bar',
           data: data,
-          options: barChartOptions
+          options: makeBarChartOptions(false)
         });
       } else {
         userAgentsChart.data = data;
         userAgentsChart.update();
+      }
+    }
+  });
+
+  $.ajax({
+    url: "/analytics/user_semesters/" + timeframe,
+    data: null,
+    success: function (result) {
+      var ctx = document.getElementById('user-semesters-chart').getContext('2d');
+      var data = {
+          labels: result.labels,
+          datasets: [{
+            label: "# of Users",
+            data: result.data,
+            backgroundColor: graphBackgroundColors[0],
+            borderColor: graphBorderColors[0],
+            borderWidth: 1
+          }]
+      }
+      if (!semestersChart) {
+        semestersChart = new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: makeBarChartOptions(true)
+        });
+      } else {
+        semestersChart.data = data;
+        semestersChart.update();
       }
     }
   });

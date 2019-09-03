@@ -5,6 +5,7 @@ from .models import RequestCount
 from django.utils import timezone
 from django.contrib.admin.views.decorators import staff_member_required
 import json
+import re
 import itertools
 
 @staff_member_required
@@ -62,14 +63,17 @@ def get_time_bounds(time_frame):
         format = "%I %p"
     return early_time, delta, format
 
+def strip_leading_zeros(string):
+    """Strips all leading zeros from the given string (e.g. Jan 01 -> Jan 1)."""
+    return re.sub(r"(^|(?<=[^\w]))0+", "", string)
+
 @staff_member_required
 def total_requests(request, time_frame=None):
     """Returns data for the Chart.js chart containing the total number of
     requests over time."""
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1)
-    labels, counts = itertools.izip(*((t.strftime(format).lstrip("0"), item.get(1, 0)) for t, item in data))
-    counts = [item.get(1, 0) for _, item in data]
+    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), item.get(1, 0)) for t, item in data))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
 
 USER_AGENT_TYPES = [
@@ -99,6 +103,54 @@ def user_agents(request, time_frame=None):
     observed over time."""
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: translate_user_agent_string(request.user_agent))
-    labels = [t.strftime(format).lstrip("0") for t, _ in data]
+    labels = [strip_leading_zeros(t.strftime(format)) for t, _ in data]
     datasets = {agent: [item.get(agent, 0) for _, item in data] for agent in USER_AGENT_TYPES}
     return HttpResponse(json.dumps({"labels": labels, "data": datasets}), content_type="application/json")
+
+@staff_member_required
+def logged_in_users(request, time_frame=None):
+    """Returns data for the Chart.js chart representing logged-in users over time."""
+    early_time, delta, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.student_unique_id)
+    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), len([k for k in item.keys() if k])) for t, item in data))
+    return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
+
+SEMESTERS = [
+    "None",
+    "1st Year Fall",
+    "1st Year IAP",
+    "1st Year Spring",
+    "2nd Year Fall",
+    "2nd Year IAP",
+    "2nd Year Spring",
+    "3rd Year Fall",
+    "3rd Year IAP",
+    "3rd Year Spring",
+    "4th Year Fall",
+    "4th Year IAP",
+    "4th Year Spring",
+    "5th Year Fall",
+    "5th Year IAP",
+    "5th Year Spring",
+]
+
+def get_semester_name(request):
+    """Returns a semester name for the given request, or None if no semester is
+    logged."""
+    if not request.is_authenticated:
+        return None
+
+    try:
+        return SEMESTERS[int(request.student_semester)]
+    except:
+        return None
+
+@staff_member_required
+def user_semesters(request, time_frame=None):
+    """Returns data for the Chart.js chart representing the semesters in which
+    logged-in users fall."""
+    early_time, delta, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, delta, get_semester_name)
+    labels = SEMESTERS
+    data = [sum(item.get(semester, 0) for _, item in data) for semester in SEMESTERS]
+    return HttpResponse(json.dumps({"labels": labels, "data": data}), content_type="application/json")
