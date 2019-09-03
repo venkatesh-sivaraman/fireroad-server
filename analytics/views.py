@@ -86,6 +86,8 @@ USER_AGENT_TYPES = [
 
 def translate_user_agent_string(user_agent):
     """Returns the most likely user agent type for the given user agent string."""
+    if not user_agent:
+        return None
     if "CFNetwork" in user_agent:
         return "iOS"
     elif "okhttp" in user_agent:
@@ -160,7 +162,7 @@ def request_paths(request, time_frame=None):
     """Returns data for the Chart.js chart showing counts for various request paths."""
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.path)
-    labels = set.union(*(set(item.keys()) for _, item in data))
+    labels = set.union(*(set(item.keys()) for _, item in data)) - set([None])
     counts = {label: sum(item.get(label, 0) for _, item in data) for label in labels}
     labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
