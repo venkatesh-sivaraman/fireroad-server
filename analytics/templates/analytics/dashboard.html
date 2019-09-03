@@ -1,0 +1,78 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>FireRoad Analytics</title>
+<link href="{% static "analytics/css/styles.css" %}" rel="stylesheet" />
+{% endblock %}
+
+{% block pagebody %}
+<div class="analytics-body">
+  <div class="row edit-head">
+    <div class="col m8 red-text text-darken-4">
+      <h4>Analytics</h4>
+    </div>
+    <div class="col m4">
+      <table><tr style="border-bottom: none;">
+        <td width="80%">
+          <div class="input-field">
+            <select id="timeframe-select" onchange="timeframeChanged()">
+              <option value="day" selected>Last 24 hours</option>
+              <option value="week">Last week</option>
+              <option value="month">Last month</option>
+              <option value="year">Last year</option>
+              <option value="all-time">All time</option>
+            </select>
+          </div>
+        </td>
+        <td width="20%">
+          <div class="valign-wrapper">
+            <a class="mbtn red white-text" onclick="reloadData()"><i class="material-icons">refresh</i></a>
+          </div>
+        </td>
+      </tr></table>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>Total Requests</h5>
+        <canvas id="total-requests-chart"></canvas>
+      </div>
+    </div>
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>Unique Users</h5>
+        <canvas id="unique-users-chart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>User Agents</h5>
+        <canvas id="user-agents-chart"></canvas>
+      </div>
+    </div>
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>Student Semesters</h5>
+        <canvas id="user-semesters-chart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col m6">
+      <div class="card hoverable chart-card">
+        <h5>Request Paths</h5>
+        <canvas id="request-paths-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block pagescripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
+<script src="{% static "analytics/js/analytics.js" %}"></script>
+</script>
+{% endblock %}

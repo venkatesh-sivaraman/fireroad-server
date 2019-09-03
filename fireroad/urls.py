@@ -22,6 +22,7 @@ urlpatterns = [
     url(r'recommend/', include('recommend.urls')),
     url(r'admin/', admin.site.urls),
     url(r'sync/', include('sync.urls')),
+    url(r'analytics/', include('analytics.urls')),
     url(r'requirements/', include('requirements.urls')),
     url(r'', include('common.urls')),
 ]

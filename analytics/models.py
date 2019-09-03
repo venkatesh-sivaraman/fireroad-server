@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class RequestCount(models.Model):
     """Keeps track of a single request."""
@@ -17,3 +18,37 @@ class RequestCount(models.Model):
             self.timestamp,
             " (logged in)" if self.is_authenticated else ""
         )
+
+    @staticmethod
+    def tabulate_requests(early_time, interval, attribute_func):
+        """Retrieves request counts from the given time to present,
+        bucketed by the given interval.
+
+        Args:
+            early_time: A timezone.datetime object indicating the minimum time
+                to retrieve requests for.
+            interval: A timezone.timedelta object indicating the period of time
+                spanned by each returned bucket.
+            attribute_func: A function taking a RequestCount and returning a
+                value to tabulate for each bucket.
+
+        Returns:
+            A list of tuples (time, dict), where time is a timezone.datetime
+            object indicating the start time of the bucket, and dict is a
+            dictionary mapping values returned by attribute_func to their
+            counts in the bucket.
+        """
+        now = timezone.now()
+        buckets = []
+        curr = early_time
+        while curr < now:
+            buckets.append((curr, {}))
+            curr += interval
+
+        for request in RequestCount.objects.filter(timestamp__gte=early_time).iterator():
+            for time, bucket in buckets:
+                if request.timestamp >= time and request.timestamp < time + interval:
+                    value = attribute_func(request)
+                    bucket[value] = bucket.get(value, 0) + 1
+                    break
+        return buckets

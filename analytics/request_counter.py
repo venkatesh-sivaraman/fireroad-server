@@ -12,6 +12,8 @@ from .models import *
 EXCLUDE_PATH_PREFIXES = [
     "/favicon.ico",
     "/admin",
+    "/analytics",
+    "/apple"
 ]
 
 EXCLUDE_USER_AGENTS = [
