@@ -165,4 +165,7 @@ def request_paths(request, time_frame=None):
     labels = set.union(*(set(item.keys()) for _, item in data)) - set([None])
     counts = {label: sum(item.get(label, 0) for _, item in data) for label in labels}
     labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
+    if len(labels) > 15:
+        labels = labels[:15]
+        counts = counts[:15]
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
