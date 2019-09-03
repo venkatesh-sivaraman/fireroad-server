@@ -1,0 +1,15 @@
+.chart-card {
+  padding: 8px 16px 16px 16px;
+}
+
+@media (min-width: 767px) {
+  .analytics-body {
+    padding: 12px 30px 30px 30px;
+  }
+}
+
+@media (max-width: 767px) {
+  .analytics-body {
+    padding: 12px 12px 36px 12px;
+  }
+}
