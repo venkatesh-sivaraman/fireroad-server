@@ -136,14 +136,14 @@ SEMESTERS = [
     "5th Year Spring",
 ]
 
-def get_semester_name(request):
-    """Returns a semester name for the given request, or None if no semester is
-    logged."""
+def get_semester_number(request):
+    """Returns a tuple with the user's ID and the semester number for the given
+    request, or None if no semester is logged."""
     if not request.is_authenticated:
         return None
 
     try:
-        return SEMESTERS[int(request.student_semester)]
+        return request.student_unique_id, int(request.student_semester)
     except:
         return None
 
@@ -151,19 +151,25 @@ def get_semester_name(request):
 def user_semesters(request, time_frame=None):
     """Returns data for the Chart.js chart representing the semesters in which
     logged-in users fall."""
-    early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, get_semester_name)
+    early_time, _, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, None, get_semester_number)
     labels = SEMESTERS
-    data = [sum(item.get(semester, 0) for _, item in data) for semester in SEMESTERS]
-    return HttpResponse(json.dumps({"labels": labels, "data": data}), content_type="application/json")
+
+    semester_buckets = [0 for _ in SEMESTERS]
+    for semester_item, _ in data.items():
+        if not semester_item:
+            continue
+        person, semester = semester_item
+        semester_buckets[semester] += 1
+    return HttpResponse(json.dumps({"labels": labels, "data": semester_buckets}), content_type="application/json")
 
 @staff_member_required
 def request_paths(request, time_frame=None):
     """Returns data for the Chart.js chart showing counts for various request paths."""
-    early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.path)
-    labels = set.union(*(set(item.keys()) for _, item in data)) - set([None])
-    counts = {label: sum(item.get(label, 0) for _, item in data) for label in labels}
+    early_time, _, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, None, lambda request: request.path)
+    labels = set(data.keys()) - set([None])
+    counts = {label: data.get(label, 0) for label in labels}
     labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
     if len(labels) > 15:
         labels = labels[:15]
