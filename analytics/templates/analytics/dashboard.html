@@ -2,7 +2,6 @@
 {% load static %}
 {% block title %}
 <title>FireRoad Analytics</title>
-<link href="{% static "common/css/Chart.min.css" %}" rel="stylesheet" />
 <link href="{% static "analytics/css/styles.css" %}" rel="stylesheet" />
 {% endblock %}
 
@@ -11,6 +10,15 @@
   <div class="row edit-head">
     <div class="col s8 red-text text-darken-4">
       <h4>Analytics</h4>
+    </div>
+    <div class="input-field col s4">
+      <select id="timeframe-select" onchange="timeframeChanged()">
+        <option value="day" selected>Last 24 hours</option>
+        <option value="week">Last week</option>
+        <option value="month">Last month</option>
+        <option value="year">Last year</option>
+        <option value="all-time">All time</option>
+      </select>
     </div>
   </div>
   <div class="row">
@@ -31,8 +39,7 @@
 {% endblock %}
 
 {% block pagescripts %}
-<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script> -->
-<script src="{% static "common/js/Chart.bundle.min.js" %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
 <script src="{% static "analytics/js/analytics.js" %}"></script>
 </script>
 {% endblock %}
