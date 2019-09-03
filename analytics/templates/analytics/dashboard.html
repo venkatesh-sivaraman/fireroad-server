@@ -8,17 +8,28 @@
 {% block pagebody %}
 <div class="analytics-body">
   <div class="row edit-head">
-    <div class="col s8 red-text text-darken-4">
+    <div class="col m8 red-text text-darken-4">
       <h4>Analytics</h4>
     </div>
-    <div class="input-field col s4">
-      <select id="timeframe-select" onchange="timeframeChanged()">
-        <option value="day" selected>Last 24 hours</option>
-        <option value="week">Last week</option>
-        <option value="month">Last month</option>
-        <option value="year">Last year</option>
-        <option value="all-time">All time</option>
-      </select>
+    <div class="col m4">
+      <table><tr style="border-bottom: none;">
+        <td width="80%">
+          <div class="input-field">
+            <select id="timeframe-select" onchange="timeframeChanged()">
+              <option value="day" selected>Last 24 hours</option>
+              <option value="week">Last week</option>
+              <option value="month">Last month</option>
+              <option value="year">Last year</option>
+              <option value="all-time">All time</option>
+            </select>
+          </div>
+        </td>
+        <td width="20%">
+          <div class="valign-wrapper">
+            <a class="mbtn red white-text" onclick="reloadData()"><i class="material-icons">refresh</i></a>
+          </div>
+        </td>
+      </tr></table>
     </div>
   </div>
   <div class="row">
