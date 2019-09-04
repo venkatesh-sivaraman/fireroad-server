@@ -170,10 +170,10 @@ def user_semesters(request, time_frame=None):
     labels = SEMESTERS
 
     semester_buckets = [0 for _ in SEMESTERS]
-    for semester, _ in data.items():
+    for semester, count in data.items():
         if not semester or semester < 0 or semester >= len(semester_buckets):
             continue
-        semester_buckets[semester] += 1
+        semester_buckets[semester] += count
     return HttpResponse(json.dumps({"labels": labels, "data": semester_buckets}), content_type="application/json")
 
 @staff_member_required
