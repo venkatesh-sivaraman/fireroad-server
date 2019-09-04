@@ -115,7 +115,7 @@ def user_agents(request, time_frame=None):
     observed over time."""
     timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, lambda request: translate_user_agent_string(request.user_agent))
+    data = RequestCount.tabulate_requests(early_time, delta, lambda request: translate_user_agent_string(request.user_agent), distinct_users=True)
     labels = [format_date(t, format) for t, _ in data]
     datasets = {agent: [item.get(agent, 0) for _, item in data] for agent in USER_AGENT_TYPES}
     return HttpResponse(json.dumps({"labels": labels, "data": datasets}), content_type="application/json")

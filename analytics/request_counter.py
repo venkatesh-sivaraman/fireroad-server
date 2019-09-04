@@ -33,7 +33,7 @@ class RequestCounterMiddleware(object):
         to make sure we have login info)."""
         if any(request.path.startswith(prefix) for prefix in EXCLUDE_PATH_PREFIXES):
             return response
-        user_agent = request.META["HTTP_USER_AGENT"]
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
         if any(element in user_agent.lower() for element in EXCLUDE_USER_AGENTS):
             return response
 
