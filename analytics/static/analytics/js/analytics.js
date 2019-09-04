@@ -47,6 +47,9 @@ function makeBarChartOptions(show_all) {
 
 // Reloads the data from the server with a specific time frame.
 function reloadData() {
+  $("#total-requests-scorecard").html("&nbsp;");
+  $("#requests-scorecard-ind").addClass("active");
+  $("#total-requests-ind").addClass("active");
   $.ajax({
     url: "/analytics/total_requests/" + timeframe,
     data: null,
@@ -73,9 +76,14 @@ function reloadData() {
         totalRequestsChart.update();
       }
       $("#total-requests-scorecard").text(result.total);
+      $("#requests-scorecard-ind").removeClass("active");
+      $("#total-requests-ind").removeClass("active");
     }
   });
 
+  $("#active-users-scorecard").html("&nbsp;");
+  $("#users-scorecard-ind").addClass("active");
+  $("#unique-users-ind").addClass("active");
   $.ajax({
     url: "/analytics/logged_in_users/" + timeframe,
     data: null,
@@ -102,9 +110,12 @@ function reloadData() {
         loggedInUsersChart.update();
       }
       $("#active-users-scorecard").text(result.total);
+      $("#users-scorecard-ind").removeClass("active");
+      $("#unique-users-ind").removeClass("active");
     }
   });
 
+  $("#user-agents-ind").addClass("active");
   $.ajax({
     url: "/analytics/user_agents/" + timeframe,
     data: null,
@@ -139,9 +150,11 @@ function reloadData() {
         userAgentsChart.data = data;
         userAgentsChart.update();
       }
+      $("#user-agents-ind").removeClass("active");
     }
   });
 
+  $("#user-semesters-ind").addClass("active");
   $.ajax({
     url: "/analytics/user_semesters/" + timeframe,
     data: null,
@@ -167,9 +180,11 @@ function reloadData() {
         semestersChart.data = data;
         semestersChart.update();
       }
+      $("#user-semesters-ind").removeClass("active");
     }
   });
 
+  $("#request-paths-ind").addClass("active");
   $.ajax({
     url: "/analytics/request_paths/" + timeframe,
     data: null,
@@ -195,15 +210,22 @@ function reloadData() {
         requestPathsChart.data = data;
         requestPathsChart.update();
       }
+      $("#request-paths-ind").removeClass("active");
     }
   });
 
+  $("#active-roads-scorecard").html("&nbsp;");
+  $("#active-schedules-scorecard").html("&nbsp;");
+  $("#active-roads-ind").addClass("active");
+  $("#active-schedules-ind").addClass("active");
   $.ajax({
     url: "/analytics/active_documents/" + timeframe,
     data: null,
     success: function (result) {
       $("#active-roads-scorecard").text(result.roads);
       $("#active-schedules-scorecard").text(result.schedules);
+      $("#active-roads-ind").removeClass("active");
+      $("#active-schedules-ind").removeClass("active");
     }
   });
 }

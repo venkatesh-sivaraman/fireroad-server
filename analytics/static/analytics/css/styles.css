@@ -13,3 +13,12 @@
     padding: 12px 12px 36px 12px;
   }
 }
+
+.floating-indicator {
+  position: absolute;
+  margin: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
