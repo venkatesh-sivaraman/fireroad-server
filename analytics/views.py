@@ -6,7 +6,12 @@ from django.utils import timezone
 from django.contrib.admin.views.decorators import staff_member_required
 import json
 import re
+import pytz
 import itertools
+
+# The time zone used to display times in all the views. This is distinct from
+# the time zone that the server runs on, which is UTC by default.
+DISPLAY_TIME_ZONE = pytz.timezone("America/New_York")
 
 @staff_member_required
 def dashboard(request):
@@ -63,17 +68,21 @@ def get_time_bounds(time_frame):
         format = "%I %p"
     return early_time, delta, format
 
-def strip_leading_zeros(string):
-    """Strips all leading zeros from the given string (e.g. Jan 01 -> Jan 1)."""
+def format_date(date, format):
+    """Formats the date for rendering in a template by converting to the
+    appropriate time zone, formatting it into a string, and stripping all
+    leading zeros from the given string (e.g. Jan 01 -> Jan 1)."""
+    string = timezone.localtime(date).strftime(format)
     return re.sub(r"(^|(?<=[^\w]))0+", "", string)
 
 @staff_member_required
 def total_requests(request, time_frame=None):
     """Returns data for the Chart.js chart containing the total number of
     requests over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1)
-    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), item.get(1, 0)) for t, item in data))
+    labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
 
 USER_AGENT_TYPES = [
@@ -103,18 +112,20 @@ def translate_user_agent_string(user_agent):
 def user_agents(request, time_frame=None):
     """Returns data for the Chart.js chart containing the various user agents
     observed over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: translate_user_agent_string(request.user_agent))
-    labels = [strip_leading_zeros(t.strftime(format)) for t, _ in data]
+    labels = [format_date(t, format) for t, _ in data]
     datasets = {agent: [item.get(agent, 0) for _, item in data] for agent in USER_AGENT_TYPES}
     return HttpResponse(json.dumps({"labels": labels, "data": datasets}), content_type="application/json")
 
 @staff_member_required
 def logged_in_users(request, time_frame=None):
     """Returns data for the Chart.js chart representing logged-in users over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.student_unique_id)
-    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), len([k for k in item.keys() if k])) for t, item in data))
+    labels, counts = itertools.izip(*((format_date(t, format), len([k for k in item.keys() if k])) for t, item in data))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
 
 SEMESTERS = [
@@ -151,6 +162,7 @@ def get_semester_number(request):
 def user_semesters(request, time_frame=None):
     """Returns data for the Chart.js chart representing the semesters in which
     logged-in users fall."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, _, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, None, get_semester_number)
     labels = SEMESTERS
@@ -166,6 +178,7 @@ def user_semesters(request, time_frame=None):
 @staff_member_required
 def request_paths(request, time_frame=None):
     """Returns data for the Chart.js chart showing counts for various request paths."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, _, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, None, lambda request: request.path)
     labels = set(data.keys()) - set([None])
