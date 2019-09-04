@@ -20,7 +20,7 @@ class RequestCount(models.Model):
         )
 
     @staticmethod
-    def tabulate_requests(early_time, interval, attribute_func):
+    def tabulate_requests(early_time, interval=None, attribute_func=None):
         """Retrieves request counts from the given time to present,
         bucketed by the given interval.
 
@@ -28,7 +28,8 @@ class RequestCount(models.Model):
             early_time: A timezone.datetime object indicating the minimum time
                 to retrieve requests for.
             interval: A timezone.timedelta object indicating the period of time
-                spanned by each returned bucket.
+                spanned by each returned bucket. If None, counts all requests
+                together and returns a single dictionary.
             attribute_func: A function taking a RequestCount and returning a
                 value to tabulate for each bucket.
 
@@ -40,15 +41,21 @@ class RequestCount(models.Model):
         """
         now = timezone.now()
         buckets = []
-        curr = early_time
-        while curr < now:
-            buckets.append((curr, {}))
-            curr += interval
+        if interval:
+            curr = early_time
+            while curr < now:
+                buckets.append((curr, {}))
+                curr += interval
+        else:
+            buckets.append((early_time, {}))
 
         for request in RequestCount.objects.filter(timestamp__gte=early_time).iterator():
             for time, bucket in buckets:
-                if request.timestamp >= time and request.timestamp < time + interval:
-                    value = attribute_func(request)
+                if request.timestamp >= time and (not interval or request.timestamp < time + interval):
+                    value = attribute_func(request) if attribute_func else None
                     bucket[value] = bucket.get(value, 0) + 1
                     break
+
+        if not interval:
+            return buckets[0][1]
         return buckets

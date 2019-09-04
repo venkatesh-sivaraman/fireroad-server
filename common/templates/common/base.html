@@ -58,6 +58,7 @@
             <li><a href="/login?next=">Login</a></li>
             {% else %}
             {% if request.user.is_staff %}
+            <li><a href="/analytics">Analytics</a></li>
             <li><a class="dropdown-trigger" href="#!" data-target="dropdown3">Admin</a></li>
             {% endif %}
             <li><a href="/logout">Logout</a></li>
@@ -91,6 +92,7 @@
       <li><a href="/login?next=">Login</a></li>
       {% else %}
       {% if request.user.is_staff %}
+      <li><a href="/analytics">Analytics</a></li>
       <li><a class="dropdown-trigger" href="#!" data-target="dropdown4">Admin<i class="material-icons right">arrow_drop_down</i></a></li>
       {% endif %}
       <li><a href="/logout">Logout</a></li>

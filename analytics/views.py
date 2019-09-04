@@ -6,7 +6,12 @@ from django.utils import timezone
 from django.contrib.admin.views.decorators import staff_member_required
 import json
 import re
+import pytz
 import itertools
+
+# The time zone used to display times in all the views. This is distinct from
+# the time zone that the server runs on, which is UTC by default.
+DISPLAY_TIME_ZONE = pytz.timezone("America/New_York")
 
 @staff_member_required
 def dashboard(request):
@@ -63,17 +68,21 @@ def get_time_bounds(time_frame):
         format = "%I %p"
     return early_time, delta, format
 
-def strip_leading_zeros(string):
-    """Strips all leading zeros from the given string (e.g. Jan 01 -> Jan 1)."""
+def format_date(date, format):
+    """Formats the date for rendering in a template by converting to the
+    appropriate time zone, formatting it into a string, and stripping all
+    leading zeros from the given string (e.g. Jan 01 -> Jan 1)."""
+    string = timezone.localtime(date).strftime(format)
     return re.sub(r"(^|(?<=[^\w]))0+", "", string)
 
 @staff_member_required
 def total_requests(request, time_frame=None):
     """Returns data for the Chart.js chart containing the total number of
     requests over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1)
-    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), item.get(1, 0)) for t, item in data))
+    labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
 
 USER_AGENT_TYPES = [
@@ -86,6 +95,8 @@ USER_AGENT_TYPES = [
 
 def translate_user_agent_string(user_agent):
     """Returns the most likely user agent type for the given user agent string."""
+    if not user_agent:
+        return None
     if "CFNetwork" in user_agent:
         return "iOS"
     elif "okhttp" in user_agent:
@@ -101,18 +112,20 @@ def translate_user_agent_string(user_agent):
 def user_agents(request, time_frame=None):
     """Returns data for the Chart.js chart containing the various user agents
     observed over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: translate_user_agent_string(request.user_agent))
-    labels = [strip_leading_zeros(t.strftime(format)) for t, _ in data]
+    labels = [format_date(t, format) for t, _ in data]
     datasets = {agent: [item.get(agent, 0) for _, item in data] for agent in USER_AGENT_TYPES}
     return HttpResponse(json.dumps({"labels": labels, "data": datasets}), content_type="application/json")
 
 @staff_member_required
 def logged_in_users(request, time_frame=None):
     """Returns data for the Chart.js chart representing logged-in users over time."""
+    timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.student_unique_id)
-    labels, counts = itertools.izip(*((strip_leading_zeros(t.strftime(format)), len([k for k in item.keys() if k])) for t, item in data))
+    labels, counts = itertools.izip(*((format_date(t, format), len([k for k in item.keys() if k])) for t, item in data))
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
 
 SEMESTERS = [
@@ -134,14 +147,14 @@ SEMESTERS = [
     "5th Year Spring",
 ]
 
-def get_semester_name(request):
-    """Returns a semester name for the given request, or None if no semester is
-    logged."""
+def get_semester_number(request):
+    """Returns a tuple with the user's ID and the semester number for the given
+    request, or None if no semester is logged."""
     if not request.is_authenticated:
         return None
 
     try:
-        return SEMESTERS[int(request.student_semester)]
+        return request.student_unique_id, int(request.student_semester)
     except:
         return None
 
@@ -149,18 +162,29 @@ def get_semester_name(request):
 def user_semesters(request, time_frame=None):
     """Returns data for the Chart.js chart representing the semesters in which
     logged-in users fall."""
-    early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, get_semester_name)
+    timezone.activate(DISPLAY_TIME_ZONE)
+    early_time, _, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, None, get_semester_number)
     labels = SEMESTERS
-    data = [sum(item.get(semester, 0) for _, item in data) for semester in SEMESTERS]
-    return HttpResponse(json.dumps({"labels": labels, "data": data}), content_type="application/json")
+
+    semester_buckets = [0 for _ in SEMESTERS]
+    for semester_item, _ in data.items():
+        if not semester_item:
+            continue
+        person, semester = semester_item
+        semester_buckets[semester] += 1
+    return HttpResponse(json.dumps({"labels": labels, "data": semester_buckets}), content_type="application/json")
 
 @staff_member_required
 def request_paths(request, time_frame=None):
     """Returns data for the Chart.js chart showing counts for various request paths."""
-    early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.path)
-    labels = set.union(*(set(item.keys()) for _, item in data))
-    counts = {label: sum(item.get(label, 0) for _, item in data) for label in labels}
+    timezone.activate(DISPLAY_TIME_ZONE)
+    early_time, _, format = get_time_bounds(time_frame)
+    data = RequestCount.tabulate_requests(early_time, None, lambda request: request.path)
+    labels = set(data.keys()) - set([None])
+    counts = {label: data.get(label, 0) for label in labels}
     labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
+    if len(labels) > 15:
+        labels = labels[:15]
+        counts = counts[:15]
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
