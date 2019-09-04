@@ -5,7 +5,7 @@ class RequestCount(models.Model):
     """Keeps track of a single request."""
 
     path = models.CharField(max_length=50, null=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     user_agent = models.CharField(max_length=150, null=True)
     is_authenticated = models.BooleanField(default=False)
     student_unique_id = models.CharField(max_length=50, null=True)
@@ -20,7 +20,7 @@ class RequestCount(models.Model):
         )
 
     @staticmethod
-    def tabulate_requests(early_time, interval=None, attribute_func=None):
+    def tabulate_requests(early_time, interval=None, attribute_func=None, distinct_users=False):
         """Retrieves request counts from the given time to present,
         bucketed by the given interval.
 
@@ -32,6 +32,7 @@ class RequestCount(models.Model):
                 together and returns a single dictionary.
             attribute_func: A function taking a RequestCount and returning a
                 value to tabulate for each bucket.
+            distinct_users: If True, count only one request per unique user.
 
         Returns:
             A list of tuples (time, dict), where time is a timezone.datetime
@@ -49,7 +50,11 @@ class RequestCount(models.Model):
         else:
             buckets.append((early_time, {}))
 
+        seen_users = set()
         for request in RequestCount.objects.filter(timestamp__gte=early_time).iterator():
+            if distinct_users and (not request.student_unique_id or request.student_unique_id in seen_users):
+                continue
+            seen_users.add(request.student_unique_id)
             for time, bucket in buckets:
                 if request.timestamp >= time and (not interval or request.timestamp < time + interval):
                     value = attribute_func(request) if attribute_func else None
