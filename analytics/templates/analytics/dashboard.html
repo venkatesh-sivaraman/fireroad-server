@@ -33,15 +33,41 @@
     </div>
   </div>
   <div class="row">
+    <div class="col m3">
+      <div class="card hoverable chart-card">
+        <h2 class="center" id="total-requests-scorecard">0</h2>
+        <p class="center">Total Requests</p>
+      </div>
+    </div>
+    <div class="col m3">
+      <div class="card hoverable chart-card">
+        <h2 class="center" id="active-users-scorecard">0</h2>
+        <p class="center">Active Users</p>
+      </div>
+    </div>
+    <div class="col m3">
+      <div class="card hoverable chart-card">
+        <h2 class="center" id="active-roads-scorecard">0</h2>
+        <p class="center">Active Roads</p>
+      </div>
+    </div>
+    <div class="col m3">
+      <div class="card hoverable chart-card">
+        <h2 class="center" id="active-schedules-scorecard">0</h2>
+        <p class="center">Active Schedules</p>
+      </div>
+    </div>
+  </div>
+  <div class="row">
     <div class="col m6">
       <div class="card hoverable chart-card">
-        <h5>Total Requests</h5>
+        <h5>Requests</h5>
         <canvas id="total-requests-chart"></canvas>
       </div>
     </div>
     <div class="col m6">
       <div class="card hoverable chart-card">
-        <h5>Unique Users</h5>
+        <h5>Users</h5>
         <canvas id="unique-users-chart"></canvas>
       </div>
     </div>

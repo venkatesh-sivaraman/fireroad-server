@@ -72,6 +72,7 @@ function reloadData() {
         totalRequestsChart.data = data;
         totalRequestsChart.update();
       }
+      $("#total-requests-scorecard").text(result.total);
     }
   });
 
@@ -100,6 +101,7 @@ function reloadData() {
         loggedInUsersChart.data = data;
         loggedInUsersChart.update();
       }
+      $("#active-users-scorecard").text(result.total);
     }
   });
 
@@ -193,6 +195,15 @@ function reloadData() {
         requestPathsChart.data = data;
         requestPathsChart.update();
       }
+    }
+  });
+
+  $.ajax({
+    url: "/analytics/active_documents/" + timeframe,
+    data: null,
+    success: function (result) {
+      $("#active-roads-scorecard").text(result.roads);
+      $("#active-schedules-scorecard").text(result.schedules);
     }
   });
 }

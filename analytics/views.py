@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
 from .models import RequestCount
+from sync.models import Road, Schedule
 from django.utils import timezone
 from django.contrib.admin.views.decorators import staff_member_required
 import json
@@ -50,7 +51,7 @@ def get_time_bounds(time_frame):
                 (timezone.timedelta(weeks=4), "%b %d, %Y")
             ]
             for interval, format in test_intervals:
-                num_bars = (timezone.now() - early_time).seconds / interval.seconds + 1
+                num_bars = (timezone.now() - early_time).total_seconds() / interval.total_seconds() + 1
                 last_result = early_time, interval, format
                 if 8 <= num_bars <= 15:
                     break
@@ -83,7 +84,7 @@ def total_requests(request, time_frame=None):
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1)
     labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
-    return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
+    return HttpResponse(json.dumps({"labels": labels, "data": counts, "total": "{:,}".format(sum(counts))}), content_type="application/json")
 
 USER_AGENT_TYPES = [
     "Desktop",
@@ -124,9 +125,10 @@ def logged_in_users(request, time_frame=None):
     """Returns data for the Chart.js chart representing logged-in users over time."""
     timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, delta, lambda request: request.student_unique_id)
-    labels, counts = itertools.izip(*((format_date(t, format), len([k for k in item.keys() if k])) for t, item in data))
-    return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
+    data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1, distinct_users=True)
+    total_data = RequestCount.tabulate_requests(early_time, None, lambda _: 1, distinct_users=True)
+    labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
+    return HttpResponse(json.dumps({"labels": labels, "data": counts, "total": "{:,}".format(total_data.get(1, 0))}), content_type="application/json")
 
 SEMESTERS = [
     "None",
@@ -154,7 +156,7 @@ def get_semester_number(request):
         return None
 
     try:
-        return request.student_unique_id, int(request.student_semester)
+        return int(request.student_semester)
     except:
         return None
 
@@ -164,14 +166,13 @@ def user_semesters(request, time_frame=None):
     logged-in users fall."""
     timezone.activate(DISPLAY_TIME_ZONE)
     early_time, _, format = get_time_bounds(time_frame)
-    data = RequestCount.tabulate_requests(early_time, None, get_semester_number)
+    data = RequestCount.tabulate_requests(early_time, None, get_semester_number, distinct_users=True)
     labels = SEMESTERS
 
     semester_buckets = [0 for _ in SEMESTERS]
-    for semester_item, _ in data.items():
-        if not semester_item:
+    for semester, _ in data.items():
+        if not semester or semester < 0 or semester >= len(semester_buckets):
             continue
-        person, semester = semester_item
         semester_buckets[semester] += 1
     return HttpResponse(json.dumps({"labels": labels, "data": semester_buckets}), content_type="application/json")
 
@@ -188,3 +189,12 @@ def request_paths(request, time_frame=None):
         labels = labels[:15]
         counts = counts[:15]
     return HttpResponse(json.dumps({"labels": labels, "data": counts}), content_type="application/json")
+
+@staff_member_required
+def active_documents(request, time_frame=None):
+    """Returns data for the scorecard showing the number of active roads and schedules."""
+    timezone.activate(DISPLAY_TIME_ZONE)
+    early_time, _, format = get_time_bounds(time_frame)
+    modified_roads = Road.objects.filter(modified_date__gte=early_time).count()
+    modified_schedules = Schedule.objects.filter(modified_date__gte=early_time).count()
+    return HttpResponse(json.dumps({"roads": "{:,}".format(modified_roads), "schedules": "{:,}".format(modified_schedules)}), content_type="application/json")
