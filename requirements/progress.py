@@ -253,7 +253,7 @@ class RequirementsProgress(object):
                 # For thresholded ANY statements, children that are ALL statements
                 # count as a single satisfied course. ANY children count for
                 # all of their satisfied courses.
-                if req_progress.statement.connection_type == CONNECTION_TYPE_ALL:
+                if req_progress.statement.connection_type == CONNECTION_TYPE_ALL and req_progress.children:
                     num_courses_satisfied += req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0
                 else:
                     num_courses_satisfied += len(req_satisfied_courses)
