@@ -1,3 +1,5 @@
+"""Django app config for recommend."""
+
 from django.apps import AppConfig
 
 

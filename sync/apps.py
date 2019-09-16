@@ -1,3 +1,5 @@
+"""Django app config for analytics."""
+
 from django.apps import AppConfig
 
 
