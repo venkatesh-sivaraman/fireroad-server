@@ -6,4 +6,5 @@ from django.apps import AppConfig
 
 
 class CatalogConfig(AppConfig):
+    """Django config for catalog module."""
     name = 'catalog'

@@ -6,4 +6,5 @@ from django.apps import AppConfig
 
 
 class RequirementsConfig(AppConfig):
+    """Django app config for requirements."""
     name = 'requirements'
