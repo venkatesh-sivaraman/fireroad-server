@@ -4,12 +4,13 @@ that produces structured subject listing information from the
 MIT registrar's website.
 """
 
-from lxml import html
-import lxml.etree as etree
-import requests
 import re
 import sys
 import os
+
+from lxml import html
+import lxml.etree as etree
+import requests
 
 from .utils import *
 
@@ -25,14 +26,15 @@ URL_LAST_PREFIX = "m"
 
 CONDENSED_SPLIT_COUNT = 4
 
-subject_id_regex = r'([A-Z0-9.-]+)(\[J\])?(,?)\s+'
-course_id_list_regex = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
-instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
+SUBJECT_ID_REGEX = r'([A-Z0-9.-]+)(\[J\])?(,?)\s+'
+COURSE_ID_LIST_REGEX = r'([A-Z0-9.-]+(,\s)?)+(?![:])'
+INSTRUCTOR_REGEX = r"(?:^|\s|[:])[A-Z]\. \w+"
 
 # For type checking str or unicode in Python 2 and 3
 try:
     basestring
 except NameError:
+    # pylint: disable=redefined-builtin,invalid-name
     basestring = str
 
 COURSE_NUMBERS = [
@@ -55,6 +57,7 @@ ALPHABET = "abcdefghijklmnopqrstuvwxyz"
 # Stores the HTML of the last page retrieved
 LAST_PAGE_HTML = None
 
+
 def load_course_elements(url):
     """
     Loads the HTML text at the given page, parses its HTML, and
@@ -71,7 +74,8 @@ def load_course_elements(url):
 
     LAST_PAGE_HTML = page.text
 
-    tree = html.fromstring(page.content, parser=html.HTMLParser(remove_comments=True))
+    tree = html.fromstring(page.content,
+                           parser=html.HTMLParser(remove_comments=True))
     # Add newlines to br elements
     for br in tree.xpath("*//br"):
         br.tail = "\n" + br.tail if br.tail else "\n"
@@ -88,20 +92,23 @@ def load_course_elements(url):
             course_ids.append(subject_id)
             courses.append([])
         else:
-            match = re.match(subject_id_regex, element.text_content())
+            match = re.match(SUBJECT_ID_REGEX, element.text_content())
             if element.tag == "h3":
                 if match is not None:
-                    if len(course_ids) == 0 or (match.group(1) != course_ids[-1] and not match.group(3)):
+                    if (not course_ids or
+                            (match.group(1) != course_ids[-1] and
+                             not match.group(3))):
                         subject_id = match.group(1)
                         course_ids.append(subject_id)
                         courses.append([element])
-                    elif len(courses) > 0:
+                    elif courses:
                         courses[-1].append(element)
                 # if no match with subject ID, ignore this h3!
-            elif len(courses) > 0:
+            elif courses:
                 courses[-1].append(element)
 
     return list(zip(course_ids, courses))
+
 
 def get_inner_html(node):
     """Gets the inner HTML of a node, including tags."""
@@ -109,6 +116,7 @@ def get_inner_html(node):
     if node.text is None:
         return children
     return node.text + children
+
 
 def recursively_extract_info(node):
     """
@@ -119,15 +127,15 @@ def recursively_extract_info(node):
     contents = get_inner_html(node)
 
     if node.tag == "img":
-        if "title" in node.keys() and len(node.get("title")):
+        if "title" in node.keys() and node.get("title"):
             info_items.append(node.get("title"))
     elif node.tag == "a":
         if "name" in node.keys():
             return (info_items, True)
         text = node.text_content().strip()
-        if len(text):
+        if text:
             info_items.append(text)
-    elif node.tag == "span" and len(contents) > 0:
+    elif node.tag == "span" and contents:
         info_items.append(contents)
     else:
         for child in node.getchildren():
@@ -138,6 +146,7 @@ def recursively_extract_info(node):
                 break
 
     return info_items, False
+
 
 def extract_course_properties(elements):
     """
@@ -155,7 +164,7 @@ def extract_course_properties(elements):
     # Recursively collect info from tree
     for node in elements:
         child_items, should_stop = recursively_extract_info(node)
-        if should_stop and len(info_items) > 0:
+        if should_stop and info_items:
             break
 
         info_items += child_items
@@ -171,7 +180,7 @@ def extract_course_properties(elements):
 
     # Collect info from flat text
     for line in total_text.split("\n"):
-        if len(line.strip()) > 0:
+        if line.strip():
             info_items.append(line.strip())
 
     # Sort by length, so most informative information items will be added last
@@ -179,28 +188,31 @@ def extract_course_properties(elements):
 
     return info_items
 
-### Information Item Processing
+# Information Item Processing
+
 
 def subject_title_regex(subject_id):
     """Makes a regex that detects a subject title when the subject ID is present,
     for example, "6.006 Introduction to Algorithms". Also detects parenthesized
     additional subjects that this subject title may contain."""
-    return "{}(?:{})?\\s*(\\([A-Z0-9.,\s-]+\\))?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
+    return r"{}(?:{})?\s*(\([A-Z0-9.,\s-]+\))?\s+".format(
+        re.escape(subject_id), re.escape(CatalogConstants.joint_class))
 
-def process_info_item(item, attributes):
+
+def process_info_item(item, attribs):
     """Determines the type of the given info item and adds it into the
     attributes dictionary."""
     case_insensitive_item = item.lower()
-    def_not_desc = False # Filter out candidates for description
+    def_not_desc = False  # Filter out candidates for description
 
     # Prereqs
     if CatalogConstants.prereq_prefix in case_insensitive_item:
-        handle_prereq(item, attributes)
+        handle_prereq(item, attribs)
         def_not_desc = True
 
     # Coreqs
     elif CatalogConstants.coreq_prefix in case_insensitive_item:
-        handle_coreq(item, attributes)
+        handle_coreq(item, attribs)
         def_not_desc = True
 
     # URL
@@ -212,122 +224,166 @@ def process_info_item(item, attributes):
     elif re.search(r'([MTWRF]+)(\s*EVE\s*\()?(\d+)\)?', item):
         trimmed_item = item
         if CatalogConstants.final_flag in trimmed_item:
-            attributes[CourseAttribute.hasFinal] = True
-            trimmed_item = trimmed_item.replace(CatalogConstants.final_flag, "")
+            attribs[CourseAttribute.hasFinal] = True
+            trimmed_item = trimmed_item.replace(
+                CatalogConstants.final_flag, "")
 
-        sched, quarter_info = parse_schedule(trimmed_item.strip().replace("\n", ""))
-        if len(sched) > 0:
-            attributes[CourseAttribute.schedule] = sched
-        if len(quarter_info) > 0:
-            attributes[CourseAttribute.quarterInformation] = quarter_info
+        sched, quarter_info = parse_schedule(
+            trimmed_item.strip().replace("\n", ""))
+        if sched:
+            attribs[CourseAttribute.schedule] = sched
+        if quarter_info:
+            attribs[CourseAttribute.quarterInformation] = quarter_info
         def_not_desc = True
 
     # Subject title
-    elif CourseAttribute.subjectID in attributes and re.search(course_id_list_regex, item) is not None and re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item) is not None and len(item) <= 125:
-        match = re.search(subject_title_regex(attributes[CourseAttribute.subjectID]), item)
-        if match.group(1) is not None and len(match.group(1)) > 0:
-            attributes[CourseAttribute.subjectID] = match.group(0).strip()
+    elif (CourseAttribute.subjectID in attribs and
+          re.search(COURSE_ID_LIST_REGEX, item) is not None and
+          re.search(subject_title_regex(
+              attribs[CourseAttribute.subjectID]), item) is not None and
+          len(item) <= 125):
+        match = re.search(
+            subject_title_regex(attribs[CourseAttribute.subjectID]), item)
+        if match.group(1) is not None and match.group(1):
+            attribs[CourseAttribute.subjectID] = match.group(0).strip()
         end = match.end(0)
-        attributes[CourseAttribute.title] = item[end:].replace(CatalogConstants.joint_class, "").strip()
+        attribs[CourseAttribute.title] = item[end:].replace(
+            CatalogConstants.joint_class, "").strip()
         def_not_desc = True
 
     # Subject level
-    elif CatalogConstants.undergrad in case_insensitive_item and abs(len(item) - len(CatalogConstants.undergrad)) < 10:
-        attributes[CourseAttribute.subjectLevel] = CatalogConstants.undergradValue
-    elif CatalogConstants.graduate in case_insensitive_item and abs(len(item) - len(CatalogConstants.graduate)) < 10:
-        attributes[CourseAttribute.subjectLevel] = CatalogConstants.graduateValue
+    elif (CatalogConstants.undergrad in case_insensitive_item and
+          abs(len(item) - len(CatalogConstants.undergrad)) < 10):
+        attribs[CourseAttribute.subjectLevel] = CatalogConstants.undergradValue
+    elif (CatalogConstants.graduate in case_insensitive_item and
+          abs(len(item) - len(CatalogConstants.graduate)) < 10):
+        attribs[CourseAttribute.subjectLevel] = CatalogConstants.graduateValue
 
     # Notes
-    elif len(item) > 75 and len(attributes.get(CourseAttribute.description, "")) > len(item):
-        if CourseAttribute.notes in attributes:
-            attributes[CourseAttribute.notes] = attributes[CourseAttribute.notes] + "\n" + item.strip()
+    elif (len(item) > 75 and
+          len(attribs.get(CourseAttribute.description, "")) > len(item)):
+        if CourseAttribute.notes in attribs:
+            attribs[CourseAttribute.notes] = (
+                attribs[CourseAttribute.notes] + "\n" + item.strip())
         else:
-            attributes[CourseAttribute.notes] = item.strip()
+            attribs[CourseAttribute.notes] = item.strip()
 
     # Meets with/joint/equivalent subjects
-    elif CatalogConstants.meets_with_prefix in case_insensitive_item or CatalogConstants.equivalent_subj_prefix in case_insensitive_item or CatalogConstants.joint_subj_prefix in case_insensitive_item:
-        prefixes = '|'.join(re.escape(p) for p in [CatalogConstants.meets_with_prefix, CatalogConstants.equivalent_subj_prefix, CatalogConstants.joint_subj_prefix])
-        for i, match in enumerate(re.finditer('({0})(.+?)(?=\\Z|\)|{0})'.format(prefixes), item, re.I | re.S)):
+    elif (CatalogConstants.meets_with_prefix in case_insensitive_item or
+          CatalogConstants.equivalent_subj_prefix in case_insensitive_item or
+          CatalogConstants.joint_subj_prefix in case_insensitive_item):
+        prefixes = '|'.join(re.escape(p) for p in [
+            CatalogConstants.meets_with_prefix,
+            CatalogConstants.equivalent_subj_prefix,
+            CatalogConstants.joint_subj_prefix
+        ])
+        for i, match in enumerate(re.finditer(
+                r'({0})(.+?)(?=\\Z|\)|{0})'.format(prefixes), item, re.I | re.S)):
             prefix = match.group(1)
-            contents = [comp.strip() for comp in match.group(2).split(",") if len(comp.strip()) > 0]
-            if i == 0 and match.start(0) > 3: continue
+            contents = [comp.strip() for comp in match.group(
+                2).split(",") if comp.strip()]
+            if i == 0 and match.start(0) > 3:
+                continue
 
             if prefix.lower() == CatalogConstants.meets_with_prefix:
-                attributes[CourseAttribute.meetsWithSubjects] = contents
+                attribs[CourseAttribute.meetsWithSubjects] = contents
             elif prefix.lower() == CatalogConstants.equivalent_subj_prefix:
-                attributes[CourseAttribute.equivalentSubjects] = contents
+                attribs[CourseAttribute.equivalentSubjects] = contents
             elif prefix.lower() == CatalogConstants.joint_subj_prefix:
-                attributes[CourseAttribute.jointSubjects] = contents
+                attribs[CourseAttribute.jointSubjects] = contents
             else:
                 print("Unrecognized prefix")
 
     # Not offered information
     elif CatalogConstants.not_offered_prefix in case_insensitive_item:
-        upper_bound = item.find(CatalogConstants.not_offered_prefix) + len(CatalogConstants.not_offered_prefix)
-        attributes[CourseAttribute.notOfferedYear] = item[upper_bound:].strip()
+        upper_bound = (item.find(CatalogConstants.not_offered_prefix) +
+                       len(CatalogConstants.not_offered_prefix))
+        attribs[CourseAttribute.notOfferedYear] = item[upper_bound:].strip()
 
     # Variable units
     elif CatalogConstants.units_arranged_prefix in case_insensitive_item:
-        attributes[CourseAttribute.isVariableUnits] = True
+        attribs[CourseAttribute.isVariableUnits] = True
 
     # Unit counts
     elif CatalogConstants.units_prefix in case_insensitive_item:
 
         # P/D/F option
         if CatalogConstants.pdf_string in item:
-            attributes[CourseAttribute.pdfOption] = True
+            attribs[CourseAttribute.pdfOption] = True
             item = item.replace(CatalogConstants.pdf_string, "")
         else:
-            attributes[CourseAttribute.pdfOption] = False
+            attribs[CourseAttribute.pdfOption] = False
 
-        upper_bound = item.find(CatalogConstants.units_prefix) + len(CatalogConstants.units_prefix)
+        upper_bound = item.find(CatalogConstants.units_prefix) + \
+            len(CatalogConstants.units_prefix)
         units_string = item[upper_bound:].strip()
         comps = re.split(r'\s', units_string)[-1].split("-")
         if len(comps) >= 3:
-            attributes[CourseAttribute.lectureUnits] = int(comps[0])
-            attributes[CourseAttribute.labUnits] = int(comps[1])
-            attributes[CourseAttribute.preparationUnits] = int(comps[2])
-            attributes[CourseAttribute.totalUnits] = int(comps[0]) + int(comps[1]) + int(comps[2])
+            attribs[CourseAttribute.lectureUnits] = int(comps[0])
+            attribs[CourseAttribute.labUnits] = int(comps[1])
+            attribs[CourseAttribute.preparationUnits] = int(comps[2])
+            attribs[CourseAttribute.totalUnits] = int(
+                comps[0]) + int(comps[1]) + int(comps[2])
 
     # HASS requirement
-    elif any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassH, CatalogConstants.hassA, CatalogConstants.hassS, CatalogConstants.hassE]):
-        attributes[CourseAttribute.hassRequirement] = CatalogConstants.abbreviation(item.strip())
+    elif any(hass_code in case_insensitive_item for hass_code in [
+            CatalogConstants.hassH,
+            CatalogConstants.hassA,
+            CatalogConstants.hassS,
+            CatalogConstants.hassE]):
+        attribs[CourseAttribute.hassRequirement] = (
+            CatalogConstants.abbreviation(item.strip()))
 
     # Multiple HASS requirements
-    elif "+" in item and len(item) < 50 and any(hass_code in case_insensitive_item for hass_code in [CatalogConstants.hassHBasic, CatalogConstants.hassABasic, CatalogConstants.hassSBasic, CatalogConstants.hassEBasic]):
+    elif ("+" in item and len(item) < 50 and
+          any(hass_code in case_insensitive_item for hass_code in [
+              CatalogConstants.hassHBasic,
+              CatalogConstants.hassABasic,
+              CatalogConstants.hassSBasic,
+              CatalogConstants.hassEBasic])):
         comps = item.split("+")
-        attributes[CourseAttribute.hassRequirement] = ','.join([CatalogConstants.abbreviation(comp.strip()) for comp in comps])
+        attribs[CourseAttribute.hassRequirement] = ','.join(
+            [CatalogConstants.abbreviation(comp.strip()) for comp in comps])
 
     # CI requirement
-    elif any(ci_code in case_insensitive_item for ci_code in [CatalogConstants.ciH, CatalogConstants.ciHW]):
-        attributes[CourseAttribute.communicationRequirement] = CatalogConstants.abbreviation(item.strip())
+    elif any(ci_code in case_insensitive_item for ci_code in [
+            CatalogConstants.ciH,
+            CatalogConstants.ciHW]):
+        attribs[CourseAttribute.communicationRequirement] = (
+            CatalogConstants.abbreviation(item.strip()))
 
     # GIR requirement
     elif item.strip() in CatalogConstants.gir_requirements:
-        attributes[CourseAttribute.GIR] = CatalogConstants.gir_requirements[item.strip()]
+        attribs[CourseAttribute.GIR] = (
+            CatalogConstants.gir_requirements[item.strip()])
 
     # Instructors
-    elif len(item) < 100 and re.search(instructor_regex, item) is not None:
+    elif len(item) < 100 and re.search(INSTRUCTOR_REGEX, item) is not None:
         new_comp = item.strip().replace("\n", "")
-        if CourseAttribute.instructors in attributes and (CatalogConstants.fall in attributes[CourseAttribute.instructors].lower() or CatalogConstants.spring in new_comp.lower()):
-            attributes[CourseAttribute.instructors] += '\n' + new_comp
+        if (CourseAttribute.instructors in attribs and
+                (CatalogConstants.fall in attribs[CourseAttribute.instructors].lower() or
+                 CatalogConstants.spring in new_comp.lower())):
+            attribs[CourseAttribute.instructors] += '\n' + new_comp
         else:
-            attributes[CourseAttribute.instructors] = new_comp
+            attribs[CourseAttribute.instructors] = new_comp
 
     # Offered terms
     elif CatalogConstants.fall in case_insensitive_item:
-        attributes[CourseAttribute.offeredFall] = True
+        attribs[CourseAttribute.offeredFall] = True
     elif CatalogConstants.iap in case_insensitive_item:
-        attributes[CourseAttribute.offeredIAP] = True
+        attribs[CourseAttribute.offeredIAP] = True
     elif CatalogConstants.spring in case_insensitive_item:
-        attributes[CourseAttribute.offeredSpring] = True
+        attribs[CourseAttribute.offeredSpring] = True
     elif CatalogConstants.summer in case_insensitive_item:
-        attributes[CourseAttribute.offeredSummer] = True
+        attribs[CourseAttribute.offeredSummer] = True
 
-    # The longest item that is more than 30 characters long should be the description
+    # The longest item that is more than 30 characters long should be the
+    # description
     if len(item) > 30 and not def_not_desc:
-        if CourseAttribute.description not in attributes or len(attributes[CourseAttribute.description]) < len(item):
-            attributes[CourseAttribute.description] = item.strip()
+        if (CourseAttribute.description not in attribs or
+                len(attribs[CourseAttribute.description]) < len(item)):
+            attribs[CourseAttribute.description] = item.strip()
+
 
 def expand_subject_ids(subject_id):
     """
@@ -338,21 +394,27 @@ def expand_subject_ids(subject_id):
     """
 
     # Matches 6.S193-6.S198
-    match = re.match(r'([A-Z0-9.]+[^0-9])([0-9]+)-[A-Z0-9.]+[^0-9]([0-9]+)', subject_id)
+    match = re.match(
+        r'([A-Z0-9.]+[^0-9])([0-9]+)-[A-Z0-9.]+[^0-9]([0-9]+)',
+        subject_id)
     if match is not None:
         base = match.group(1)
         start_num = int(match.group(2))
         end_num = int(match.group(3))
-        return [base + str(num).zfill(len(match.group(2))) for num in range(start_num, end_num + 1)]
+        return [base + str(num).zfill(len(match.group(2)))
+                for num in range(start_num, end_num + 1)]
 
     # Matches 10.81 (10.83, 10.85, 10.87)
-    match = re.match(r'([A-Z0-9.]+)\s*\(((?:[A-Z0-9.]+,\s*)*(?:[A-Z0-9.]+\s*))\)', subject_id)
+    match = re.match(
+        r'([A-Z0-9.]+)\s*\(((?:[A-Z0-9.]+,\s*)*(?:[A-Z0-9.]+\s*))\)',
+        subject_id)
     if match is not None:
         base = match.group(1)
         alternatives = match.group(2).split(',')
         return [base.strip()] + [alt.strip() for alt in alternatives]
 
     return [subject_id]
+
 
 def merge_duplicates(courses):
     """
@@ -364,23 +426,30 @@ def merge_duplicates(courses):
     merged_courses_set = set()
     course_dict = {}
     for course in courses:
-        if CourseAttribute.subjectID not in course: continue
-        course_dict.setdefault(course[CourseAttribute.subjectID], []).append(course)
+        if CourseAttribute.subjectID not in course:
+            continue
+        course_dict.setdefault(
+            course[CourseAttribute.subjectID], []).append(course)
 
     for course in courses:
-        if CourseAttribute.subjectID not in course: continue
+        if CourseAttribute.subjectID not in course:
+            continue
         subject_id = course[CourseAttribute.subjectID]
-        if subject_id in merged_courses_set: continue
+        if subject_id in merged_courses_set:
+            continue
 
         if len(course_dict[subject_id]) > 1:
             total_course = {}
-            keys = set().union(*(other.keys() for other in course_dict[subject_id]))
+            keys = set().union(*(other.keys()
+                                 for other in course_dict[subject_id]))
             for key in keys:
-                vals = [other.get(key, '') for other in course_dict[subject_id]]
+                vals = [other.get(key, '')
+                        for other in course_dict[subject_id]]
 
                 if key == CourseAttribute.URL:
                     # Choose a URL without the hyphen in the link name
-                    correct_val = next((val for val in vals if len(val) and '-' not in val[val.rfind('#'):]), None)
+                    correct_val = next((val for val in vals if len(
+                        val) and '-' not in val[val.rfind('#'):]), None)
                     if correct_val is not None:
                         total_course[key] = correct_val
 
@@ -393,6 +462,7 @@ def merge_duplicates(courses):
         merged_courses_set.add(subject_id)
 
     return merged_courses
+
 
 def courses_from_dept_code(dept_code):
     """
@@ -410,29 +480,31 @@ def courses_from_dept_code(dept_code):
 
     courses = []
     autofill_ids = []
-    for id, nodes in elements:
-        if len(nodes) == 0:
-            autofill_ids.append(id)
+    for subj_id, nodes in elements:
+        if not nodes:
+            autofill_ids.append(subj_id)
             continue
 
         props = extract_course_properties(nodes)
-        attribs = {CourseAttribute.subjectID: id.replace('[J]', '')}
-        attribs[CourseAttribute.URL] = catalog_url + "#" + id
+        attribs = {CourseAttribute.subjectID: subj_id.replace('[J]', '')}
+        attribs[CourseAttribute.URL] = catalog_url + "#" + subj_id
         for prop in props:
             process_info_item(prop, attribs)
 
         # The subject ID might have changed during parsing
-        id = attribs[CourseAttribute.subjectID]
+        subj_id = attribs[CourseAttribute.subjectID]
 
-        # Apply the subject content to multiple subject IDs if they are contained within this entry
-        subject_ids = expand_subject_ids(id) + autofill_ids
+        # Apply the subject content to multiple subject IDs if they are
+        # contained within this entry
+        subject_ids = expand_subject_ids(subj_id) + autofill_ids
 
         if len(subject_ids) > 1:
             # Possibly split up schedules by subject
             schedules = attribs.get(CourseAttribute.schedule, {})
             if "" in schedules:
                 # Only one schedule for all
-                schedules = {other_id: schedules[""] for other_id in subject_ids}
+                schedules = {other_id: schedules[""]
+                             for other_id in subject_ids}
 
             for other_id in subject_ids:
                 copied_course = {key: val for key, val in attribs.items()}
@@ -445,17 +517,19 @@ def courses_from_dept_code(dept_code):
         else:
             # Use only the first item in the schedule dictionary
             if CourseAttribute.schedule in attribs:
-                attribs[CourseAttribute.schedule] = list(attribs[CourseAttribute.schedule].values())[0]
+                attribs[CourseAttribute.schedule] = list(
+                    attribs[CourseAttribute.schedule].values())[0]
             courses.append(attribs)
 
         # Autofill regions that were empty with the subsequent course information
         # For example, 6.260, 6.261 Advanced Topics in Communications
-        if len(autofill_ids) > 0:
+        if autofill_ids:
             autofill_ids = []
 
     return courses
 
-### Writing courses
+# Writing courses
+
 
 def writing_description_for_attribute(course, attribute):
     """Returns a string that represents the given attribute of the given course,
@@ -467,18 +541,23 @@ def writing_description_for_attribute(course, attribute):
     if isinstance(item, basestring):
         return '"' + item.replace('"', "'").replace('\n', '\\n') + '"'
     elif isinstance(item, bool):
-        return "Y" if item == True else "N"
+        return "Y" if item is True else "N"
     elif isinstance(item, float):
         return "{:.2f}".format(item)
     elif isinstance(item, int):
         return str(item)
-    elif isinstance(item, list) and len(item) > 0 and isinstance(item[0], list):
+    elif isinstance(item, list) and item and isinstance(item[0], list):
         return '"' + ";".join(",".join(subitem) for subitem in item) + '"'
     elif isinstance(item, list):
         return '"' + ",".join(item) + '"'
     else:
-        print("Don't have a way to represent attribute {}: {} ({})".format(attribute, item, type(item)))
+        print(
+            "Don't have a way to represent attribute {}: {} ({})".format(
+                attribute,
+                item,
+                type(item)))
         return str(item)
+
 
 def write_courses(courses, filepath, attributes):
     """Writes the given list of courses to the given file, in CSV format. Only
@@ -486,17 +565,21 @@ def write_courses(courses, filepath, attributes):
     csv_comps = [attributes]
 
     for course in courses:
-        csv_comps.append([writing_description_for_attribute(course, attrib) for attrib in attributes])
+        csv_comps.append([writing_description_for_attribute(
+            course, attrib) for attrib in attributes])
 
-    with open(filepath, 'w') as file:
+    with open(filepath, 'w') as out_file:
         if sys.version_info > (3, 0):
-            file.write("\n".join(",".join(item) for item in csv_comps))
+            out_file.write("\n".join(",".join(item) for item in csv_comps))
         else:
-            file.write("\n".join(",".join(item) for item in csv_comps).encode('utf-8'))
+            out_file.write("\n".join(",".join(item)
+                                     for item in csv_comps).encode('utf-8'))
 
-### Main method
+# Main method
 
-def parse(output_dir, evaluations_path=None, equivalences_path=None, write_related=True, progress_callback=None):
+
+def parse(output_dir, evaluations_path=None, equivalences_path=None,
+          write_related=True, progress_callback=None):
     """
     Parses the catalog from the web and writes the files to the given directory.
 
@@ -505,8 +588,8 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
     equivalences_path: path to a JSON file containing equivalences, i.e.
         [[["6.0001", "6.0002"], "6.00"], ...]
     write_related: if True, compute the related and features files as well
-    progress_callback: a function that takes the current progress (from 0-100) and an
-        update string
+    progress_callback: a function that takes the current progress (from 0-100)
+        and an update string
     """
 
     if not os.path.exists(output_dir):
@@ -522,7 +605,12 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
     courses_by_dept = {}
     for i, course_code in enumerate(COURSE_NUMBERS):
         if progress_callback is not None:
-            progress_callback(float(i) / len(COURSE_NUMBERS) * 50, "Parsing course {} ({} of {})...".format(course_code, i + 1, len(COURSE_NUMBERS)))
+            progress_callback(
+                float(i) / len(COURSE_NUMBERS) * 50,
+                "Parsing course {} ({} of {})...".format(
+                    course_code,
+                    i + 1,
+                    len(COURSE_NUMBERS)))
 
         dept_courses = []
         original_html = None
@@ -530,11 +618,14 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
             total_code = course_code + letter
 
             # Check that this page was linked to in the original dept page
-            if original_html is not None and (URL_LAST_PREFIX + total_code + URL_SUFFIX) not in original_html:
+            this_page_url = URL_LAST_PREFIX + total_code + URL_SUFFIX
+            if (original_html is not None and
+                    this_page_url not in original_html): #pylint: disable=unsupported-membership-test
                 continue
 
-            addl_courses = [course for course in courses_from_dept_code(total_code) if course_code in course[CourseAttribute.subjectID]]
-            if len(addl_courses) == 0:
+            addl_courses = [course for course in courses_from_dept_code(
+                total_code) if course_code in course[CourseAttribute.subjectID]]
+            if not addl_courses:
                 continue
 
             print("======", total_code)
@@ -554,26 +645,48 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
             parse_equivalences(equivalences_path, course_dict)
 
         # Write department-specific file
-        write_courses(dept_courses, os.path.join(output_dir, course_code + ".txt"), ALL_ATTRIBUTES)
+        write_courses(
+            dept_courses,
+            os.path.join(
+                output_dir,
+                course_code +
+                ".txt"),
+            ALL_ATTRIBUTES)
         all_courses += dept_courses
         courses_by_dept[course_code] = course_dict
 
     print("Writing condensed courses...")
     for i in range(CONDENSED_SPLIT_COUNT):
         lower_bound = int(i / float(CONDENSED_SPLIT_COUNT) * len(all_courses))
-        upper_bound = min(len(all_courses), int((i + 1) / float(CONDENSED_SPLIT_COUNT) * len(all_courses)))
-        write_courses(all_courses[lower_bound:upper_bound], os.path.join(output_dir, "condensed_{}.txt".format(i)), CONDENSED_ATTRIBUTES)
+        upper_bound = min(
+            len(all_courses), int(
+                (i + 1) / float(CONDENSED_SPLIT_COUNT) * len(all_courses)))
+        write_courses(all_courses[lower_bound:upper_bound], os.path.join(
+            output_dir, "condensed_{}.txt".format(i)), CONDENSED_ATTRIBUTES)
 
     print("Writing all courses...")
-    write_courses(all_courses, os.path.join(output_dir, "courses.txt"), ALL_ATTRIBUTES)
+    write_courses(
+        all_courses,
+        os.path.join(
+            output_dir,
+            "courses.txt"),
+        ALL_ATTRIBUTES)
 
     if write_related:
-        write_related_and_features(courses_by_dept, output_dir, progress_callback=progress_callback, progress_start=50.0)
+        write_related_and_features(
+            courses_by_dept,
+            output_dir,
+            progress_callback=progress_callback,
+            progress_start=50.0)
     print("Done.")
 
-if __name__ == '__main__':
+
+def main():
+    """Runs the catalog parser using command-line arguments."""
+
     if len(sys.argv) < 2:
-        print("Usage: python catalog_parser.py output-dir [evaluations-file] [equivalences-file]")
+        print(("Usage: python catalog_parser.py output-dir "
+               "[evaluations-file] [equivalences-file]"))
         exit(1)
 
     output_dir = sys.argv[1]
@@ -587,4 +700,9 @@ if __name__ == '__main__':
     else:
         equiv_path = None
 
-    parse(output_dir, eval_path, equiv_path, write_related=(not '-norel' in sys.argv))
+    parse(output_dir, eval_path, equiv_path,
+          write_related=('-norel' not in sys.argv))
+
+
+if __name__ == '__main__':
+    main()
