@@ -1,3 +1,5 @@
+"""Database models for FireRoad Analytics services."""
+
 from django.db import models
 from django.utils import timezone
 
@@ -11,8 +13,8 @@ class RequestCount(models.Model):
     student_unique_id = models.CharField(max_length=50, null=True)
     student_semester = models.CharField(max_length=25, null=True)
 
-    def __str__(self):
-        return "{} by {} at {}{}".format(
+    def __unicode__(self):
+        return u"{} by {} at {}{}".format(
             self.path,
             self.user_agent,
             self.timestamp,
@@ -20,7 +22,10 @@ class RequestCount(models.Model):
         )
 
     @staticmethod
-    def tabulate_requests(early_time, interval=None, attribute_func=None, distinct_users=False):
+    def tabulate_requests(early_time,
+                          interval=None,
+                          attribute_func=None,
+                          distinct_users=False):
         """Retrieves request counts from the given time to present,
         bucketed by the given interval.
 
@@ -51,12 +56,15 @@ class RequestCount(models.Model):
             buckets.append((early_time, {}))
 
         seen_users = set()
-        for request in RequestCount.objects.filter(timestamp__gte=early_time).iterator():
-            if distinct_users and (not request.student_unique_id or request.student_unique_id in seen_users):
+        recent_requests = RequestCount.objects.filter(timestamp__gte=early_time)
+        for request in recent_requests.iterator():
+            if distinct_users and (not request.student_unique_id or
+                                   request.student_unique_id in seen_users):
                 continue
             seen_users.add(request.student_unique_id)
             for time, bucket in buckets:
-                if request.timestamp >= time and (not interval or request.timestamp < time + interval):
+                if (request.timestamp >= time and
+                        (not interval or request.timestamp < time + interval)):
                     value = attribute_func(request) if attribute_func else None
                     bucket[value] = bucket.get(value, 0) + 1
                     break

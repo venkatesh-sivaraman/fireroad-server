@@ -139,7 +139,8 @@ disable=print-statement,
         no-init,
         too-few-public-methods,
         old-style-class,
-        wildcard-import
+        wildcard-import,
+        no-self-use
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -418,7 +419,8 @@ good-names=i,
            k,
            ex,
            Run,
-           _
+           _,
+           urlpatterns
 
 # Include a hint for the correct naming format with invalid-name
 include-naming-hint=no

@@ -7,6 +7,7 @@ not leave the FireRoad server unless it is aggregated such that users are no
 longer identifiable.
 """
 
+from django.core.exceptions import ObjectDoesNotExist
 from .models import *
 
 EXCLUDE_PATH_PREFIXES = [
@@ -25,16 +26,19 @@ EXCLUDE_USER_AGENTS = [
 ]
 
 class RequestCounterMiddleware(object):
-    """A middleware that saves a RequestCount object each time a page is requested."""
+    """A middleware that saves a RequestCount object each time a page is
+    requested."""
 
     def process_response(self, request, response):
         """Called after Django calls the request's view. We will use this hook
         to log basic information about the request (performed after request
         to make sure we have login info)."""
-        if any(request.path.startswith(prefix) for prefix in EXCLUDE_PATH_PREFIXES):
+        if any(request.path.startswith(prefix)
+               for prefix in EXCLUDE_PATH_PREFIXES):
             return response
         user_agent = request.META.get("HTTP_USER_AGENT", "")
-        if any(element in user_agent.lower() for element in EXCLUDE_USER_AGENTS):
+        if any(element in user_agent.lower()
+               for element in EXCLUDE_USER_AGENTS):
             return response
 
         tally = RequestCount.objects.create()
@@ -42,11 +46,13 @@ class RequestCounterMiddleware(object):
         if len(user_agent) > 150:
             user_agent = user_agent[:150]
         tally.user_agent = user_agent
-        if hasattr(request, "user") and request.user and request.user.is_authenticated():
+        if (hasattr(request, "user") and request.user and
+                request.user.is_authenticated()):
+
             tally.is_authenticated = True
             try:
                 student = request.user.student
-            except:
+            except ObjectDoesNotExist:
                 pass
             else:
                 tally.student_unique_id = student.unique_id
