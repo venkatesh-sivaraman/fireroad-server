@@ -1,24 +1,28 @@
-from django.shortcuts import render
+"""Views for the catalog app."""
+
+import json
+
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.core.exceptions import ObjectDoesNotExist
-import os
-import json
-from .models import Course
 from django.db.models import Q
+
+from .models import Course
 
 # Create your views here.
 TRUE_SET = {"true", "yes", "y", "t", "1"}
 
 def lookup(request, subject_id=None):
     """
-    Provides a full JSON description of the course specified by the given subject
-    ID.
+    Provides a full JSON description of the course specified by the given
+    subject ID.
     """
     if subject_id is None:
-        return HttpResponseBadRequest("Provide a subject ID to look up a course.")
+        return HttpResponseBadRequest(
+            "Provide a subject ID to look up a course.")
     try:
         c = Course.public_courses().get(subject_id=subject_id)
-        return HttpResponse(json.dumps(c.to_json_object()), content_type="application/json")
+        return HttpResponse(json.dumps(c.to_json_object()),
+                            content_type="application/json")
     except ObjectDoesNotExist:
         return HttpResponseNotFound("No subject found with the given ID")
 
@@ -29,13 +33,18 @@ def department(request, dept=None):
     specified, it will indicate whether the full JSON description is included.
     """
     if dept is None:
-        return HttpResponseBadRequest("Provide a department to look up its courses.")
+        return HttpResponseBadRequest(
+            "Provide a department to look up its courses.")
     if "full" in request.GET:
         full = request.GET["full"].lower() in TRUE_SET
     else:
         full = False
-    courses = Course.public_courses().filter(subject_id__startswith=dept + ".").order_by("subject_id")
-    return HttpResponse(json.dumps([c.to_json_object(full=full) for c in courses]), content_type="application/json")
+    courses = (Course.public_courses()
+               .filter(subject_id__startswith=dept + ".")
+               .order_by("subject_id"))
+    return HttpResponse(
+        json.dumps([c.to_json_object(full=full) for c in courses]),
+        content_type="application/json")
 
 def list_all(request):
     """
@@ -47,7 +56,10 @@ def list_all(request):
         full = request.GET["full"].lower() in TRUE_SET
     else:
         full = False
-    return HttpResponse(json.dumps([c.to_json_object(full=full) for c in Course.public_courses().order_by("subject_id")]), content_type="application/json")
+    return HttpResponse(
+        json.dumps([c.to_json_object(full=full)
+                    for c in Course.public_courses().order_by("subject_id")]),
+        content_type="application/json")
 
 def offered_filter(offered_value):
     """Constructs a Q filter based on the given offered value, or throws a
@@ -90,7 +102,8 @@ def ci_filter(ci_value):
     elif ci_value == "cihw":
         return Q(communication_requirement="CI-HW")
     elif ci_value == "not-ci":
-        return Q(communication_requirement__isnull=True) | Q(communication_requirement="")
+        return (Q(communication_requirement__isnull=True) |
+                Q(communication_requirement=""))
     else:
         raise ValueError
 
@@ -120,17 +133,21 @@ def gir_filter(gir_value):
     else:
         raise ValueError
 
-def construct_search_query(search_term, type):
+def construct_search_query(search_term, search_type):
     """Constructs a Q filter based on the given search term, using the given
     search type (contains, matches, etc.)."""
-    if type == "contains":
-        return Q(subject_id__icontains=search_term) | Q(title__icontains=search_term)
-    elif type == "matches":
-        return Q(subject_id__iexact=search_term) | Q(title__iexact=search_term)
-    elif type == "starts":
-        return Q(subject_id__istartswith=search_term) | Q(title__istartswith=search_term)
-    elif type == "ends":
-        return Q(subject_id__iendswith=search_term) | Q(title__iendswith=search_term)
+    if search_type == "contains":
+        return (Q(subject_id__icontains=search_term) |
+                Q(title__icontains=search_term))
+    elif search_type == "matches":
+        return (Q(subject_id__iexact=search_term) |
+                Q(title__iexact=search_term))
+    elif search_type == "starts":
+        return (Q(subject_id__istartswith=search_term) |
+                Q(title__istartswith=search_term))
+    elif search_type == "ends":
+        return (Q(subject_id__iendswith=search_term) |
+                Q(title__iendswith=search_term))
     else:
         raise ValueError
 
@@ -140,18 +157,18 @@ def search(request, search_term=None):
     Searches the catalog database for courses matching the given search term.
     The following case-insensitive GET parameter options are available:
 
-    type: The match type to use with the search term. Possible values: "contains"
-        (default), "matches", "starts", "ends"
-    gir: Whether to filter by GIR. Possible values: "off" (default), "any", "lab",
-        "rest"
-    hass: Whether to filter by HASS fulfillment. Possible values: "off" (default),
-        "any", "a", "s", "h"
+    type: The match type to use with the search term. Possible values:
+        "contains" (default), "matches", "starts", "ends"
+    gir: Whether to filter by GIR. Possible values: "off" (default), "any",
+        "lab", "rest"
+    hass: Whether to filter by HASS fulfillment. Possible values: "off"
+        (default), "any", "a", "s", "h"
     ci: Whether to filter by CI fulfillment. Possible values: "off" (default),
         "cih", "cihw", "not-ci"
     offered: Which semester the course is offered. Possible values: "off"
         (default), "fall", "spring", "IAP", "summer"
-    level: The level of the course. Possible values: "off" (default), "undergrad",
-        "grad"
+    level: The level of the course. Possible values: "off" (default),
+        "undergrad", "grad"
     full: Boolean indicating whether to return the full course description.
         Possible values: "n" (default), "y"
 
@@ -162,22 +179,28 @@ def search(request, search_term=None):
 
     try:
         # Construct query
-        query = construct_search_query(search_term, request.GET.get("type", "contains"))
+        query = construct_search_query(search_term,
+                                       request.GET.get("type", "contains"))
         if "offered" in request.GET:
-            filter = offered_filter(request.GET["offered"])
-            if filter is not None: query &= filter
+            query_filter = offered_filter(request.GET["offered"])
+            if query_filter is not None:
+                query &= query_filter
         if "level" in request.GET:
-            filter = level_filter(request.GET["level"])
-            if filter is not None: query &= filter
+            query_filter = level_filter(request.GET["level"])
+            if query_filter is not None:
+                query &= query_filter
         if "gir" in request.GET:
-            filter = gir_filter(request.GET["gir"])
-            if filter is not None: query &= filter
+            query_filter = gir_filter(request.GET["gir"])
+            if query_filter is not None:
+                query &= query_filter
         if "hass" in request.GET:
-            filter = hass_filter(request.GET["hass"])
-            if filter is not None: query &= filter
+            query_filter = hass_filter(request.GET["hass"])
+            if query_filter is not None:
+                query &= query_filter
         if "ci" in request.GET:
-            filter = ci_filter(request.GET["ci"])
-            if filter is not None: query &= filter
+            query_filter = ci_filter(request.GET["ci"])
+            if query_filter is not None:
+                query &= query_filter
     except ValueError:
         return HttpResponseBadRequest("Invalid filter value")
 
@@ -187,4 +210,6 @@ def search(request, search_term=None):
         full = request.GET["full"].lower() in TRUE_SET
     else:
         full = False
-    return HttpResponse(json.dumps([c.to_json_object(full=full) for c in results]), content_type="application/json")
+    return HttpResponse(
+        json.dumps([c.to_json_object(full=full) for c in results]),
+        content_type="application/json")

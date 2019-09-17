@@ -1,3 +1,5 @@
+"""URL patterns for the catalog app."""
+
 from django.conf.urls import url
 
 from . import views
