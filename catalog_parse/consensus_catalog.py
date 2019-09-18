@@ -12,7 +12,9 @@ import pandas as pd
 import numpy as np
 from .utils.catalog_constants import *
 
-KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
+KEYS_TO_WRITE = ([key for key in CONDENSED_ATTRIBUTES
+                  if key != CourseAttribute.subjectID] +
+                 [CourseAttribute.sourceSemester, CourseAttribute.isHistorical])
 
 def semester_sort_key(x):
     comps = x.split('-')
@@ -33,7 +35,8 @@ def make_corrections(corrections, consensus):
                     if correction[col]:
                         if col not in consensus.columns:
                             consensus[col] = ""
-                        print("Correction for {}: {} ==> {}".format(idx, col, correction[col]))
+                        print("Correction for {}: {} ==> {}".format(
+                            idx, col, correction[col]))
                         consensus.ix[idx][col] = correction[col]
 
         elif subject_id in consensus.index:
@@ -42,13 +45,15 @@ def make_corrections(corrections, consensus):
             for col in correction:
                 if col == "Subject Id": continue
                 if correction[col]:
-                    print("Correction for {}: {} ==> {}".format(subject_id, col, correction[col]))
+                    print("Correction for {}: {} ==> {}".format(
+                        subject_id, col, correction[col]))
                     consensus_row[col] = correction[col]
 
         else:
             # Add the subject
             print("Correction: adding subject {}".format(subject_id))
-            consensus.loc[subject_id] = {col: correction.get(col, None) for col in consensus.columns}
+            consensus.loc[subject_id] = {col: correction.get(col, None) 
+                                         for col in consensus.columns}
 
 
 def build_consensus(base_path, out_path, corrections=None):
@@ -59,11 +64,16 @@ def build_consensus(base_path, out_path, corrections=None):
 
     for semester in os.listdir(base_path):
         if 'sem-' not in semester: continue
-        all_courses = pd.read_csv(os.path.join(base_path, semester, 'courses.txt'), dtype=str).replace(np.nan, '', regex=True)
+        all_courses = pd.read_csv(
+            os.path.join(base_path, semester, 'courses.txt'),
+            dtype=str
+        ).replace(np.nan, '', regex=True)
         semester_data[semester] = all_courses
 
     # Sort in reverse chronological order
-    semester_data = sorted(semester_data.items(), key=lambda x: semester_sort_key(x[0]), reverse=True)
+    semester_data = sorted(semester_data.items(), 
+                           key=lambda x: semester_sort_key(x[0]),
+                           reverse=True)
     if len(semester_data) == 0:
         print("No raw semester data found.")
         return
@@ -81,8 +91,10 @@ def build_consensus(base_path, out_path, corrections=None):
         else:
             consensus = pd.concat([consensus, data], sort=False)
 
-        consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
-        print("Added {} courses with {}.".format(len(consensus) - last_size, semester))
+        consensus = consensus.drop_duplicates(
+            subset=[CourseAttribute.subjectID], keep='first')
+        print("Added {} courses with {}.".format(
+            len(consensus) - last_size, semester))
         last_size = len(consensus)
         i += 1
 
@@ -107,9 +119,9 @@ def build_consensus(base_path, out_path, corrections=None):
     for semester, data in semester_data:
         related_path = os.path.join(base_path, semester, "related.txt")
         if os.path.exists(related_path):
-            with open(related_path, 'r') as file:
+            with open(related_path, 'r') as infile:
                 with open(os.path.join(out_path, "related.txt"), 'w') as outfile:
-                    for line in file:
+                    for line in infile:
                         outfile.write(line)
             break
 
@@ -117,24 +129,28 @@ def write_condensed_files(consensus, out_path, split_count=4):
     for i in range(split_count):
         lower_bound = int(i / 4.0 * len(consensus))
         upper_bound = min(len(consensus), int((i + 1) / 4.0 * len(consensus)))
-        write_df(consensus[KEYS_TO_WRITE].iloc[lower_bound:upper_bound], os.path.join(out_path, "condensed_{}.txt".format(i)))
+        write_df(consensus[KEYS_TO_WRITE].iloc[lower_bound:upper_bound],
+                 os.path.join(out_path, "condensed_{}.txt".format(i)))
 
 def write_df(df, path):
     """Writes the df to the given path with appropriate quoting."""
     with open(path, 'w') as file:
         file.write(','.join([CourseAttribute.subjectID] + list(df.columns)) + '\n')
-        file.write(df.to_csv(header=False, quoting=csv.QUOTE_NONNUMERIC).replace('""', ''))
+        file.write(df.to_csv(header=False,
+                             quoting=csv.QUOTE_NONNUMERIC).replace('""', ''))
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Provide the directory containing raw semester catalog data, and the directory into which to write the output.")
+        print(("Provide the directory containing raw semester catalog data, and "
+               "the directory into which to write the output."))
         exit()
 
     in_path = sys.argv[1]
     out_path = sys.argv[2]
 
     if os.path.exists(out_path):
-        print("Fatal: the directory {} already exists. Please delete it or choose a different location.".format(out_path))
+        print(("Fatal: the directory {} already exists. Please delete it or "
+               "choose a different location.").format(out_path))
         exit(1)
 
     build_consensus(in_path, out_path)
