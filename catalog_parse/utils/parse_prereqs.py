@@ -1,4 +1,9 @@
-import numpy as np
+"""Parses the text of prerequisites and corequisites from the course
+catalog. The output of the routine is a requirements statement defining the
+prerequisites. For example: (2.002 or 2.003) and (2.005, 2.006, or 2.007) and
+permission of instructor becomes (2.002/2.003), (2.005/2.006/2.007),
+''permission of instructor''."""
+
 import re
 from .catalog_constants import *
 
@@ -14,15 +19,17 @@ def collapse_parentheses(text):
     for c in text:
         if c == "(":
             paren_level += 1
-            if paren_level == 1: mut += c
+            if paren_level == 1:
+                mut += c
         elif c == ")":
             paren_level -= 1
-            if paren_level == 0: mut += c
+            if paren_level == 0:
+                mut += c
         elif paren_level == 0:
             mut += c
     return mut
 
-information_separator = r'[\r\n/,;-]'
+INFORMATION_SEPARATOR = r'[\r\n/,;-]'
 
 def filter_course_list(list_string):
     """
@@ -33,12 +40,14 @@ def filter_course_list(list_string):
         comps = trimmed_list.split(";")
         return [subcomp for comp in comps for subcomp in filter_course_list(comp)]
 
-    items = re.split(information_separator, trimmed_list.replace(" or", ",").replace(" and", ","))
+    items = re.split(INFORMATION_SEPARATOR, trimmed_list.replace(" or", ",").replace(" and", ","))
     trimmed_items = [item.strip() for item in items]
     if " or" in trimmed_list:
-        return [[item for item in trimmed_items if len(item) and CatalogConstants.none not in item.lower()]]
+        return [[item for item in trimmed_items
+                 if len(item) and CatalogConstants.none not in item.lower()]]
 
-    return [[item] for item in trimmed_items if len(item) and CatalogConstants.none not in item.lower()]
+    return [[item] for item in trimmed_items
+            if len(item) and CatalogConstants.none not in item.lower()]
 
 
 def process_req_list_item(item):
@@ -47,7 +56,7 @@ def process_req_list_item(item):
     If the requirements contain more than one element, the result is parenthesized.
     """
     filtered_item = item.strip().replace("\n", " ").replace("(GIR)", "[GIR]")
-    if len(filtered_item) == 0 or "none" in filtered_item:
+    if not filtered_item or "none" in filtered_item:
         return ""
 
     # Search for parenthetical groups and replace them with macros
@@ -70,7 +79,7 @@ def process_req_list_item(item):
         else:
             paren_levels[-1] += c
 
-    if len(paren_levels) == 0:
+    if not paren_levels:
         print("Unmatched parentheses:", item)
     result = process_single_level_req_item(paren_levels[-1])
     for key, sub in substitutions.items():
@@ -78,10 +87,10 @@ def process_req_list_item(item):
     return result
 
 # This only handles one level of parenthesization, I think
-req_list_comp = r"([^(),;]+(\s*\[GIR\])?|\((.*)\))"
-req_list_comp_regex = req_list_comp + r"((\s*,)|(\s+(?=and))|(\s+(?=or)))"
-req_list_and_final_regex = r"^\s*(and)?\s*" + req_list_comp + r"\s*;?"
-req_list_or_final_regex = r"^\s*or\s*" + req_list_comp + r"\s*;?"
+REQ_LIST_COMP = r"([^(),;]+(\s*\[GIR\])?|\((.*)\))"
+REQ_LIST_COMP_REGEX = REQ_LIST_COMP + r"((\s*,)|(\s+(?=and))|(\s+(?=or)))"
+REQ_LIST_AND_FINAL_REGEX = r"^\s*(and)?\s*" + REQ_LIST_COMP + r"\s*;?"
+REQ_LIST_OR_FINAL_REGEX = r"^\s*or\s*" + REQ_LIST_COMP + r"\s*;?"
 
 def process_single_level_req_item(item):
     """
@@ -89,7 +98,7 @@ def process_single_level_req_item(item):
     connected with an 'and' or an 'or'.
     """
 
-    if len(item) == 0:
+    if not item:
         return ""
 
     filtered_item = item.strip().replace("\n", " ")
@@ -98,8 +107,8 @@ def process_single_level_req_item(item):
 
     components = []
     is_or = False
-    while len(filtered_item) > 0:
-        match = re.search(req_list_comp_regex, filtered_item)
+    while filtered_item:
+        match = re.search(REQ_LIST_COMP_REGEX, filtered_item)
         if match is not None:
             current_comp = match.group(1).strip()
             if current_comp[0] == "(" and current_comp[-1] == ")":
@@ -109,7 +118,7 @@ def process_single_level_req_item(item):
             filtered_item = filtered_item[match.end(0):].strip()
             continue
 
-        match = re.search(req_list_or_final_regex, filtered_item)
+        match = re.search(REQ_LIST_OR_FINAL_REGEX, filtered_item)
         if match is not None:
             last_comp = match.group(1)
             if last_comp == filtered_item:
@@ -122,7 +131,7 @@ def process_single_level_req_item(item):
             filtered_item = filtered_item[match.end(0):].strip()
             continue
 
-        match = re.search(req_list_and_final_regex, filtered_item)
+        match = re.search(REQ_LIST_AND_FINAL_REGEX, filtered_item)
         if match is not None and filtered_item != "or" and filtered_item != "and":
             last_comp = match.group(2)
             if last_comp == filtered_item:
@@ -142,12 +151,11 @@ def process_single_level_req_item(item):
     else:
         base = ", ".join(components)
 
-    if len(components) > 1:
+    if components:
         return base
-    else:
-        return process_base_requirement(base)
+    return process_base_requirement(base)
 
-course_regex = r'([A-z0-9]+)\.([A-z0-9]+)'
+COURSE_REGEX = r'([A-z0-9]+)\.([A-z0-9]+)'
 
 def process_base_requirement(item):
     """
@@ -160,7 +168,7 @@ def process_base_requirement(item):
         return "GIR:" + gir_id
 
     # Handle courses, already-processed items
-    match = re.search(course_regex, item)
+    match = re.search(COURSE_REGEX, item)
     if match is not None and match.start(0) == 0:
         return item
 
@@ -189,7 +197,9 @@ def handle_prereq(item, attributes):
         attributes[CourseAttribute.oldCorequisites] = filter_course_list(coreq_string)
         attributes[CourseAttribute.corequisites] = process_req_list_item(coreq_string)
 
-        if prereq_string.find(CatalogConstants.either_prereq_or_coreq_flag) + len(CatalogConstants.either_prereq_or_coreq_flag) == len(prereq_string) - 1:
+        if (prereq_string.find(CatalogConstants.either_prereq_or_coreq_flag) +
+                len(CatalogConstants.either_prereq_or_coreq_flag) ==
+                len(prereq_string) - 1):
             attributes[CourseAttribute.eitherPrereqOrCoreq] = True
 
     else:

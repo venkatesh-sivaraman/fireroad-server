@@ -1,4 +1,8 @@
+"""Defines constants used for the course catalog parsing process and stored in
+the database."""
+
 class CatalogConstants:
+    """Constants defining strings found in the course catalog."""
     equivalent_subj_prefix = "credit cannot also be received for"
     not_offered_prefix = "not offered academic year "
     units_prefix = "units:"
@@ -47,6 +51,8 @@ class CatalogConstants:
 
     @staticmethod
     def abbreviation(attribute):
+        """Returns an abbreviation for the given humanities or communication
+        attribute."""
         if attribute.lower() == CatalogConstants.hassH:
             return CatalogConstants.hassH_abbreviation
         elif attribute.lower() == CatalogConstants.hassA:
@@ -67,9 +73,8 @@ class CatalogConstants:
             return CatalogConstants.ciH_abbreviation
         elif attribute.lower() == CatalogConstants.ciHW:
             return CatalogConstants.ciHW_abbreviation
-        else:
-            print("Don't have an abbreviation for \(attribute)")
-            return attribute
+        print("Don't have an abbreviation for {}".format(attribute))
+        return attribute
 
     final_flag = "+final"
 
@@ -90,6 +95,7 @@ class CatalogConstants:
     gir_suffix = "[GIR]"
 
 class CourseAttribute:
+    """Defines attributes of the course used to write to CSV."""
     subjectID = "Subject Id"
     title = "Subject Title"
     description = "Subject Description"
