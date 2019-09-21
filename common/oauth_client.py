@@ -1,16 +1,20 @@
-from .models import *
-import json
-from django.core.exceptions import PermissionDenied
-import requests
-import os
+"""Implements an OAuth client for the OIDC server."""
+
 import base64
-import urllib
-from .models import OAuthCache
+import json
+import os
 import random
+import urllib
+
+import requests
+
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.conf import settings
 
-module_path = os.path.dirname(__file__)
+from .models import *
+
+MODULE_PATH = os.path.dirname(__file__)
 
 REDIRECT_URI = settings.MY_BASE_URL + '/login/'
 ISSUER = 'https://oidc.mit.edu/'
@@ -23,12 +27,14 @@ AUTH_SCOPES = ['email', 'openid', 'profile', 'offline_access']
 AUTH_RESPONSE_TYPE = 'code'
 
 def get_client_info():
-    with open(os.path.join(module_path, 'oidc.txt'), 'r') as file:
-        contents = file.read().strip()
-        id, secret = contents.split('\n')
-    return id, secret
+    """Reads the ID and secret from the oidc.txt file in this directory."""
+    with open(os.path.join(MODULE_PATH, 'oidc.txt'), 'r') as cred_file:
+        contents = cred_file.read().strip()
+        auth_id, secret = contents.split('\n')
+    return auth_id, secret
 
 def generate_random_string(length):
+    """Generates a random alphanumeric string of the given length."""
     choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     return ''.join(random.choice(choices) for _ in range(length))
 
@@ -38,9 +44,11 @@ def oauth_code_url(request, after_redirect=None):
     None for mobile apps and a string for websites."""
 
     # Create a state and nonce, and save them
-    cache = OAuthCache(state=generate_random_string(48), nonce=generate_random_string(48), redirect_uri=after_redirect)
+    cache = OAuthCache(state=generate_random_string(48),
+                       nonce=generate_random_string(48),
+                       redirect_uri=after_redirect)
     sem = request.GET.get('sem', '')
-    if len(sem) > 0:
+    if sem:
         cache.current_semester = sem
     cache.save()
     return "{}?response_type={}&client_id={}&redirect_uri={}&scope={}&state={}&nonce={}".format(
@@ -53,6 +61,8 @@ def oauth_code_url(request, after_redirect=None):
         cache.nonce)
 
 def get_user_info(request):
+    """Returns user information for the second half of the OAuth login flow (after
+    receiving an initial code from the OAuth provider)."""
     code = request.GET.get('code', None)
     state = request.GET.get('state', None)
 
@@ -71,7 +81,8 @@ def get_user_info(request):
     return result, status, info
 
 def get_oauth_id_token(request, code, state, refresh=False):
-    id, secret = get_client_info()
+    """Requests an OAuth token from the OAuth provider using the given login code."""
+    auth_id, secret = get_client_info()
 
     if refresh:
         payload = {
@@ -84,7 +95,7 @@ def get_oauth_id_token(request, code, state, refresh=False):
             'code': code,
             'redirect_uri': REDIRECT_URI
         }
-    r = requests.post(AUTH_TOKEN_URL, auth=(id, secret), data=payload)
+    r = requests.post(AUTH_TOKEN_URL, auth=(auth_id, secret), data=payload)
     if r.status_code != 200:
         return None, None, None, r.status_code
 
@@ -92,8 +103,8 @@ def get_oauth_id_token(request, code, state, refresh=False):
     r_json = r.json()
 
     id_token = r_json['id_token']
-    header, body, signature = id_token.split('.')
-    header_text = base64.b64decode(header)
+    _, body, _ = id_token.split('.')
+    # header_text = base64.b64decode(header)
     body += "=" * ((4 - len(body) % 4) % 4)
     body_text = base64.b64decode(body)
 
@@ -122,6 +133,8 @@ def get_oauth_id_token(request, code, state, refresh=False):
     return access_token, info, r_json, r.status_code
 
 def get_user_info_with_token(request, acc_token):
+    """Sends the given access token to the OAuth provider and uses it to request user
+    information."""
     headers = {"Authorization":"Bearer {}".format(acc_token)}
     r = requests.get(AUTH_USER_INFO_URL, headers=headers)
     return r.json(), r.status_code

@@ -1,9 +1,10 @@
-from django.conf.urls import url
-
-from . import views
+"""Common and login URLs."""
 
 from django.views.generic import TemplateView
 from django.contrib.auth.views import logout
+from django.conf.urls import url
+
+from . import views
 
 urlpatterns = [
     url('verify/', views.verify, name='verify'),
@@ -15,7 +16,9 @@ urlpatterns = [
     url('prefs/favorites/', views.favorites, name='favorites'),
     url('prefs/set_favorites/', views.set_favorites, name='set_favorites'),
     url('prefs/progress_overrides/', views.progress_overrides, name='progress_overrides'),
-    url('prefs/set_progress_overrides/', views.set_progress_overrides, name='set_progress_overrides'),
+    url('prefs/set_progress_overrides/',
+        views.set_progress_overrides,
+        name='set_progress_overrides'),
     url('prefs/notes/', views.notes, name='notes'),
     url('prefs/set_notes/', views.set_notes, name='set_notes'),
     url('prefs/custom_courses/', views.custom_courses, name='custom_courses'),
@@ -26,12 +29,24 @@ urlpatterns = [
     url('user_info/', views.user_info, name='user_info'),
 
     # reference
-    url('reference/$', TemplateView.as_view(template_name='common/docs/overview.html'), name='overview'),
-    url('reference/auth', TemplateView.as_view(template_name='common/docs/auth.html'), name='auth'),
-    url('reference/catalog', TemplateView.as_view(template_name='common/docs/catalog.html'), name='catalog'),
-    url('reference/requirements', TemplateView.as_view(template_name='common/docs/requirements.html'), name='requirements'),
-    url('reference/sync', TemplateView.as_view(template_name='common/docs/sync.html'), name='sync'),
-    url('reference/recommender', TemplateView.as_view(template_name='common/docs/recommender.html'), name='recommender'),
+    url('reference/$',
+        TemplateView.as_view(template_name='common/docs/overview.html'),
+        name='overview'),
+    url('reference/auth',
+        TemplateView.as_view(template_name='common/docs/auth.html'),
+        name='auth'),
+    url('reference/catalog',
+        TemplateView.as_view(template_name='common/docs/catalog.html'),
+        name='catalog'),
+    url('reference/requirements',
+        TemplateView.as_view(template_name='common/docs/requirements.html'),
+        name='requirements'),
+    url('reference/sync',
+        TemplateView.as_view(template_name='common/docs/sync.html'),
+        name='sync'),
+    url('reference/recommender',
+        TemplateView.as_view(template_name='common/docs/recommender.html'),
+        name='recommender'),
 
     # index
     url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),

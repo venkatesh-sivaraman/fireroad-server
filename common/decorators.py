@@ -1,25 +1,29 @@
+"""Defines a decorator to ensure that requests to auth-protected endpoints are
+rejected if the user is not logged in, and to populate the user field of the
+request if the user bears an authentication token."""
+
 import base64
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
 
 from .oauth_client import *
 from .models import Student
-import json
 from .token_gen import *
 
 ALWAYS_LOGIN = False
 
 def user_has_student(user):
+    """Returns true if the given user has a non-None student associated with
+    it."""
     try:
         s = user.student
         return s is not None
-    except:
+    except AttributeError:
         return False
 
-def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
+# pylint: disable=keyword-arg-before-vararg
+def view_or_basicauth(view, request, test_func, realm="", *args, **kwargs):
     """
     This is a helper function used by both 'logged_in_or_basicauth' and
     'has_perm_or_basicauth' that does the nitty of determining if they
@@ -27,7 +31,8 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     and returning the view if all goes well, otherwise responding with a 401.
     """
 
-    if request.user is None or not request.user.is_authenticated() or not user_has_student(request.user) or ALWAYS_LOGIN:
+    if (request.user is None or not request.user.is_authenticated() or not
+            user_has_student(request.user) or ALWAYS_LOGIN):
         key = 'HTTP_AUTHORIZATION'
         if key not in request.META:
             key = 'REDIRECT_HTTP_AUTHORIZATION'
@@ -44,7 +49,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
                     # The client bears a FireRoad-issued token
                     user, error = get_user_for_token(request, auth[1])
                     if error is not None:
-                        return HttpResponse(json.dumps(error), status=401, content_type="application/json")
+                        return JsonResponse(error, status=401)
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
 
                 if user is not None:
@@ -57,9 +62,8 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     else:
         return view(request, *args, **kwargs)
 
-#############################################################################
-#
-def logged_in_or_basicauth(func, realm = ""):
+
+def logged_in_or_basicauth(func, realm=""):
     """
     A simple decorator that requires a user to be logged in. If they are not
     logged in the request is examined for a 'authorization' header.
@@ -89,6 +93,8 @@ def logged_in_or_basicauth(func, realm = ""):
     You can provide the name of the realm to ask for authentication within.
     """
     def wrapper(request, *args, **kwargs):
+        """Takes a request and sends it through without computation if it is an
+        OPTIONS request, then runs the view_or_basicauth decorator."""
         # If it's a preflight request, don't even run the view
         if request.method == 'OPTIONS':
             return HttpResponse()
@@ -97,9 +103,8 @@ def logged_in_or_basicauth(func, realm = ""):
                                  realm, *args, **kwargs)
     return wrapper
 
-#############################################################################
-#
-def has_perm_or_basicauth(perm, realm = ""):
+
+def has_perm_or_basicauth(perm, realm=""):
     """
     This is similar to the above decorator 'logged_in_or_basicauth'
     except that it requires the logged in user to have a specific
@@ -113,7 +118,9 @@ def has_perm_or_basicauth(perm, realm = ""):
 
     """
     def view_decorator(func):
+        """Builds a wrapper view function."""
         def wrapper(request, *args, **kwargs):
+            """The wrapper view function."""
             return view_or_basicauth(func, request,
                                      lambda u: u.has_perm(perm),
                                      realm, *args, **kwargs)
