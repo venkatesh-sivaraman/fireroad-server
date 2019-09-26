@@ -1,3 +1,5 @@
+"""Data models for the course updater module."""
+
 from django.db import models
 from django import forms
 from catalog.models import Course
@@ -15,18 +17,26 @@ class CatalogUpdate(models.Model):
     is_staged = models.BooleanField(default=False)
     is_started = models.BooleanField(default=False)
 
-    def __str__(self):
-        base = "Catalog update for {} on {}".format(self.semester, self.creation_date)
+    def __unicode__(self):
+        base = u"Catalog update for {} on {}".format(self.semester, self.creation_date)
         if self.is_completed:
-            base += " (completed)"
+            base += u" (completed)"
         elif self.is_staged:
-            base += " (staged)"
+            base += u" (staged)"
         elif self.is_started:
-            base += " ({:.2f}% complete - {})".format(self.progress, self.progress_message)
+            base += u" ({:.2f}% complete - {})".format(self.progress, self.progress_message)
         return base
 
 class CatalogUpdateStartForm(forms.Form):
-    semester = forms.CharField(label='Semester', max_length=30, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'e.g. fall-2019'}))
+    """A form that allows the web user to start a catalog update for the data
+    in a given semester."""
+
+    semester = forms.CharField(label='Semester',
+                               max_length=30,
+                               widget=forms.TextInput(attrs={
+                                   'class': 'input-field',
+                                   'placeholder': 'e.g. fall-2019'
+                               }))
 
     def clean_semester(self):
         """
@@ -50,20 +60,34 @@ class CatalogUpdateStartForm(forms.Form):
 
 
 class CatalogUpdateDeployForm(forms.Form):
+    """A form that lets the user register the current catalog update for
+    deployment at the next database refresh. No fields are required here, as
+    the submission of the form is sufficient."""
     pass
 
 class CatalogCorrection(Course):
+    """Represents a correction to the catalog. Inherits from catalog.Course, so
+    has the ability to override any field on the course."""
+
     date_added = models.DateTimeField(auto_now_add=True)
     author = models.CharField(max_length=25, null=True)
 
-    def __str__(self):
-        return "Correction to {} by {} on {}".format(self.subject_id, self.author, self.date_added)
+    def __unicode__(self):
+        return u"Correction to {} by {} on {}".format(
+            self.subject_id, self.author, self.date_added)
 
 class CatalogCorrectionForm(forms.ModelForm):
+    """A form that allows users to input values for the catalog correction.
+    Currently only a subset of fields are supported by this form."""
 
     class Meta:
         model = CatalogCorrection
-        fields = ["subject_id", "title", "parent", "children", "description", "instructors", "gir_attribute", "communication_requirement", "hass_attribute", "total_units", "lecture_units", "lab_units", "preparation_units", "design_units", "offered_fall", "offered_IAP", "offered_spring", "offered_summer", "is_variable_units", "is_half_class"]
+        fields = ["subject_id", "title", "parent", "children", "description",
+                  "instructors", "gir_attribute", "communication_requirement",
+                  "hass_attribute", "total_units", "lecture_units",
+                  "lab_units", "preparation_units", "design_units",
+                  "offered_fall", "offered_IAP", "offered_spring",
+                  "offered_summer", "is_variable_units", "is_half_class"]
         labels = {
             "gir_attribute": "GIR Attribute (e.g. PHY1, REST)",
             "communication_requirement": "Communication Requirement (e.g. CI-H)",
