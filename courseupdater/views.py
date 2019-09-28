@@ -81,14 +81,15 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
     def url_comp(x):
         if x in global_file_names:
             return x + '.txt'
-        return semester_dir + '/' + x + '.txt'
+        return os.path.join(semester_dir, x + '.txt')
     urls_to_update = list(map(url_comp, sorted(list(updated_files))))
     resp = {'v': updated_version, 'delta': urls_to_update}
 
     # Check requirements also, if necessary
     if req_version_num != -1:
         updated_files, updated_version = compute_updated_files(req_version_num, os.path.join(CATALOG_BASE_DIR, deltas_directory, requirements_dir))
-        urls_to_update = list(map(lambda x: requirements_dir + '/' + x + '.reql', sorted(list(updated_files))))
+        urls_to_update = list(map(lambda x: os.path.join(requirements_dir, x + '.reql'),
+                                  sorted(list(updated_files))))
         resp['rv'] = updated_version
         resp['r_delta'] = urls_to_update
     return resp

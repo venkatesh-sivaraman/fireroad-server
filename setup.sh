@@ -2,6 +2,7 @@
 
 SECRETPATH="fireroad/secret.txt"
 DBCREDPATH="fireroad/dbcreds.py"
+DEFAULT_CATALOGPATH="catalog_files"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -64,7 +65,7 @@ echo
 echo "Migrating to database $NAME..."
 
 # Migrations
-python manage.py makemigrations common catalog courseupdater sync recommend requirements
+python manage.py makemigrations common catalog courseupdater sync recommend requirements analytics
 read -p "Ready to migrate? (y/n) " ready
 if [[ $ready != "y" ]]; then
   echo "Use the following command to migrate the database when ready:"
@@ -76,3 +77,18 @@ fi
 python manage.py migrate
 
 echo "Done migrating."
+
+# Catalog files
+
+echo
+echo -e "${YELLOW}FireRoad uses catalog files to store information about the course catalog and major/minor requirements.${NC}"
+read -p "Press Enter to use the default path ($( pwd )/$DEFAULT_CATALOGPATH) or type a new catalog path: " catalogpath
+if [ -z "$catalogpath" ]; then
+	catalogpath=$DEFAULT_CATALOGPATH
+else
+	echo "Editing fireroad/settings.py..."
+	sed -i.bak "s:CATALOG_BASE_DIR = .*$:CATALOG_BASE_DIR = \""${catalogpath}"\":g" fireroad/settings.py
+fi
+
+mkdir -p $catalogpath 
+mkdir -p $catalogpath/deltas

@@ -15,7 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = ""
+CATALOG_BASE_DIR = "/Users/venkatesh-sivaraman/Desktop/test-catalogs"
 # If True, login redirects will be required to be registered as a RedirectURL
 # Set to True in production!
 RESTRICT_AUTH_REDIRECTS = False
@@ -125,6 +125,12 @@ if os.path.exists(email_creds_path):
         EMAIL_HOST_PASSWORD = passwd
 else:
     FR_EMAIL_ENABLED = False
+    EMAIL_BACKEND = None
+    EMAIL_HOST = None
+    EMAIL_USE_TLS = False
+    EMAIL_PORT = None
+    EMAIL_HOST_USER = None
+    EMAIL_HOST_PASSWORD = None
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
