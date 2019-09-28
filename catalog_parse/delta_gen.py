@@ -87,17 +87,22 @@ def commit_delta(new_directory, old_directory, server_path, delta):
 
 if __name__ == '__main__':
     if len(sys.argv) < 4:
-        print("Insufficient arguments. Pass the directory of new files, the directory that the files should be saved to (e.g. sem-spring-2018), and the path to the courseupdater directory in the server. Make sure you do not add trailing slashes to your paths.")
+        print("Insufficient arguments. Pass the directory of new files, the"
+              "directory that the files should be saved to (e.g. "
+              "sem-spring-2018), and the path to the catalog_files directory."
+              " Make sure you do not add trailing slashes to your paths.")
         exit(1)
     new_directory = sys.argv[1]
     old_directory = sys.argv[2]
-    server_path = sys.argv[3]
+    server_path = os.path.join(sys.argv[3], "deltas")
     print("Changed items:")
     delta = make_delta(new_directory, old_directory)
     for file in delta:
         print(file)
     if raw_input("Ready to write files?") in ['y', 'yes', '\n']:
         commit_delta(new_directory, old_directory, server_path, delta)
-        print("Old files moved to {}. New files moved to {}.".format(os.path.join(os.path.dirname(old_directory), old_name + "-old"), old_directory))
+        print("Old files moved to {}. New files moved to {}.".format(
+            os.path.join(os.path.dirname(old_directory),
+            os.path.basename(old_directory) + "-old"), old_directory))
     else:
         print("Aborting.")

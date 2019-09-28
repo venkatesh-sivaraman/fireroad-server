@@ -85,7 +85,6 @@ echo -e "${YELLOW}FireRoad uses catalog files to store information about the cou
 read -p "Press Enter to use the default path ($DEFAULT_CATALOGPATH) or type a new catalog path: " catalogpath
 if [ -z "$catalogpath" ]; then
   catalogpath=$DEFAULT_CATALOGPATH
-else
 fi
 echo "Editing fireroad/settings.py to point to your desired catalog base directory. Please do not commit this change."
 sed -i.bak "s:CATALOG_BASE_DIR = .*$:CATALOG_BASE_DIR = \""${catalogpath}"\":g" fireroad/settings.py
@@ -93,3 +92,23 @@ sed -i.bak "s:CATALOG_BASE_DIR = .*$:CATALOG_BASE_DIR = \""${catalogpath}"\":g" 
 mkdir -p $catalogpath 
 mkdir -p $catalogpath/deltas
 mkdir -p $catalogpath/raw
+
+echo "Done configuring catalog files."
+read -p "Would you like to populate the database with an initial set of catalog data? (y/n) " dbrun
+if [[ $dbrun == "n" ]]; then
+  echo -e "You can setup the database later by running python update_catalog.py fall-2019 (replace with the current semester), then python delta_gen.py, then python update_db.py."
+  exit 0
+elif [[ $dbrun != "y" ]]; then
+  echo -e "${RED}Unrecognized symbol $dbrun; quitting ${NC}"
+  exit 1
+fi
+
+echo
+
+# Run the catalog updater
+read -p "Enter the current semester in the form SEASON-YEAR (e.g. fall-2019): " semester
+python update_catalog.py $semester || exit 1
+python catalog_parse/delta_gen.py $catalogpath/sem-$semester-new $catalogpath/sem-$semester $catalogpath/deltas || exit 1
+python update_db.py || exit 1
+echo -e "${GREEN}Finished populating database!${NC}"
+echo "You can add requirements later by adding them to $catalogpath/requirements, then running update_db.py again."
