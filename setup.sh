@@ -2,7 +2,7 @@
 
 SECRETPATH="fireroad/secret.txt"
 DBCREDPATH="fireroad/dbcreds.py"
-DEFAULT_CATALOGPATH="catalog_files"
+DEFAULT_CATALOGPATH="$( pwd )/catalog_files"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -82,13 +82,14 @@ echo "Done migrating."
 
 echo
 echo -e "${YELLOW}FireRoad uses catalog files to store information about the course catalog and major/minor requirements.${NC}"
-read -p "Press Enter to use the default path ($( pwd )/$DEFAULT_CATALOGPATH) or type a new catalog path: " catalogpath
+read -p "Press Enter to use the default path ($DEFAULT_CATALOGPATH) or type a new catalog path: " catalogpath
 if [ -z "$catalogpath" ]; then
-	catalogpath=$DEFAULT_CATALOGPATH
+  catalogpath=$DEFAULT_CATALOGPATH
 else
-	echo "Editing fireroad/settings.py..."
-	sed -i.bak "s:CATALOG_BASE_DIR = .*$:CATALOG_BASE_DIR = \""${catalogpath}"\":g" fireroad/settings.py
 fi
+echo "Editing fireroad/settings.py to point to your desired catalog base directory. Please do not commit this change."
+sed -i.bak "s:CATALOG_BASE_DIR = .*$:CATALOG_BASE_DIR = \""${catalogpath}"\":g" fireroad/settings.py
 
 mkdir -p $catalogpath 
 mkdir -p $catalogpath/deltas
+mkdir -p $catalogpath/raw
