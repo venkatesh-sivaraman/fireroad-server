@@ -10,6 +10,7 @@ NC='\033[0m' # No Color
 
 # Installing dependencies
 pip install django==1.11.15 pandas nltk lxml scipy scikit-learn requests pyjwt==1.6.4
+python -m nltk.downloader popular
 echo
 echo
 
