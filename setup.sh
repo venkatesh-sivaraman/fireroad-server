@@ -38,8 +38,10 @@ if [[ $keepbackend == "y" ]]; then
     fi
     python manage.py migrate
 
-    echo "Done migrating." echo -e "${YELLOW}Please modify the fireroad/settings.py file to use the appropriate database.${NC}"
-      exit 0
+    echo "Done migrating."
+    exit 0
+elif [[ $keepbackend == "n" ]]; then
+    echo -e "${YELLOW}Please modify the fireroad/settings.py file to use the appropriate database, or specify a different settings module when running the server (such as settings_dev or settings_prod).${NC}"
 else
   echo -e "${RED}Unrecognized symbol $keepbackend; quitting ${NC}"
   exit 1
