@@ -1,3 +1,5 @@
+"""URLs for the document sync module."""
+
 from django.conf.urls import url
 
 from . import views
