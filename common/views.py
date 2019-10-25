@@ -119,13 +119,15 @@ def login_touchstone(request):
     login(request, student.user)
 
     # Generate access token for the user
-    lifetime = TOKEN_EXPIRY_WEB if "redirect" in info else TOKEN_EXPIRY_MOBILE
+    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
     token = generate_token(request, student.user, lifetime)
-    access_info = {'success': True, 'username': student.user.username, 'current_semester': int(student.current_semester), 'academic_id': student.academic_id, 'access_token': token, 'sub': sub}
+    access_info = {'success': True, 'username': student.user.username, 'current_semester':
+                   int(student.current_semester), 'academic_id': student.academic_id,
+                   'access_token': token}
 
-    if "redirect" in info:
+    if "redirect" in request.GET:
         # Redirect to the web application's page with a temporary code to get the access token
-        return finish_login_redirect(access_info, info["redirect"])
+        return finish_login_redirect(access_info, request.GET["redirect"])
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
