@@ -18,61 +18,33 @@ if [ ! -f $SECRETPATH ]; then
   echo -e "${GREEN}Generated secret key at $SECRETPATH ${NC}"
 fi
 
-# Check for database credentials, if applicable
-hasdbcreds=$( python -c 'try:
-  import fireroad.settings
-  print("y")
-except:
-  try:
-    import dbcreds
-    print("y")
-  except:
-    print("n")
-' )
-if [[ $hasdbcreds == "n" ]]; then
-  echo -e "${YELLOW}The fireroad/settings.py module requires database credentials to use MySQL.${NC}"
-  read -p "Press Enter to add these credentials, or press ^C to quit and change the database backend in fireroad/settings.py." continue
-  read -p "Enter the host URL for the database (e.g. sql.mit.edu): " host
-  read -p "Enter the database name: " dbname
-  read -p "Enter the username to log into the database: " username
-  read -p "Enter the password: " -s passwd
-  echo
-
-  echo 'dbname = "'$dbname'"
-username = "'$username'"
-password = "'$passwd'"
-host = "'$host'"' > $DBCREDPATH
-  echo -e "${GREEN}Wrote database credentials to $DBCREDPATH. ${NC}"
-fi
-
 # Prompt for database type
 BACKEND=$( python -c "from fireroad.settings import DATABASES; print(DATABASES['default']['ENGINE'])" )
 NAME=$( python -c "from fireroad.settings import DATABASES; print(DATABASES['default']['NAME'])" )
-read -p "You are set to use the database '$NAME' (backend: $BACKEND). Would you like to continue using this backend? (y/n) " keepbackend
-if [[ $keepbackend == "n" ]]; then
-  echo -e "${YELLOW}Please modify the fireroad/settings.py file to use the appropriate database.${NC}"
-  exit 0
-elif [[ $keepbackend != "y" ]]; then
+read -p "You are set to use the database '$NAME' (backend: $BACKEND). Would you like to migrate to this backend? (y/n) " keepbackend
+if [[ $keepbackend == "y" ]]; then
+    # Migrate database
+    echo "Migrating to database $NAME..."
+
+    # Migrations
+    python manage.py makemigrations common catalog courseupdater sync recommend requirements
+    read -p "Ready to migrate? (y/n) " ready
+    if [[ $ready != "y" ]]; then
+      echo "Use the following command to migrate the database when ready:"
+      echo
+      echo "    python manage.py migrate"
+      echo
+      exit 0
+    fi
+    python manage.py migrate
+
+    echo "Done migrating."
+    exit 0
+elif [[ $keepbackend == "n" ]]; then
+    echo -e "${YELLOW}Please modify the fireroad/settings.py file to use the appropriate database, or specify a different settings module when running the server (such as settings_dev or settings_prod).${NC}"
+else
   echo -e "${RED}Unrecognized symbol $keepbackend; quitting ${NC}"
   exit 1
 fi
 
-echo
-echo
 
-# Migrate database
-echo "Migrating to database $NAME..."
-
-# Migrations
-python manage.py makemigrations common catalog courseupdater sync recommend requirements
-read -p "Ready to migrate? (y/n) " ready
-if [[ $ready != "y" ]]; then
-  echo "Use the following command to migrate the database when ready:"
-  echo
-  echo "    python manage.py migrate"
-  echo
-  exit 0
-fi
-python manage.py migrate
-
-echo "Done migrating."
