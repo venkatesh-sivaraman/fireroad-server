@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
@@ -128,6 +128,12 @@ def login_touchstone(request):
     if "redirect" in request.GET:
         # Redirect to the web application's page with a temporary code to get the access token
         return finish_login_redirect(access_info, request.GET["redirect"])
+    elif "next" in request.GET:
+        # Redirect to the given page in FireRoad
+        redirect_dest = request.GET.get("next", "")
+        if not redirect_dest:
+            redirect_dest = "index"
+        return redirect(reverse(redirect_dest))
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
