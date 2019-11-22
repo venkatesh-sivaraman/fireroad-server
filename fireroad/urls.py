@@ -15,11 +15,12 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.generic.base import RedirectView
 from django.contrib import admin
 from django.conf import settings
 
-admin.autodiscover()
-admin.site.login = staff_member_required(admin.site.login, login_url=settings.LOGIN_URL)
+# admin.autodiscover()
+# admin.site.login = staff_member_required(admin.site.login, login_url=settings.LOGIN_URL)
 
 urlpatterns = [
     url(r'courses/', include('catalog.urls')),
@@ -31,3 +32,16 @@ urlpatterns = [
     url(r'requirements/', include('requirements.urls')),
     url(r'', include('common.urls')),
 ]
+
+# Redirect to the appropriate login page if one is specified in the settings module
+if settings.LOGIN_URL:
+    if settings.LOGIN_URL.strip("/") != 'admin/login':
+        urlpatterns.insert(0, url(r'^admin/login/$', RedirectView.as_view(url=settings.LOGIN_URL,
+                                                                          permanent=True,
+                                                                          query_string=True)))
+    if settings.LOGIN_URL.strip("/") != 'login':
+        urlpatterns.insert(0, url(r'^login/$', RedirectView.as_view(url=settings.LOGIN_URL,
+                                                                    permanent=True,
+                                                                    query_string=True)))
+
+

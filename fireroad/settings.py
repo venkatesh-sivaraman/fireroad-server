@@ -12,6 +12,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CATALOG_BASE_DIR = ""
 
+# Use the Django default login page for local debugging
+LOGIN_URL = "/admin/login"
+
 # Security settings
 
 # If True, login redirects will be required to be registered as a RedirectURL
