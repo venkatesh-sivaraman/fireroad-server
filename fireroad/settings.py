@@ -15,7 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = ""
+CATALOG_BASE_DIR = "C:\\Users\\ma7mo\\Desktop\\fireroad-server\\catalog_files"
 # If True, login redirects will be required to be registered as a RedirectURL
 # Set to True in production!
 RESTRICT_AUTH_REDIRECTS = False
@@ -31,7 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'lvh.me']
 
-MY_BASE_URL = 'https://lvh.me:8000'
+MY_BASE_URL = 'https://lvh.me:8888'
 
 # Application definition
 
