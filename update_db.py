@@ -3,7 +3,6 @@ import re
 import django
 import sys
 
-os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 
 from courseupdater.views import *
@@ -13,7 +12,6 @@ from requirements.models import *
 from catalog.models import *
 from django.db import DatabaseError, transaction
 from django import db
-from fireroad.settings import CATALOG_BASE_DIR
 from common.models import *
 from common.oauth_client import LOGIN_TIMEOUT
 from django.utils.dateparse import parse_datetime
@@ -40,11 +38,11 @@ def deploy_catalog_updates():
     """Deploys any staged catalog update if one exists."""
     for update in CatalogUpdate.objects.filter(is_staged=True, is_completed=False):
         # Commit this update
-        new_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester + '-new')
-        old_path = os.path.join(CATALOG_BASE_DIR, 'sem-' + update.semester)
+        new_path = os.path.join(settings.CATALOG_BASE_DIR, 'sem-' + update.semester + '-new')
+        old_path = os.path.join(settings.CATALOG_BASE_DIR, 'sem-' + update.semester)
 
         delta = cp.make_delta(new_path, old_path)
-        cp.commit_delta(new_path, old_path, os.path.join(CATALOG_BASE_DIR, deltas_directory), delta)
+        cp.commit_delta(new_path, old_path, os.path.join(settings.CATALOG_BASE_DIR, deltas_directory), delta)
 
         update.is_completed = True
         update.save()
@@ -102,9 +100,9 @@ def update_catalog():
             # Save this for last
             related_path = path
         else:
-            update_catalog_with_file(os.path.join(CATALOG_BASE_DIR, path), semester)
+            update_catalog_with_file(os.path.join(settings.CATALOG_BASE_DIR, path), semester)
     if related_path is not None:
-        parse_related_file(os.path.join(CATALOG_BASE_DIR, related_path))
+        parse_related_file(os.path.join(settings.CATALOG_BASE_DIR, related_path))
 
 ### REQUIREMENTS UPDATE
 
@@ -143,7 +141,7 @@ def perform_deployments():
                     print("Edit request {} has no contents, skipping".format(edit_req))
                     continue
 
-                with open(os.path.join(CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
+                with open(os.path.join(settings.CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
                     file.write(edit_req.contents.encode('utf-8'))
 
                 edit_req.committed = False
@@ -157,7 +155,7 @@ def perform_deployments():
 
     # Write delta file
     if len(delta) > 0:
-        write_delta_file(sorted(delta), os.path.join(CATALOG_BASE_DIR, "deltas", requirements_dir))
+        write_delta_file(sorted(delta), os.path.join(settings.CATALOG_BASE_DIR, "deltas", requirements_dir))
 
 
 def update_requirements():
@@ -169,7 +167,7 @@ def update_requirements():
     for path_name in req_urls[REQUIREMENTS_INFO_KEY]:
         print(path_name)
         new_req = RequirementsList.objects.create(list_id=os.path.basename(path_name))
-        with open(os.path.join(CATALOG_BASE_DIR, path_name), 'rb') as file:
+        with open(os.path.join(settings.CATALOG_BASE_DIR, path_name), 'rb') as file:
             new_req.parse(file.read().decode('utf-8'))
         new_req.save()
 

@@ -15,7 +15,7 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from catalog.models import Course, CourseFields
 from django.core.exceptions import ObjectDoesNotExist
-from fireroad.settings import RESTRICT_AUTH_REDIRECTS, MY_BASE_URL
+from django.conf import settings
 
 # One month for mobile, ~1 week for web
 TOKEN_EXPIRY_MOBILE = 2.6e6
@@ -26,8 +26,8 @@ def login_oauth(request):
         code = request.GET.get('code', None)
         redirect_URL = request.GET.get('redirect', None)
         if 'next' in request.GET:
-            redirect_URL = MY_BASE_URL + '/' + request.GET['next']
-        elif RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
+            redirect_URL = settings.MY_BASE_URL + '/' + request.GET['next']
+        elif settings.RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
             return HttpResponse("Redirect URL not registered", status=403)
         return redirect(oauth_code_url(request, after_redirect=redirect_URL))
 

@@ -3,7 +3,6 @@ import re
 import sys
 import shutil
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 
 from courseupdater.views import get_current_update
@@ -18,7 +17,7 @@ if __name__ == '__main__':
     update.is_started = True
     update.save()
 
-from fireroad.settings import CATALOG_BASE_DIR, FR_EMAIL_ENABLED, EMAIL_HOST_USER
+from django.conf import settings
 from django.core.mail import send_mail
 import traceback
 from django.core.exceptions import ObjectDoesNotExist
@@ -32,12 +31,12 @@ def email_results(message, recipients):
     Sends an email to the given recipients with the given message. Prints to
     the console if email is not set up.
     """
-    if not FR_EMAIL_ENABLED:
+    if not settings.FR_EMAIL_ENABLED:
         print("Email not configured. Message:")
         print(message)
         return
 
-    email_from = "FireRoad <{}>".format(EMAIL_HOST_USER)
+    email_from = "FireRoad <{}>".format(settings.EMAIL_HOST_USER)
     send_mail("Catalog update", message, email_from, recipients)
 
 def update_progress(progress, message):
@@ -121,35 +120,35 @@ if __name__ == '__main__':
     # update is loaded at the top of the script for efficiency
     try:
         semester = 'sem-' + update.semester
-        out_path = os.path.join(CATALOG_BASE_DIR, "raw", semester)
-        evaluations_path = os.path.join(CATALOG_BASE_DIR, "evaluations.js")
+        out_path = os.path.join(settings.CATALOG_BASE_DIR, "raw", semester)
+        evaluations_path = os.path.join(settings.CATALOG_BASE_DIR, "evaluations.js")
         if not os.path.exists(evaluations_path):
             print("No evaluations file found - consider adding one (see catalog_parse/utils/parse_evaluations.py).")
             evaluations_path = None
-        equivalences_path = os.path.join(CATALOG_BASE_DIR, "equivalences.json")
+        equivalences_path = os.path.join(settings.CATALOG_BASE_DIR, "equivalences.json")
         if not os.path.exists(equivalences_path):
             print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
             equivalences_path = None
 
         cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress)
 
-        consensus_path = os.path.join(CATALOG_BASE_DIR, semester + "-new")
+        consensus_path = os.path.join(settings.CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):
             shutil.rmtree(consensus_path)
 
         # Get corrections and convert from field names to CSV headings
-        cp.build_consensus(os.path.join(CATALOG_BASE_DIR, "raw"), consensus_path, corrections=get_corrections())
+        cp.build_consensus(os.path.join(settings.CATALOG_BASE_DIR, "raw"), consensus_path, corrections=get_corrections())
 
         # Write a diff so it's easier to visualize changes
         update_progress(95.0, "Finding differences...")
         print("Finding differences...")
 
-        old_path = os.path.join(CATALOG_BASE_DIR, semester, "courses.txt")
-        new_path = os.path.join(CATALOG_BASE_DIR, semester + "-new", "courses.txt")
-        write_diff(old_path, new_path, os.path.join(CATALOG_BASE_DIR, "diff.txt"))
+        old_path = os.path.join(settings.CATALOG_BASE_DIR, semester, "courses.txt")
+        new_path = os.path.join(settings.CATALOG_BASE_DIR, semester + "-new", "courses.txt")
+        write_diff(old_path, new_path, os.path.join(settings.CATALOG_BASE_DIR, "diff.txt"))
 
         # Make delta for informative purposes
-        delta = cp.make_delta(consensus_path, os.path.join(CATALOG_BASE_DIR, semester))
+        delta = cp.make_delta(consensus_path, os.path.join(settings.CATALOG_BASE_DIR, semester))
         if len(delta) > 0:
             message = "The following {} files changed: ".format(len(delta)) + ", ".join(sorted(delta))
         else:
