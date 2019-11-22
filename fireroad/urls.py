@@ -13,8 +13,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.conf.urls import url, include
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import admin
+from django.conf import settings
+
+admin.autodiscover()
+admin.site.login = staff_member_required(admin.site.login, login_url=settings.LOGIN_URL)
 
 urlpatterns = [
     url(r'courses/', include('catalog.urls')),

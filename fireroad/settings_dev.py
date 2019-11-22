@@ -8,6 +8,9 @@ from .settings import *
 # Location of catalog files on the server
 CATALOG_BASE_DIR = "/var/www/html/catalogs"
 
+# URL used to log in
+LOGIN_URL = "/login_touchstone"
+
 # Security settings more relaxed on dev server
 RESTRICT_AUTH_REDIRECTS = False
 DEBUG = True

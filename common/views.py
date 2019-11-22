@@ -132,8 +132,8 @@ def login_touchstone(request):
         # Redirect to the given page in FireRoad
         redirect_dest = request.GET.get("next", "")
         if not redirect_dest:
-            redirect_dest = "index"
-        return redirect(reverse(redirect_dest))
+            redirect_dest = "/"
+        return redirect(redirect_dest)
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
