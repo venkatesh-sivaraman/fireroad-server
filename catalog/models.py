@@ -56,7 +56,7 @@ class GIRAttribute(Attribute):
         return course
 
 class HASSAttribute(Attribute):
-    attributes = ["HASS-S", "HASS-H", "HASS-A","HASS"]
+    attributes = ["HASS-S", "HASS-H", "HASS-A", "HASS-E", "HASS"]
     #There could be many HASS classes in a schedule
     multiple = True
     def modify_course(self, course):
