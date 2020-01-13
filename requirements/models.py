@@ -23,8 +23,8 @@ class RequirementsList(RequirementsStatement):
 
     #description = models.TextField(null=True)
 
-    def __str__(self):
-        return self.short_title + " - " + self.title
+    def __unicode__(self):
+        return u"{} - {}".format(self.short_title, self.title)
 
     def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements list into a dictionary that can be sent
