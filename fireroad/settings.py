@@ -12,11 +12,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CATALOG_BASE_DIR = ""
 
+# Use the Django default login page for local debugging
+LOGIN_URL = "/admin/login"
+
 # Security settings
 
 # If True, login redirects will be required to be registered as a RedirectURL
 # Set to True in production!
-RESTRICT_AUTH_REDIRECTS = True
+RESTRICT_AUTH_REDIRECTS = False
 
 with open(os.path.join(os.path.dirname(__file__), 'secret.txt')) as f:
     SECRET_KEY = f.read().strip()
@@ -146,7 +149,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
-STATIC_URL = '/fireroad/static/'
+STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 

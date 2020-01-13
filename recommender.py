@@ -13,7 +13,6 @@ import time
 import csv
 import re
 import random
-os.environ['DJANGO_SETTINGS_MODULE'] = "fireroad.settings"
 django.setup()
 from recommend.models import Rating, Recommendation, DEFAULT_RECOMMENDATION_TYPE
 from sync.models import Road

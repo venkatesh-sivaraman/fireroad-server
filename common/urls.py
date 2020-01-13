@@ -10,6 +10,7 @@ urlpatterns = [
     url('new_user/', views.new_user, name='new_user'),
     url('signup/', views.signup, name='signup'),
     url('login/', views.login_oauth, name='login'),
+    url('login_touchstone/', views.login_touchstone, name='login_touchstone'),
     url('logout/', logout, {'next_page': 'index'}, name='logout'),
     url('set_semester/', views.set_semester, name='set_semester'),
     url('prefs/favorites/', views.favorites, name='favorites'),

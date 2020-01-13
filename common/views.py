@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from .models import *
@@ -15,7 +15,7 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from catalog.models import Course, CourseFields
 from django.core.exceptions import ObjectDoesNotExist
-from fireroad.settings import RESTRICT_AUTH_REDIRECTS, MY_BASE_URL
+from django.conf import settings
 
 # One month for mobile, ~1 week for web
 TOKEN_EXPIRY_MOBILE = 2.6e6
@@ -26,8 +26,8 @@ def login_oauth(request):
         code = request.GET.get('code', None)
         redirect_URL = request.GET.get('redirect', None)
         if 'next' in request.GET:
-            redirect_URL = MY_BASE_URL + '/' + request.GET['next']
-        elif RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
+            redirect_URL = settings.MY_BASE_URL + '/' + request.GET['next']
+        elif settings.RESTRICT_AUTH_REDIRECTS and redirect_URL is not None and RedirectURL.objects.filter(url=redirect_URL).count() == 0:
             return HttpResponse("Redirect URL not registered", status=403)
         return redirect(oauth_code_url(request, after_redirect=redirect_URL))
 
@@ -80,6 +80,64 @@ def login_oauth(request):
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
+
+def login_touchstone(request):
+    """Logs in with Touchstone. This endpoint requires Touchstone authentication through the server
+    host, so the user will be redirected automatically to the appropriate login screen. When this
+    view is called, the request.META dictionary should contain REMOTE_USER and displayName fields
+    that specify user information."""
+    email_address = request.META.get("REMOTE_USER", None)
+    student_name = request.META.get("displayName", None)
+    if not email_address or not student_name:
+        return HttpResponseBadRequest(("User information was missing from the Touchstone "
+                                       "authentication process."))
+
+    try:
+        student = Student.objects.get(academic_id=email_address)
+    except:
+        user = make_new_user()
+        user.save()
+
+        student = Student(user=user, academic_id=email_address, name=student_name)
+        student.current_semester = request.GET.get('sem', '0')
+        student.save()
+    else:
+        # Only set the current semester if there's a real new value
+        if request.GET.get('sem', '') and int(request.GET['sem']) != 0:
+            student.current_semester = request.GET['sem']
+        if student.user is None:
+            user = make_new_user()
+            user.save()
+            student.user = user
+
+        if email_address is not None: # In case the student's email has appeared now
+            student.academic_id = email_address
+
+        student.save()
+
+    student.user.backend = 'django.contrib.auth.backends.ModelBackend'
+    login(request, student.user)
+
+    # Generate access token for the user
+    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
+    token = generate_token(request, student.user, lifetime)
+    access_info = {'success': True, 'username': student.user.username, 'current_semester':
+                   int(student.current_semester), 'academic_id': student.academic_id,
+                   'access_token': token}
+
+    if "redirect" in request.GET:
+        # Redirect to the web application's page with a temporary code to get the access token
+        return finish_login_redirect(access_info, request.GET["redirect"])
+    elif "next" in request.GET:
+        # Redirect to the given page in FireRoad
+        redirect_dest = request.GET.get("next", "")
+        if not redirect_dest:
+            redirect_dest = "/"
+        return redirect(redirect_dest)
+    else:
+        # Go to FireRoad's login success page, which is read by the mobile apps
+        return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
+
 
 def make_new_user():
     """Creates a new user using a random unique username and a long alphanumeric

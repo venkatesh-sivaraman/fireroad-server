@@ -8,7 +8,7 @@ from catalog.models import Course
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.admin.views.decorators import staff_member_required
 from django.forms.models import model_to_dict
-from fireroad.settings import BASE_DIR, CATALOG_BASE_DIR
+from django.conf import settings
 from requirements.diff import *
 import catalog_parse as cp
 
@@ -62,7 +62,7 @@ def compute_updated_files(version, base_dir):
 
 """Returns the numerical version for the given semester, e.g. "fall-2017"."""
 def current_version_for_semester(semester):
-    semester_dir = os.path.join(CATALOG_BASE_DIR, deltas_directory, semester_dir_prefix + semester)
+    semester_dir = os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, semester_dir_prefix + semester)
     max_version = 0
     for path in os.listdir(semester_dir):
         if path.find(delta_file_prefix) == 0:
@@ -75,7 +75,7 @@ def current_version_for_semester(semester):
 def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
     # Walk through the delta files
     semester_dir = semester_dir_prefix + semester_comps[0] + '-' + semester_comps[1]
-    updated_files, updated_version = compute_updated_files(version_num, os.path.join(CATALOG_BASE_DIR, deltas_directory, semester_dir))
+    updated_files, updated_version = compute_updated_files(version_num, os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, semester_dir))
 
     # Write out the updated files to JSON
     def url_comp(x):
@@ -87,7 +87,8 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
 
     # Check requirements also, if necessary
     if req_version_num != -1:
-        updated_files, updated_version = compute_updated_files(req_version_num, os.path.join(CATALOG_BASE_DIR, deltas_directory, requirements_dir))
+        updated_files, updated_version = compute_updated_files(req_version_num,
+                                                               os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, requirements_dir))
         urls_to_update = list(map(lambda x: requirements_dir + '/' + x + '.reql', sorted(list(updated_files))))
         resp['rv'] = updated_version
         resp['r_delta'] = urls_to_update
@@ -95,7 +96,7 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
 
 def list_semesters():
     sems = []
-    for path in os.listdir(os.path.join(CATALOG_BASE_DIR, deltas_directory)):
+    for path in os.listdir(os.path.join(settings.CATALOG_BASE_DIR, deltas_directory)):
         if path.find(semester_dir_prefix) == 0:
             sems.append(path[len(semester_dir_prefix):])
     def semester_sort_key(x):
@@ -177,7 +178,7 @@ def update_catalog(request):
         else:
             form = CatalogUpdateDeployForm()
 
-        diff_path = os.path.join(CATALOG_BASE_DIR, "diff.txt")
+        diff_path = os.path.join(settings.CATALOG_BASE_DIR, "diff.txt")
         if os.path.exists(diff_path):
             with open(diff_path, 'r') as file:
                 diffs = [line for line in file.readlines() if len(line)]
