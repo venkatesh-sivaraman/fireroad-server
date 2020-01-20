@@ -33,6 +33,7 @@ urlpatterns = [
     url('reference/requirements', TemplateView.as_view(template_name='common/docs/requirements.html'), name='requirements'),
     url('reference/sync', TemplateView.as_view(template_name='common/docs/sync.html'), name='sync'),
     url('reference/recommender', TemplateView.as_view(template_name='common/docs/recommender.html'), name='recommender'),
+    url('reference/file_formats', TemplateView.as_view(template_name='common/docs/file_formats.html'), name='file_formats'),
 
     # index
     url(r'^$', TemplateView.as_view(template_name='common/index.html'), name='index'),
