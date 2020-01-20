@@ -1,8 +1,6 @@
 # FireRoad Server
 
-FireRoad is an iOS/Android (and hopefully soon, web) application providing MIT students with accessible information about courses, subjects, and schedules. The FireRoad Server is a Django server that currently provides simple catalog auto-updating services but is intended to expand into course suggestion features later on.
-
-The `master` branch of this repo is intended to be checked out and run by the production server. All changes not ready for `master` should be kept in the `develop` branch.
+FireRoad is an iOS/Android application that allows MIT students to plan their course selections, view up-to-date major/minor requirements, and discover new courses. The FireRoad Server is a Django server that provides a data backend and document "cloud" for the native apps as well as the web-based CourseRoad application.
 
 ## Cloning and Setup
 
@@ -20,21 +18,12 @@ $ cd fireroad-server
 $ ./setup.sh
 ```
 
-Note that we use SQLite for local testing and MySQL for production - you will need to comment/uncomment the appropriate settings in `fireroad/settings.py`. If the setup script detects you are using a MySQL database, it will walk you through the creation of a `fireroad/dbcreds.py` file that specifies the necessary authentication info.
+Note that the project contains three Django settings modules: `fireroad/settings.py` (local development), `fireroad/settings_dev.py` (dev server), and `fireroad_settings_prod.py` (prod server). When making changes to the settings, please make sure to change the file appropriate to the environment on which you want the changes to take effect (and note that the latter two import the base `settings.py` file). In order to specify which settings module should be used, you will need to set the `DJANGO_SETTINGS_MODULE` environment variable to `fireroad.settings{VARIANT}`, and change the default value specified in `fireroad/wsgi.py` if deploying with WSGI.
 
-To work with the login-based APIs, you will need a file at `recommend/oidc.txt` that contains two lines: one with the client ID and one with the client secret for the OAuth authorization server.
+Depending on your settings, there may be additional files that you can add to enable certain capabilities:
 
-### Merging Notes
-
-**Read this before you merge into master.** The develop and master branches contain different versions of `fireroad/settings.py`, which are critical for the different server behaviors in local development and production. To merge into master, try using the following to merge without modifying the settings file:
-
-```
-git merge --no-ff --no-commit <merge-branch>
-git reset HEAD fireroad/settings.py
-git checkout -- fireroad/settings.py
-```
-
-If you made any changes you want to keep in the settings file for production, you would need to redo those changes before committing the merge.
+* To use a MySQL database, add a `fireroad/dbcreds.py` file that specifies the necessary authentication info as Python variables `dbname`, `username`, `password`, and `host`.
+* To enable sending emails to admins for unresolved edit requests, etc., create an email address with two-factor authentication disabled (gmail works well). Then add a `fireroad/email_creds.py` file that specifies authentication info as a comma-delimited string with three components: the email server (e.g. `smtp.gmail.com`), the email address, and the password for the email account.
 
 ### API Endpoints
 
