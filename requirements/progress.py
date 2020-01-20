@@ -95,6 +95,10 @@ class JSONProgressConstants:
     percent_fulfilled = "percent_fulfilled"
     satisfied_courses = "sat_courses"
 
+    # Progress assertions
+    is_bypassed = "is_bypassed"
+    override = "override"
+
 
 class Progress(object):
     """An object describing simple progress towards a requirement
@@ -174,16 +178,106 @@ class RequirementsProgress(object):
 
         return [], []
 
-    def compute(self, courses, progress_overrides):
+    def compute_assertions(self, courses, progress_assertions):
+        """
+        Computes the fulfillment of this requirement based on progress assertions, and returns
+        True if the requirement has an assertion available or False otherwise.
+
+        Assertions are in the format of a dictionary keyed by requirements list paths, where the
+        values are dictionaries containing two possible keys: "substitutions", which should be a
+        list of course IDs that combine to substitute for the requirement, and "ignore", which
+        indicates that the requirement is not to be used when satisfying later requirements. The
+        ignore flag takes precedence over substitutions, but for clarity it is preferred that only
+        one or the other is provided.
+        """
+        self.override = progress_assertions.get(self.list_path, None)
+        self.is_bypassed = False
+        if self.override is not None:
+            substitutions = self.override.get("substitutions", None) #List of substitutions
+            ignore = self.override.get("ignore", False)               #Boolean
+        else:
+            substitutions = None
+            ignore = False
+
+        if ignore:
+            self.is_fulfilled = False
+            subject_progress = Progress(0, 0)
+            self.subject_fulfillment = subject_progress
+            self.subject_progress = subject_progress.progress
+            self.subject_max = subject_progress.max
+            unit_progress = Progress(0, 0)
+            self.unit_fulfillment = unit_progress
+            self.unit_progress = unit_progress.progress
+            self.unit_max = unit_progress.max
+            progress = Progress(0, 0)
+            self.progress = progress.progress
+            self.progress_max = progress.max
+            self.percent_fulfilled = progress.get_percent()
+            self.fraction_fulfilled = progress.get_fraction()
+            self.satisfied_courses = []
+            return True
+        if substitutions is not None:
+            satisfied_courses = set()
+            subs_satisfied = 0
+            for sub in substitutions:
+                for course in courses:
+                    if course.satisfies(sub, courses):
+                        subs_satisfied += 1
+                        satisfied_courses.add(course)
+                        break
+            subject_progress = Progress(subs_satisfied, len(substitutions))
+            self.is_fulfilled = subs_satisfied == len(substitutions)
+            self.subject_fulfillment = subject_progress
+            self.subject_progress = subject_progress.progress
+            self.subject_max = subject_progress.max
+            unit_progress = Progress(subs_satisfied * DEFAULT_UNIT_COUNT, len(substitutions) * DEFAULT_UNIT_COUNT)
+            self.unit_fulfillment = unit_progress
+            self.unit_progress = unit_progress.progress
+            self.unit_max = unit_progress.max
+            progress = subject_progress
+            self.progress = progress.progress
+            self.progress_max = progress.max
+            self.percent_fulfilled = progress.get_percent()
+            self.fraction_fulfilled = progress.get_fraction()
+            self.satisfied_courses = list(satisfied_courses)
+            return True
+
+        return False
+
+    def bypass_children(self):
+        """Sets the is_bypassed flag of the recursive children of this progress object to True."""
+        for child in self.children:
+            child.is_bypassed = True
+            child.is_fulfilled = False
+            child.subject_fulfillment = Progress(0, 0)
+            child.subject_progress = 0
+            child.subject_max = 0
+            child.unit_fulfillment = Progress(0, 0)
+            child.unit_progress = 0
+            child.unit_max = 0
+            child.progress = 0
+            child.progress_max = 0
+            child.percent_fulfilled = 0
+            child.fraction_fulfilled = 0
+            child.satisfied_courses = []
+            child.override = None
+            child.bypass_children()
+
+    def compute(self, courses, progress_overrides, progress_assertions):
         """Computes and stores the status of the requirements statement using the
         given list of Course objects."""
         # Compute status of children and then self, adapted from mobile apps' computeRequirementsStatus method
         satisfied_courses = set()
+        if self.compute_assertions(courses, progress_assertions):
+            self.bypass_children()
+            return
 
         if self.list_path in progress_overrides:
             manual_progress = progress_overrides[self.list_path]
         else:
             manual_progress = 0
+        self.is_bypassed = False
+        self.override = None
 
         if self.statement.requirement is not None:
             #it is a basic requirement
@@ -241,7 +335,7 @@ class RequirementsProgress(object):
             num_courses_satisfied = 0
 
             for req_progress in self.children:
-                req_progress.compute(courses, progress_overrides)
+                req_progress.compute(courses, progress_overrides, progress_assertions)
                 req_satisfied_courses = req_progress.satisfied_courses
 
                 if req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0:
@@ -352,6 +446,11 @@ class RequirementsProgress(object):
         stmt_json[JSONProgressConstants.progress_max] = self.progress_max
         stmt_json[JSONProgressConstants.percent_fulfilled] = self.percent_fulfilled
         stmt_json[JSONProgressConstants.satisfied_courses] = map(lambda c: c.subject_id, self.satisfied_courses)
+
+        if self.is_bypassed:
+            stmt_json[JSONProgressConstants.is_bypassed] = self.is_bypassed
+        if self.override:
+            stmt_json[JSONProgressConstants.override] = self.override
 
         if full:
             if self.children:
