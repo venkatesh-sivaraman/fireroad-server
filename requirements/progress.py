@@ -97,7 +97,7 @@ class JSONProgressConstants:
 
     # Progress assertions
     is_bypassed = "is_bypassed"
-    override = "override"
+    assertion = "assertion"
 
 
 class Progress(object):
@@ -190,11 +190,11 @@ class RequirementsProgress(object):
         ignore flag takes precedence over substitutions, but for clarity it is preferred that only
         one or the other is provided.
         """
-        self.override = progress_assertions.get(self.list_path, None)
+        self.assertion = progress_assertions.get(self.list_path, None)
         self.is_bypassed = False
-        if self.override is not None:
-            substitutions = self.override.get("substitutions", None) #List of substitutions
-            ignore = self.override.get("ignore", False)               #Boolean
+        if self.assertion is not None:
+            substitutions = self.assertion.get("substitutions", None) #List of substitutions
+            ignore = self.assertion.get("ignore", False)               #Boolean
         else:
             substitutions = None
             ignore = False
@@ -260,7 +260,7 @@ class RequirementsProgress(object):
             child.percent_fulfilled = 0
             child.fraction_fulfilled = 0
             child.satisfied_courses = []
-            child.override = None
+            child.assertion = None
             child.bypass_children()
 
     def compute(self, courses, progress_overrides, progress_assertions):
@@ -277,7 +277,7 @@ class RequirementsProgress(object):
         else:
             manual_progress = 0
         self.is_bypassed = False
-        self.override = None
+        self.assertion = None
 
         if self.statement.requirement is not None:
             #it is a basic requirement
@@ -449,8 +449,8 @@ class RequirementsProgress(object):
 
         if self.is_bypassed:
             stmt_json[JSONProgressConstants.is_bypassed] = self.is_bypassed
-        if self.override:
-            stmt_json[JSONProgressConstants.override] = self.override
+        if self.assertion:
+            stmt_json[JSONProgressConstants.assertion] = self.assertion
 
         if full:
             if self.children:
