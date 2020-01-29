@@ -334,9 +334,15 @@ class RequirementsProgress(object):
             satisfied_courses = set()
             num_courses_satisfied = 0
 
+            open_children = []
             for req_progress in self.children:
                 req_progress.compute(courses, progress_overrides, progress_assertions)
                 req_satisfied_courses = req_progress.satisfied_courses
+
+                # Don't count anything from a requirement that is ignored
+                if req_progress.assertion and req_progress.assertion.get("ignore", False):
+                    continue
+                open_children.append(req_progress)
 
                 if req_progress.is_fulfilled and len(req_progress.satisfied_courses) > 0:
                     num_reqs_satisfied += 1
@@ -352,8 +358,8 @@ class RequirementsProgress(object):
                 else:
                     num_courses_satisfied += len(req_satisfied_courses)
 
-            satisfied_by_category = [sat for prog, sat in sorted(zip(self.children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
-            sorted_progresses = sorted(self.children, key = lambda req: req.fraction_fulfilled, reverse = True)
+            satisfied_by_category = [sat for prog, sat in sorted(zip(open_children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
+            sorted_progresses = sorted(open_children, key = lambda req: req.fraction_fulfilled, reverse = True)
 
             if self.threshold is None and self.distinct_threshold is None:
                 is_fulfilled = (num_reqs_satisfied > 0)
@@ -382,7 +388,7 @@ class RequirementsProgress(object):
                     satisfied_courses = set()
                     num_courses_satisfied = 0
 
-                    for i, child in zip(range(num_progresses_to_count), self.children):
+                    for i, child in zip(range(num_progresses_to_count), open_children):
                         satisfied_courses.update(satisfied_by_category[i])
                         if child.statement.connection_type == CONNECTION_TYPE_ALL:
                             num_courses_satisfied += (child.is_fulfilled and len(child.satisfied_courses) > 0)
@@ -413,10 +419,10 @@ class RequirementsProgress(object):
 
             if self.statement.connection_type == CONNECTION_TYPE_ALL:
                 #"All" statement - make above progresses more stringent
-                is_fulfilled = is_fulfilled and (num_reqs_satisfied == len(self.children))
-                if subject_progress.progress == subject_progress.max and len(self.children) > num_reqs_satisfied:
-                    subject_progress.max += len(self.children) - num_reqs_satisfied
-                    unit_progress.max += (len(self.children) - num_reqs_satisfied) * DEFAULT_UNIT_COUNT
+                is_fulfilled = is_fulfilled and (num_reqs_satisfied == len(open_children))
+                if subject_progress.progress == subject_progress.max and len(open_children) > num_reqs_satisfied:
+                    subject_progress.max += len(open_children) - num_reqs_satisfied
+                    unit_progress.max += (len(open_children) - num_reqs_satisfied) * DEFAULT_UNIT_COUNT
             #Polish up values
             subject_progress = ceiling_thresh(subject_progress.progress, subject_progress.max)
             unit_progress = ceiling_thresh(unit_progress.progress, unit_progress.max)
