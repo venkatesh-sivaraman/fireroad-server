@@ -203,6 +203,7 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.communicationRequirement,
     CourseAttribute.hassRequirement,
     CourseAttribute.GIR,
+    CourseAttribute.averageRating,
     CourseAttribute.averageInClassHours,
     CourseAttribute.averageOutOfClassHours,
     CourseAttribute.enrollment,
