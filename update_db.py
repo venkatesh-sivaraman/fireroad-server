@@ -185,7 +185,7 @@ def check_for_edits():
     if edit_requests.count() > 0:
         message += "You have {} unresolved edit requests:\n".format(edit_requests.count())
         for req in edit_requests:
-            message += str(req) + "\n"
+            message += unicode(req).encode("utf-8") + "\n"
         message += "\n"
     return message
 
@@ -299,5 +299,5 @@ if __name__ == '__main__':
             message += traceback.format_exc()
 
     if len(message) > 0 and len(sys.argv) > 2:
-        email_results(message, sys.argv[2:])
+        email_results(message.decode("utf-8"), sys.argv[2:])
     print(message)
