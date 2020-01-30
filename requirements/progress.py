@@ -219,22 +219,32 @@ class RequirementsProgress(object):
         if substitutions is not None:
             satisfied_courses = set()
             subs_satisfied = 0
+            units_satisfied = 0
             for sub in substitutions:
                 for course in courses:
                     if course.satisfies(sub, courses):
                         subs_satisfied += 1
+                        units_satisfied += course.total_units
                         satisfied_courses.add(course)
                         break
-            subject_progress = Progress(subs_satisfied, len(substitutions))
-            self.is_fulfilled = subs_satisfied == len(substitutions)
+            if self.statement.is_plain_string and self.threshold is not None:
+                subject_progress = Progress(subs_satisfied,
+                                            self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
+                unit_progress = Progress(units_satisfied,
+                                         self.threshold.cutoff_for_criterion(CRITERION_UNITS))
+                progress = subject_progress if self.threshold.criterion == CRITERION_SUBJECTS else unit_progress
+                self.is_fulfilled = progress.progress == progress.max
+            else:
+                subject_progress = Progress(subs_satisfied, len(substitutions))
+                self.is_fulfilled = subs_satisfied == len(substitutions)
+                unit_progress = Progress(subs_satisfied * DEFAULT_UNIT_COUNT, len(substitutions) * DEFAULT_UNIT_COUNT)
+                progress = subject_progress
             self.subject_fulfillment = subject_progress
             self.subject_progress = subject_progress.progress
             self.subject_max = subject_progress.max
-            unit_progress = Progress(subs_satisfied * DEFAULT_UNIT_COUNT, len(substitutions) * DEFAULT_UNIT_COUNT)
             self.unit_fulfillment = unit_progress
             self.unit_progress = unit_progress.progress
             self.unit_max = unit_progress.max
-            progress = subject_progress
             self.progress = progress.progress
             self.progress_max = progress.max
             self.percent_fulfilled = progress.get_percent()
