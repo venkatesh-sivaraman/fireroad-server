@@ -19,7 +19,7 @@ class Road(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     contents = models.TextField()
-    modified_date = models.DateTimeField(auto_now=True)
+    modified_date = models.DateTimeField(auto_now=True, index=True)
     last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):

@@ -229,7 +229,14 @@ def save_backups():
     from their last backup."""
     num_new_backups = 0
     num_diff_backups = 0
-    for road in Road.objects.all().iterator():
+    if RoadBackup.objects.all().count() > 0:
+        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        roads_to_check = Road.objects.filter(modified_date__gte=yesterday)
+        print("Checking roads from {} to {}".format(yesterday, datetime.datetime.now())
+    else:
+        print("Checking all roads")
+        roads_to_check = Road.objects.all()
+    for road in roads_to_check.iterator():
         # Check for backups
         try:
             latest_backup = RoadBackup.objects.filter(road=road).latest('timestamp')
