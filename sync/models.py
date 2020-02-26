@@ -45,6 +45,17 @@ class RoadForm(ModelForm):
         model = Road
         fields = ['name', 'contents']
 
+class RoadBackup(models.Model):
+    """Represents a timestamped snapshot of a particular road."""
+    road = models.ForeignKey(Road, null=True, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField()
+    last_agent = models.CharField(max_length=50, default="")
+    contents = models.TextField()
+
+    def __str__(self):
+        return "Backup of {}, saved {} by {}".format(self.road.name.encode("utf-8") if self.road else "<null>",
+                                                     self.timestamp, self.last_agent)
+
 class Schedule(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)

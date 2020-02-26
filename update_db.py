@@ -10,6 +10,7 @@ from courseupdater.models import CatalogUpdate
 import catalog_parse as cp
 from requirements.models import *
 from catalog.models import *
+from sync.models import *
 from django.db import DatabaseError, transaction
 from django import db
 from common.models import *
@@ -216,6 +217,37 @@ def log_analytics_summary(output_path, num_hours=26):
             total_count, logged_in_count, student_count, user_agent_count
         ))
     out_file.close()
+
+### BACKUPS
+
+def document_contents_differ(old, new, threshold=20):
+    """Returns whether the two document contents differ sufficiently to merit a new backup."""
+    return abs(len(old) - len(new)) >= threshold
+
+def save_backups():
+    """Saves backups for any roads that don't have a backup yet or are significantly different
+    from their last backup."""
+    num_new_backups = 0
+    num_diff_backups = 0
+    for road in Road.objects.all().iterator():
+        # Check for backups
+        try:
+            latest_backup = RoadBackup.objects.filter(road=road).latest('timestamp')
+        except ObjectDoesNotExist:
+            # Create the backup
+            new_backup = RoadBackup(road=road, timestamp=road.modified_date,
+                                    last_agent=road.last_agent, contents=road.contents)
+            new_backup.save()
+            num_new_backups += 1
+        else:
+            # Check for differences between the current version and the backup
+            if document_contents_differ(latest_backup.contents, road.contents):
+                new_backup = RoadBackup(road=road, timestamp=road.modified_date,
+                                        last_agent=road.last_agent, contents=road.contents)
+                new_backup.save()
+                num_diff_backups += 1
+    print("{} backups created for new roads, {} for old roads".format(num_new_backups,
+                                                                      num_diff_backups))
 
 ### CLEAN UP
 
