@@ -242,14 +242,14 @@ def save_backups():
             latest_backup = RoadBackup.objects.filter(road=road).latest('timestamp')
         except ObjectDoesNotExist:
             # Create the backup
-            new_backup = RoadBackup(road=road, timestamp=road.modified_date,
+            new_backup = RoadBackup(road=road, timestamp=road.modified_date, name=road.name,
                                     last_agent=road.last_agent, contents=road.contents)
             new_backup.save()
             num_new_backups += 1
         else:
             # Check for differences between the current version and the backup
             if document_contents_differ(latest_backup.contents, road.contents):
-                new_backup = RoadBackup(road=road, timestamp=road.modified_date,
+                new_backup = RoadBackup(road=road, timestamp=road.modified_date, name=road.name,
                                         last_agent=road.last_agent, contents=road.contents)
                 new_backup.save()
                 num_diff_backups += 1
