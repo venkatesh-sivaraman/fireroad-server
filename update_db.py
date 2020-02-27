@@ -22,6 +22,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 import traceback
 import csv
+import json
 from django.core.exceptions import ObjectDoesNotExist
 from catalog_parse.utils.catalog_constants import CourseAttribute
 from django.utils import timezone
@@ -222,39 +223,73 @@ def log_analytics_summary(output_path, num_hours=26):
 
 def document_contents_differ(old, new, threshold=20):
     """Returns whether the two document contents differ sufficiently to merit a new backup."""
-    return abs(len(old) - len(new)) >= threshold
+    # In both the road and schedule file formats, the significant differences would occur in the
+    # second level of the JSON object.
+    if old == new:
+        return False
 
-def save_backups():
-    """Saves backups for any roads that don't have a backup yet or are significantly different
-    from their last backup."""
+    try:
+        old_json = json.loads(old)
+        new_json = json.loads(new)
+    except:
+        return True
+    else:
+        old_keys = set(old_json.keys())
+        new_keys = set(new_json.keys())
+        if old_keys != new_keys:
+            return True
+
+        for key in old_keys:
+            old_elem = old_json[key]
+            new_elem = new_json[key]
+            if not isinstance(old_elem, list) or not isinstance(new_elem, list):
+                continue
+
+            # Compare the membership 
+            old_values = set(json.dumps(elem) for elem in old_elem)
+            new_values = set(json.dumps(elem) for elem in new_elem)
+            if max(len(old_values - new_values), len(new_values - old_values)) >= 2:
+                return True
+        return False
+
+def save_backups_by_doc_type(doc_type, backup_type):
+    """Saves backups for the given document class and backup class (e.g. Road and RoadBackup)."""
     num_new_backups = 0
     num_diff_backups = 0
-    if RoadBackup.objects.all().count() > 0:
-        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
-        roads_to_check = Road.objects.filter(modified_date__gte=yesterday)
-        print("Checking roads from {} to {}".format(yesterday, datetime.datetime.now())
+    if backup_type.objects.all().count() > 0:
+        yesterday = timezone.now() - timezone.timedelta(days=1)
+        docs_to_check = doc_type.objects.filter(modified_date__gte=yesterday)
+        print("Checking documents from {} to {}".format(yesterday, timezone.now()))
     else:
-        print("Checking all roads")
-        roads_to_check = Road.objects.all()
-    for road in roads_to_check.iterator():
+        print("Checking all documents")
+        docs_to_check = doc_type.objects.all()
+    for document in docs_to_check.iterator():
         # Check for backups
         try:
-            latest_backup = RoadBackup.objects.filter(road=road).latest('timestamp')
+            latest_backup = backup_type.objects.filter(document=document).latest('timestamp')
         except ObjectDoesNotExist:
             # Create the backup
-            new_backup = RoadBackup(road=road, timestamp=road.modified_date, name=road.name,
-                                    last_agent=road.last_agent, contents=road.contents)
+            new_backup = backup_type(document=document, timestamp=document.modified_date,
+                                     name=document.name, last_agent=document.last_agent,
+                                     contents=document.contents)
             new_backup.save()
             num_new_backups += 1
         else:
             # Check for differences between the current version and the backup
-            if document_contents_differ(latest_backup.contents, road.contents):
-                new_backup = RoadBackup(road=road, timestamp=road.modified_date, name=road.name,
-                                        last_agent=road.last_agent, contents=road.contents)
+            if document_contents_differ(latest_backup.contents, document.contents):
+                new_backup = backup_type(document=document, timestamp=document.modified_date,
+                                         name=document.name, last_agent=document.last_agent,
+                                         contents=document.contents)
                 new_backup.save()
                 num_diff_backups += 1
-    print("{} backups created for new roads, {} for old roads".format(num_new_backups,
-                                                                      num_diff_backups))
+    print("{} backups created for new documents, {} for old documents".format(
+            num_new_backups, num_diff_backups))
+
+def save_backups():
+    """Saves backups for any roads that don't have a backup yet or are significantly different
+    from their last backup."""
+    save_backups_by_doc_type(Road, RoadBackup)
+    save_backups_by_doc_type(Schedule, ScheduleBackup)
 
 ### CLEAN UP
 
@@ -298,6 +333,12 @@ if __name__ == '__main__':
         clean_db()
     except:
         message += "Database cleaning failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        save_backups()
+    except:
+        message += "Saving backups:\n"
         message += traceback.format_exc()
 
     try:

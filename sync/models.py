@@ -47,14 +47,14 @@ class RoadForm(ModelForm):
 
 class RoadBackup(models.Model):
     """Represents a timestamped snapshot of a particular road."""
-    road = models.ForeignKey(Road, null=True, on_delete=models.CASCADE)
+    document = models.ForeignKey(Road, null=True, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     last_agent = models.CharField(max_length=50, default="")
     name = models.CharField(max_length=50)
     contents = models.TextField()
 
     def __str__(self):
-        return "Backup of {}, saved {} by {}".format(self.road.name.encode("utf-8") if self.road else "<null>",
+        return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
                                                      self.timestamp, self.last_agent)
 
 class Schedule(models.Model):
@@ -81,3 +81,16 @@ class Schedule(models.Model):
         for expr, sub in schedule_compressions:
             schedule_text = schedule_text.replace(sub, expr)
         return schedule_text
+
+class ScheduleBackup(models.Model):
+    """Represents a timestamped snapshot of a particular schedule."""
+    document = models.ForeignKey(Schedule, null=True, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField()
+    last_agent = models.CharField(max_length=50, default="")
+    name = models.CharField(max_length=50)
+    contents = models.TextField()
+
+    def __str__(self):
+        return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
+                                                     self.timestamp, self.last_agent)
+
