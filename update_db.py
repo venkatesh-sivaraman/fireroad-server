@@ -10,6 +10,7 @@ from courseupdater.models import CatalogUpdate
 import catalog_parse as cp
 from requirements.models import *
 from catalog.models import *
+from sync.models import *
 from django.db import DatabaseError, transaction
 from django import db
 from common.models import *
@@ -21,6 +22,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 import traceback
 import csv
+import json
 from django.core.exceptions import ObjectDoesNotExist
 from catalog_parse.utils.catalog_constants import CourseAttribute
 from django.utils import timezone
@@ -217,6 +219,78 @@ def log_analytics_summary(output_path, num_hours=26):
         ))
     out_file.close()
 
+### BACKUPS
+
+def document_contents_differ(old, new, threshold=20):
+    """Returns whether the two document contents differ sufficiently to merit a new backup."""
+    # In both the road and schedule file formats, the significant differences would occur in the
+    # second level of the JSON object.
+    if old == new:
+        return False
+
+    try:
+        old_json = json.loads(old)
+        new_json = json.loads(new)
+    except:
+        return True
+    else:
+        old_keys = set(old_json.keys())
+        new_keys = set(new_json.keys())
+        if old_keys != new_keys:
+            return True
+
+        for key in old_keys:
+            old_elem = old_json[key]
+            new_elem = new_json[key]
+            if not isinstance(old_elem, list) or not isinstance(new_elem, list):
+                continue
+
+            # Compare the membership 
+            old_values = set(json.dumps(elem) for elem in old_elem)
+            new_values = set(json.dumps(elem) for elem in new_elem)
+            if max(len(old_values - new_values), len(new_values - old_values)) >= 2:
+                return True
+        return False
+
+def save_backups_by_doc_type(doc_type, backup_type):
+    """Saves backups for the given document class and backup class (e.g. Road and RoadBackup)."""
+    num_new_backups = 0
+    num_diff_backups = 0
+    if backup_type.objects.all().count() > 0:
+        yesterday = timezone.now() - timezone.timedelta(days=1)
+        docs_to_check = doc_type.objects.filter(modified_date__gte=yesterday)
+        print("Checking documents from {} to {}".format(yesterday, timezone.now()))
+    else:
+        print("Checking all documents")
+        docs_to_check = doc_type.objects.all()
+    for document in docs_to_check.iterator():
+        # Check for backups
+        try:
+            latest_backup = backup_type.objects.filter(document=document).latest('timestamp')
+        except ObjectDoesNotExist:
+            # Create the backup
+            new_backup = backup_type(document=document, timestamp=document.modified_date,
+                                     name=document.name, last_agent=document.last_agent,
+                                     contents=document.contents)
+            new_backup.save()
+            num_new_backups += 1
+        else:
+            # Check for differences between the current version and the backup
+            if document_contents_differ(latest_backup.contents, document.contents):
+                new_backup = backup_type(document=document, timestamp=document.modified_date,
+                                         name=document.name, last_agent=document.last_agent,
+                                         contents=document.contents)
+                new_backup.save()
+                num_diff_backups += 1
+    print("{} backups created for new documents, {} for old documents".format(
+            num_new_backups, num_diff_backups))
+
+def save_backups():
+    """Saves backups for any roads that don't have a backup yet or are significantly different
+    from their last backup."""
+    save_backups_by_doc_type(Road, RoadBackup)
+    save_backups_by_doc_type(Schedule, ScheduleBackup)
+
 ### CLEAN UP
 
 def clean_db():
@@ -259,6 +333,12 @@ if __name__ == '__main__':
         clean_db()
     except:
         message += "Database cleaning failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        save_backups()
+    except:
+        message += "Saving backups:\n"
         message += traceback.format_exc()
 
     try:
