@@ -8,6 +8,7 @@ To see an example of read/write for .road files, see the code in [User.swift](Us
 
 The top-level object is a dictionary with two keys:
 
+* **numYears** - The number of years to display in the road. The user can edit this value by adding and removing full years (including fall, IAP, spring, and summer) from the end of their road.
 * **coursesOfStudy** - A list of courses of study that the user has added (e.g. "major6", "girs"). Each course of study corresponds in name to a requirements list.
 * **selectedSubjects** - A list of selected subjects (see below).
 * **progressOverrides** - (*Will be deprecated when `substitutions` is implemented*) A dictionary mapping requirement IDs to manual progress values. Requirement IDs are '.'-delimited strings that identify a particular requirements statement. For example, `major3a.2` specifies the 3rd child of the 3-A major, which is a manual progress requirement defined as `""72 units""{>=72u}`. Manual progress values are integers specifying how far the user is toward fulfilling that requirement; the range is determined by the requirements statement. In the previous example, the value may range from 0 to 72.
