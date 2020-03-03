@@ -55,7 +55,8 @@ class RoadBackup(models.Model):
 
     def __str__(self):
         return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
-                                                     self.timestamp, self.last_agent)
+                                                     self.timestamp,
+                                                     self.last_agent.encode("utf-8") if self.last_agent else "<empty>")
 
 class Schedule(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
@@ -92,5 +93,6 @@ class ScheduleBackup(models.Model):
 
     def __str__(self):
         return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
-                                                     self.timestamp, self.last_agent)
+                                                     self.timestamp,
+                                                     self.last_agent.encode("utf-8") if self.last_agent else "<empty>")
 
