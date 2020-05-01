@@ -1,83 +1,14 @@
-<html>
-  <head>
-    <meta content='width=device-width, initial-scale=1' name='viewport'/>
-    <script type="application/json" id="access_info">{{access_info|safe}}</script>
-    <style type="text/css">
-    form > :not(button) {
-      display: none;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      text-align: center;
-    }
-    @media screen and (min-width: 480px) {
-      #par {
-        width: 60%;
-        margin: auto;
-      }
-    }
-    @media screen and (max-width: 480px) {
-      #par {
-        padding-left: 25px;
-        padding-right: 25px;
-      }
-    }
-    p {
-      font-weight: 300;
-    }
-    a.submit {
-      padding:5px 15px;
-      margin-top: 15px;
-      background: none;
-      box-shadow: none;
-      border-style: solid;
-      border-color: #007aff;
-      border-width: 2px;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      font-weight: 600;
-      font-size: 1.1em;
-      color: #007aff;
-      cursor:pointer;
-      -webkit-border-radius: 5px;
-      border-radius: 5px;
-      text-decoration: none;
-      padding: 6px 10px 6px 10px;
-    }
-    a.submit:hover {
-      background: #99caff;
-    }
-    a.cancel {
-      color: gray;
-      text-decoration: none;
-    }
-    a.cancel:hover, a.cancel:active {
-      color: #222;
-    }
-    #topbar {
-      background: linear-gradient(#f14d50, #9b1e21);
-      color: white;
-    }
-    #heading {
-      padding: 10px;
-    }
-    </style>
-  </head>
-  <body>
-    <div id="topbar">
-      <h2 id="heading"><br/><br/>FireRoad Recommendations</h2>
-    </div>
-    <br/>
-    <br/>
-    <br/>
-    <div id="par">
-      <p>Login failed: {{ message }}</p>
-      <br/>
-      <a class="submit" href="{% url 'login' %}?sem={{ sem }}">Try Again</a>
-      <br/><br/>
-      <a class="cancel" href="{% url 'decline' %}">Not Now</a>
-    </div>
-  </body>
-</html>
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block pagebody %}
+<div id="par">
+  <p>Login failed: {{ message }}</p>
+  <br/>
+  <div id="buttons" class="row">
+    <a class="mbtn waves-effect waves-light red white-text" href="{% url 'login' %}?sem={{ sem }}">Try Again</a>
+    <a class="mbtn waves-effect waves-light grey white-text" href="{% url 'decline' %}">Not Now</a>
+  </div>
+</div>
+
+{% endblock %}

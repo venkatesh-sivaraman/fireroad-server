@@ -1,101 +1,23 @@
-<html>
-  <head>
-    <meta content='width=device-width, initial-scale=1' name='viewport'/>
-    <style type="text/css">
-    form > :not(button) {
-      display: none;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-    }
-    @media screen and (min-width: 480px) {
-      #par {
-        width: 60%;
-        margin: auto;
-      }
-    }
-    @media screen and (max-width: 480px) {
-      #par {
-        padding-left: 25px;
-        padding-right: 25px;
-      }
-    }
-    p {
-      font-weight: 300;
-    }
-    a.submit {
-      padding:5px 15px;
-      margin-top: 15px;
-      background: none;
-      box-shadow: none;
-      border-style: solid;
-      border-color: #007aff;
-      border-width: 2px;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      font-weight: 600;
-      font-size: 1.1em;
-      color: #007aff;
-      cursor:pointer;
-      -webkit-border-radius: 5px;
-      border-radius: 5px;
-      text-decoration: none;
-      padding: 6px 10px 6px 10px;
-    }
-    a.submit:hover {
-      background: #99caff;
-    }
-    a.cancel {
-      color: gray;
-      text-decoration: none;
-    }
-    a.cancel:hover, a.cancel:active {
-      color: #222;
-    }
-    #topbar {
-      background: linear-gradient(#f14d50, #9b1e21);
-      color: white;
-      text-align: center;
-    }
-    #heading {
-      padding: 10px;
-    }
-    #buttons {
-      text-align: center;
-    }
-    .fineprint {
-      font-size: 0.7em;
-    }
-    .red-text {
-      color: #f14d50;
-    }
-    </style>
-  </head>
-  <body>
-    <div id="topbar">
-      <h2 id="heading"><br/><br/>Approve Client</h2>
-    </div>
-    <br/>
-    <div id="par">
-      <p>&quot;{{ client_name }}&quot; is requesting access to your FireRoad account. This client will be granted the following capabilities:</p>
-      <ul>
-        {% for permission in client_permissions %}
-          <li>{{ permission }}</li>
-        {% endfor %}
-      </ul>
-      {% if is_debug %}
-      <p class="red-text"><strong>WARNING: </strong> This site is authenticating you through the FireRoad development server, which is subject to potential vulnerabilities and does not restrict client sites to specific permissions. This means of authentication must not be used for production applications.</p>
-      {% endif %}
-      <p>Would you like to allow this?</p>
-      <p class="fineprint">If you have questions, comments, or concerns, please contact the <a href="mailto:{{ client_email }}">developer of this client</a> or the <a href="mailto:fireroad-dev@mit.edu">FireRoad dev team</a>.</p>
-    </div>
-    <div id="buttons">
-      <br/>
-      <a class="submit" href="/approve_client?redirect={{ redirect }}">Allow</a>
-      <br/><br/>
-      <a class="cancel" href="/disapprove_client?redirect={{ redirect }}">Don't Allow</a>
-    </div>
-  </body>
-</html>
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block pagebody %}
+<div id="par">
+  <h2 id="heading">Approve Client</h2>
+  <p>&quot;{{ client_name }}&quot; is requesting access to your FireRoad account. This client will be granted the following capabilities:</p>
+  <ul>
+    {% for permission in client_permissions %}
+      <li>{{ permission }}</li>
+    {% endfor %}
+  </ul>
+  {% if is_debug %}
+  <p class="red-text"><strong>WARNING: </strong> This site is authenticating you through the FireRoad development server, which is subject to potential vulnerabilities and does not restrict client sites to specific permissions. This means of authentication must not be used for production applications.</p>
+  {% endif %}
+  <p>Would you like to allow this?</p>
+  <p class="fineprint">If you have questions, comments, or concerns, please contact the <a href="mailto:{{ client_email }}">developer of this client</a> or the <a href="mailto:fireroad-dev@mit.edu">FireRoad dev team</a>.</p>
+  <div id="buttons" class="row">
+    <a class="mbtn waves-effect waves-light red white-text" href="/approve_client?redirect={{ redirect }}">Allow</a>
+    <a class="mbtn waves-effect waves-light grey white-text" href="/disapprove_client?redirect={{ redirect }}">Don't Allow</a>
+  </div>
+</div>
+{% endblock %}
