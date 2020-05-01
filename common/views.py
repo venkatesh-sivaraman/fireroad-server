@@ -172,13 +172,10 @@ def login_error_response(request, message):
     return render(request, 'common/login_fail.html', params)
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_academic_id", "can_view_student_info")
 def verify(request):
     """Verify that the given request has a user."""
     user = request.user
-    client = APIClient.from_permissions_flag(request.session['permissions'])
-    if not client.can_view_academic_id or not client.can_view_student_info:
-        raise PermissionDenied("This application does not have permission to view this information.")
-
     if user is None:
         raise PermissionDenied
     auto_increment_semester(user)

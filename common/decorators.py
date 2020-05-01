@@ -126,3 +126,21 @@ def has_perm_or_basicauth(perm, realm = ""):
                                      realm, *args, **kwargs)
         return wrapper
     return view_decorator
+
+def require_token_permissions(view_func, *permission_names):
+    """Decorator that makes sure that the request has a permissions flag that permits the
+    given permission names."""
+    def view_decorator(request, *args, **kwargs):
+        if not request.session["permissions"]:
+            print("Session object has no permissions set")
+            raise PermissionDenied
+        permissions = APIClient.from_permissions_flag(request.session["permissions"])
+        for p_name in permission_names:
+            try:
+                if not getattr(permissions, p_name):
+                    raise PermissionDenied
+            except AttributeError:
+                print("Attribute not found: " + p_namee)
+                raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+    return view_decorator
