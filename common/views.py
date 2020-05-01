@@ -127,7 +127,11 @@ def login_touchstone(request):
 
     if "redirect" in request.GET:
         # Redirect to the web application's page with a temporary code to get the access token
-        return finish_login_redirect(access_info, request.GET["redirect"])
+        redirect_url = request.GET["redirect"]
+        if (settings.RESTRICT_AUTH_REDIRECTS and redirect_url is not None and
+            RedirectURL.objects.filter(url=redirect_url).count() == 0):
+            return HttpResponse("Redirect URL not registered", status=403)
+        return finish_login_redirect(access_info, redirect_url)
     elif "next" in request.GET:
         # Redirect to the given page in FireRoad
         redirect_dest = request.GET.get("next", "")
