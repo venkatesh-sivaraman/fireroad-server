@@ -22,6 +22,14 @@ class Student(models.Model):
     def __str__(self):
         return "ID {}, in {} ({} user)".format(self.academic_id, self.current_semester, self.user)
 
+    def has_approved_client(self, client):
+        """Checks whether this student has approved the given APIClient object."""
+        return not self.approved_clients.filter(pk=client.pk).empty()
+
+    def approve_client(self, client):
+        """Approves the given APIClient object."""
+        self.approved_clients.add(client)
+
 class OAuthCache(models.Model):
     state = models.CharField(max_length=50)
     nonce = models.CharField(max_length=50)
@@ -43,6 +51,8 @@ class APIClient(models.Model):
     name = models.CharField(max_length=100)
     contact_name = models.CharField(max_length=100)
     contact_email = models.CharField(max_length=100)
+
+    approved_users = models.ManyToManyField("Student", related_name="approved_clients")
 
     # Permissions that the API client may be granted
     can_view_academic_id = models.BooleanField(default=False)

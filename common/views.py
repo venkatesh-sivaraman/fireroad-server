@@ -121,6 +121,12 @@ def login_touchstone(request):
     # Generate access token for the user
     lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
     api_client = get_api_client(request)
+
+    # Check whether the user has approved this client
+    print("Has approved client: ", student.has_approved_client(api_client))
+    # TODO: show an approval screen instead of automatically approving
+    student.approve_client(api_client)
+
     token = generate_token(request, student.user, lifetime, api_client=api_client)
     access_info = {'success': True, 'username': student.user.username, 'current_semester':
                    int(student.current_semester), 'academic_id': student.academic_id,
