@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 
 from .oauth_client import *
-from .models import Student
+from .models import Student, APIClient
 import json
 from .token_gen import *
 
@@ -37,16 +37,20 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
             auth = request.META[key].split()
             if len(auth) == 2:
                 if auth[0].lower() == "basic":
-                    # Basic authentication
+                    # Basic authentication - this is not an API client
                     uname, passwd = base64.b64decode(auth[1]).split(':')
                     user = authenticate(username=uname, password=passwd)
+                    permissions = APIClient.universal_permission_flag()
                 elif auth[0].lower() == "bearer":
                     # The client bears a FireRoad-issued token
-                    user, error = get_user_for_token(request, auth[1])
+                    user, permissions, error = extract_token_info(request, auth[1])
                     if error is not None:
                         return HttpResponse(json.dumps(error), status=401, content_type="application/json")
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
+                else:
+                    raise PermissionDenied
 
+                request.session['permissions'] = permissions
                 if user is not None:
                     if user.is_active:
                         login(request, user)
@@ -55,6 +59,9 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
         raise PermissionDenied
         #return redirect('login')
     else:
+        if 'permissions' not in request.session:
+            print("Setting universal permission flag - this should only occur in dev or from FireRoad-internal login.")
+            request.session['permissions'] = APIClient.universal_permission_flag()
         return view(request, *args, **kwargs)
 
 #############################################################################

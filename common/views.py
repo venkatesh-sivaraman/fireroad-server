@@ -120,7 +120,8 @@ def login_touchstone(request):
 
     # Generate access token for the user
     lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
-    token = generate_token(request, student.user, lifetime)
+    api_client = get_api_client(request)
+    token = generate_token(request, student.user, lifetime, api_client=api_client)
     access_info = {'success': True, 'username': student.user.username, 'current_semester':
                    int(student.current_semester), 'academic_id': student.academic_id,
                    'access_token': token}
@@ -142,6 +143,17 @@ def login_touchstone(request):
         # Go to FireRoad's login success page, which is read by the mobile apps
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
 
+def get_api_client(request):
+    """Determines the API client from the request's redirect URL."""
+    redirect_url = request.GET.get("redirect", None)
+    if not redirect_url:
+        return None
+    try:
+        redirect = RedirectURL.objects.get(url=redirect_url)
+    except ObjectDoesNotExist:
+        return None
+    else:
+        return redirect.client
 
 def make_new_user():
     """Creates a new user using a random unique username and a long alphanumeric
@@ -163,6 +175,10 @@ def login_error_response(request, message):
 def verify(request):
     """Verify that the given request has a user."""
     user = request.user
+    client = APIClient.from_permissions_flag(request.session['permissions'])
+    if not client.can_view_academic_id or not client.can_view_student_info:
+        raise PermissionDenied("This application does not have permission to view this information.")
+
     if user is None:
         raise PermissionDenied
     auto_increment_semester(user)
