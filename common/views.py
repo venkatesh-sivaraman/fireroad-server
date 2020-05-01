@@ -133,6 +133,7 @@ def login_touchstone(request):
 
         if not api_client or not student.has_approved_client(api_client):
             # The user has never used this client - show an approval page
+            lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
             request.session['token'] = generate_token(request, student.user, lifetime, api_client=api_client)
             request.session['student'] = student.pk
             return render(request, 'common/client_approval.html', {
@@ -172,8 +173,8 @@ def get_api_client(request):
 
 def make_access_info(request, student, api_client, token=None):
     """Generates an access token and returns an access_info dictionary."""
-    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
     if token is None:
+        lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
         token = generate_token(request, student.user, lifetime, api_client=api_client)
     access_info = {'success': True, 'username': student.user.username, 'current_semester':
                    int(student.current_semester), 'academic_id': student.academic_id,
@@ -198,8 +199,10 @@ def approval_page_success(request):
     api_client = get_api_client(request)
     if api_client:
         student.approve_client(api_client)
+        student.save()
+        api_client.save()
 
-    finish_login_redirect(make_access_info(request, student, api_client, token=token), redirect_url)
+    return finish_login_redirect(make_access_info(request, student, api_client, token=token), redirect_url)
 
 def approval_page_failure(request):
     """Called when the user clicks Disapprove on the client approval page."""
