@@ -5,7 +5,7 @@ from .models import *
 import random
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import PermissionDenied
-from .decorators import logged_in_or_basicauth
+from .decorators import logged_in_or_basicauth, require_token_permissions
 from .oauth_client import *
 import base64
 import json
@@ -194,6 +194,7 @@ def signup(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_semester(request):
     user = request.user
     try:
@@ -238,6 +239,7 @@ def fetch_token(request):
     return HttpResponse(json.dumps({'success': True, 'access_info': access_info}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info", "can_view_academic_id")
 def user_info(request):
     """Returns a JSON object containing the logged-in student's information."""
     student = request.user.student
@@ -298,6 +300,7 @@ def auto_increment_semester(user):
 ### Preference Syncing
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def favorites(request):
     value = request.user.student.favorites
     try:
@@ -307,6 +310,7 @@ def favorites(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_favorites(request):
     try:
         favorites = json.loads(request.body)
@@ -322,6 +326,7 @@ def set_favorites(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set favorites"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def progress_overrides(request):
     value = request.user.student.progress_overrides
     try:
@@ -331,6 +336,7 @@ def progress_overrides(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_progress_overrides(request):
     try:
         progress_overrides = json.loads(request.body)
@@ -346,6 +352,7 @@ def set_progress_overrides(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set progress_overrides"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def notes(request):
     value = request.user.student.notes
     try:
@@ -355,6 +362,7 @@ def notes(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_notes(request):
     try:
         notes = json.loads(request.body)
@@ -370,6 +378,7 @@ def set_notes(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def custom_courses(request):
     value = request.user.student.custom_courses.all()
     try:
@@ -379,6 +388,7 @@ def custom_courses(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_custom_course(request):
     try:
         course_json = json.loads(request.body)
@@ -412,6 +422,7 @@ def set_custom_course(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def remove_custom_course(request):
     try:
         course_json = json.loads(request.body)
