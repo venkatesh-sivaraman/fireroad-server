@@ -149,4 +149,5 @@ def require_token_permissions(*permission_names):
                     print("Attribute not found: " + p_namee)
                     raise PermissionDenied
             return view_func(request, *args, **kwargs)
+        return wrapper
     return view_decorator
