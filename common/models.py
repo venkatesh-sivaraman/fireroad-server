@@ -117,9 +117,14 @@ class APIClient(models.Model):
             flag |= 1 << i
         return flag
 
-    def _format_abilities_list(abilities):
-        abilities[-1] = u"and " + abilities[-1]
-        text = u", ".join(abilities)
+    def _format_abilities_list(self, abilities):
+        if len(abilities) > 1:
+            abilities[-1] = u"and " + abilities[-1]
+        if len(abilities) == 2:
+            text = u" ".join(abilities)
+        else:
+            text = u", ".join(abilities)
+
         return text[0].upper() + text[1:].lower()
 
     def permissions_descriptions(self):
@@ -134,7 +139,7 @@ class APIClient(models.Model):
             if self.can_edit_student_info:
                 abilities.append("edit")
             items.append("{} your profile information in FireRoad".format(
-                _format_abilities_list(abilities)))
+                self._format_abilities_list(abilities)))
         if self.can_view_roads or self.can_edit_roads or self.can_delete_roads:
             abilities = []
             if self.can_view_roads:
@@ -144,7 +149,7 @@ class APIClient(models.Model):
             if self.can_delete_roads:
                 abilities.append("delete")
             items.append("{} your roads".format(
-                _format_abilities_list(abilities)))
+                self._format_abilities_list(abilities)))
         if self.can_view_schedules or self.can_edit_schedules or self.can_delete_schedules:
             abilities = []
             if self.can_view_schedules:
@@ -154,7 +159,7 @@ class APIClient(models.Model):
             if self.can_delete_schedules:
                 abilities.append("delete")
             items.append("{} your schedules".format(
-                _format_abilities_list(abilities)))
+                self._format_abilities_list(abilities)))
         if self.can_view_recommendations:
             items.append("View your recommendations")
         return items

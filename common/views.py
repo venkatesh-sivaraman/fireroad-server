@@ -206,6 +206,7 @@ def approval_page_success(request):
 
 def approval_page_failure(request):
     """Called when the user clicks Disapprove on the client approval page."""
+    print("Failing")
     redirect_url = request.GET.get("redirect", None)
     if redirect_url:
         if not re.search(r'^https?://', uri): # Redirect requires a protocol
@@ -279,6 +280,7 @@ def finish_login_redirect(access_info, uri):
     retrieve the access token and associated info, and redirects to the given
     URI passing the code as a "code" query parameter.
     """
+    print("Finishing login redirect")
     code = save_temporary_code(access_info)
     if not re.search(r'^https?://', uri): # Redirect requires a protocol
         uri = 'https://' + uri
