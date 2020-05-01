@@ -9,17 +9,29 @@
 
 <h4 class="red-text text-darken-4">Login Procedures</h4>
 
-<strong>Please remember to use the dev server (fireroad-dev.mit.edu) for all local testing, and <i>only</i> use the production server (fireroad.mit.edu) for your production application.</strong> The workflow for logging into the FireRoad server as a web application is as follows:
+<strong>Please remember to use the dev server (fireroad-dev.mit.edu) for all local testing, and <i>only</i> use the production server (fireroad.mit.edu) for your production application. Use of the production server requires prior approval by the FireRoad team (see "Approval" below).</strong> The workflow for logging into the FireRoad server as a web application is as follows:
 
 <ol>
   <li>Your site sends the user to <span class="code">/login</span>, with an optional query parameter <span class="code">sem</span> indicating the user's current semester, and required query parameter <span class="code">redirect</span> indicating the redirect URL after login. For production, this redirect URL needs to be registered with FireRoad before use.</li>
-  <li>The FireRoad server handles login through MIT OpenID Connect, creates a FireRoad account if necessary, then sends the user back to your redirect URL, passing a query parameter <span class="code">code</span></li>
+  <li>The FireRoad server handles login through Touchstone, creates a FireRoad account if necessary, then sends the user back to your redirect URL, passing a query parameter <span class="code">code</span></li>
   <li>The code is a string that can be used exactly once within 5 minutes of login to retrieve an access token. The application server does this by sending a request to <span class="code">/fetch_token</span>, passing the query parameter <span class="code">code</span> received in step 2.</li>
   <li>The FireRoad server validates the temporary code and sends the application server back a JSON web token (JWT) that can be used to authorize use of the API.</li>
   <li>The application server uses the JWT by including the <span class="code">Authorization</span> header set to <span class="code">"Bearer &lt;base-64 encoded token string&gt;"</span> in any request to the FireRoad server.</li>
   <li>Since the JWT may expire, the application server should check its validity by requesting the <span class="code">/verify</span> endpoint with the <span class="code">Authorization</span> header. If the token is expired or invalid, this endpoint will return 403, indicating that the user should log in again.</li>
 </ol>
 </div>
+
+<h4 class="red-text text-darken-4">Approval</h4>
+
+To use the FireRoad production server, you must contact the <a href="mailto:fireroad-dev@mit.edu">FireRoad development team</a> with the following information:
+
+<ul class="bullet-list">
+  <li>The name and description of your service. The name will be displayed to users when asked to approve access to your application.</li>
+  <li>A name and email address for the point of contact for the application.</li>
+  <li>The permissions that your application needs to function correctly (specifying whether read or read/write access is needed). When FireRoad issues your application an access token, that token will only be usable for the permissions you specify.</li>
+</ul>
+
+When your application is approved, you will be able to authenticate users at the production endpoint.
 
 <h4 class="red-text text-darken-4">Endpoints</h4>
 
