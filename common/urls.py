@@ -25,6 +25,8 @@ urlpatterns = [
     url('decline/', TemplateView.as_view(template_name='common/decline.html'), name='decline'),
     url('fetch_token/', views.fetch_token, name='fetch_token'),
     url('user_info/', views.user_info, name='user_info'),
+    url('approve_client/', views.approval_page_success, name='approval_page_success'),
+    url('disapprove_client/', views.approval_page_failure, name='approval_page_failure'),
 
     # reference
     url('reference/$', TemplateView.as_view(template_name='common/docs/overview.html'), name='overview'),

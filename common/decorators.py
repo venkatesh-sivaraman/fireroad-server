@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
+from django.conf import settings
 
 from .oauth_client import *
 from .models import Student, APIClient
@@ -132,6 +133,10 @@ def require_token_permissions(*permission_names):
     given permission names."""
     def view_decorator(view_func):
         def wrapper(request, *args, **kwargs):
+            # Passthrough for dev server and local testing
+            if not settings.RESTRICT_AUTH_REDIRECTS and settings.DEBUG:
+                return view_func(request, *args, **kwargs)
+
             if not request.session["permissions"]:
                 print("Session object has no permissions set")
                 raise PermissionDenied

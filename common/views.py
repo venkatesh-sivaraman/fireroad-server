@@ -119,26 +119,34 @@ def login_touchstone(request):
     login(request, student.user)
 
     # Generate access token for the user
-    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
     api_client = get_api_client(request)
 
-    # Check whether the user has approved this client
-    print("Has approved client: ", student.has_approved_client(api_client))
-    # TODO: show an approval screen instead of automatically approving
-    student.approve_client(api_client)
-
-    token = generate_token(request, student.user, lifetime, api_client=api_client)
-    access_info = {'success': True, 'username': student.user.username, 'current_semester':
-                   int(student.current_semester), 'academic_id': student.academic_id,
-                   'access_token': token}
-
     if "redirect" in request.GET:
-        # Redirect to the web application's page with a temporary code to get the access token
         redirect_url = request.GET["redirect"]
         if (settings.RESTRICT_AUTH_REDIRECTS and redirect_url is not None and
             RedirectURL.objects.filter(url=redirect_url).count() == 0):
             return HttpResponse("Redirect URL not registered", status=403)
-        return finish_login_redirect(access_info, redirect_url)
+
+        if settings.RESTRICT_AUTH_REDIRECTS and not api_client:
+            # If the API client is unrecognized, do not give them an access token!
+            raise HttpResponse("API client not registered with this redirect URL", status=403)
+
+        if not api_client or not student.has_approved_client(api_client):
+            # The user has never used this client - show an approval page
+            request.session['token'] = generate_token(request, student.user, lifetime, api_client=api_client)
+            request.session['student'] = student.pk
+            return render(request, 'common/client_approval.html', {
+                'redirect': redirect_url,
+                'client_name': api_client.name if api_client else redirect_url,
+                'client_email': api_client.contact_email if api_client else "",
+                'client_permissions': (api_client.permissions_descriptions() if api_client else
+                                       ["non-specific FireRoad access"]),
+                'is_debug': settings.DEBUG
+            })
+
+        # Redirect to the web application's page with a temporary code to get the access token
+        return finish_login_redirect(make_access_info(request, student, api_client), redirect_url)
+
     elif "next" in request.GET:
         # Redirect to the given page in FireRoad
         redirect_dest = request.GET.get("next", "")
@@ -147,6 +155,7 @@ def login_touchstone(request):
         return redirect(redirect_dest)
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
+        access_info = make_access_info(request, student, api_client)
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
 
 def get_api_client(request):
@@ -160,6 +169,46 @@ def get_api_client(request):
         return None
     else:
         return redirect.client
+
+def make_access_info(request, student, api_client, token=None):
+    """Generates an access token and returns an access_info dictionary."""
+    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
+    if token is None:
+        token = generate_token(request, student.user, lifetime, api_client=api_client)
+    access_info = {'success': True, 'username': student.user.username, 'current_semester':
+                   int(student.current_semester), 'academic_id': student.academic_id,
+                   'access_token': token}
+    return access_info
+
+def approval_page_success(request):
+    """Called when the user clicks Approve on the client approval page."""
+    redirect_url = request.GET.get("redirect", None)
+    if not redirect_url:
+        return HttpResponseBadRequest("Approval requires a redirect URL.")
+
+    try:
+        student = Student.objects.get(pk=request.session['student'])
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("The student no longer exists.")
+
+    token = request.session.get("token", None)
+    if not token:
+        return HttpResponseBadRequest("Token not found - please go through the login process again.")
+
+    api_client = get_api_client(request)
+    if api_client:
+        student.approve_client(api_client)
+
+    finish_login_redirect(make_access_info(request, student, api_client, token=token), redirect_url)
+
+def approval_page_failure(request):
+    """Called when the user clicks Disapprove on the client approval page."""
+    redirect_url = request.GET.get("redirect", None)
+    if redirect_url:
+        if not re.search(r'^https?://', uri): # Redirect requires a protocol
+            uri = 'https://' + uri
+        return redirect(uri)
+    return redirect("/")
 
 def make_new_user():
     """Creates a new user using a random unique username and a long alphanumeric

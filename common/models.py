@@ -24,7 +24,7 @@ class Student(models.Model):
 
     def has_approved_client(self, client):
         """Checks whether this student has approved the given APIClient object."""
-        return not self.approved_clients.filter(pk=client.pk).empty()
+        return self.approved_clients.filter(pk=client.pk).exists()
 
     def approve_client(self, client):
         """Approves the given APIClient object."""
