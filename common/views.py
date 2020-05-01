@@ -208,9 +208,9 @@ def approval_page_failure(request):
     """Called when the user clicks Disapprove on the client approval page."""
     redirect_url = request.GET.get("redirect", None)
     if redirect_url:
-        if not re.search(r'^https?://', uri): # Redirect requires a protocol
-            uri = 'https://' + uri
-        return redirect(uri)
+        if not re.search(r'^https?://', redirect_url): # Redirect requires a protocol
+            redirect_url = 'https://' + redirect_url
+        return redirect(redirect_url)
     return redirect("/")
 
 def make_new_user():
