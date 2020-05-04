@@ -146,7 +146,7 @@ def require_token_permissions(*permission_names):
                     if not getattr(permissions, p_name):
                         raise PermissionDenied
                 except AttributeError:
-                    print("Attribute not found: " + p_namee)
+                    print("Attribute not found: " + p_name)
                     raise PermissionDenied
             return view_func(request, *args, **kwargs)
         return wrapper
