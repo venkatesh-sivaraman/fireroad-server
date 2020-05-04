@@ -1,0 +1,23 @@
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block pagebody %}
+<div id="par">
+  <h2 id="heading">Approve Client</h2>
+  <p>&quot;{{ client_name }}&quot; is requesting access to your FireRoad account. This client will be granted the following capabilities:</p>
+  <ul>
+    {% for permission in client_permissions %}
+      <li>{{ permission }}</li>
+    {% endfor %}
+  </ul>
+  {% if is_debug %}
+  <p class="red-text"><strong>WARNING: </strong> This site is authenticating you through the FireRoad development server, which is subject to potential vulnerabilities and does not restrict client sites to specific permissions. This means of authentication must not be used for production applications.</p>
+  {% endif %}
+  <p>Would you like to allow this?</p>
+  <p class="fineprint">If you have questions, comments, or concerns, please contact the <a href="mailto:{{ client_email }}">developer of this client</a> or the <a href="mailto:fireroad-dev@mit.edu">FireRoad dev team</a>.</p>
+  <div id="buttons" class="row">
+    <a class="mbtn waves-effect waves-light red white-text" href="/approve_client?redirect={{ redirect }}">Allow</a>
+    <a class="mbtn waves-effect waves-light grey white-text" href="/disapprove_client?redirect={{ redirect }}">Don't Allow</a>
+  </div>
+</div>
+{% endblock %}

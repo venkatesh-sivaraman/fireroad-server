@@ -6,7 +6,7 @@ from common.models import *
 import random
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import PermissionDenied
-from common.decorators import logged_in_or_basicauth
+from common.decorators import logged_in_or_basicauth, require_token_permissions
 import json
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -18,6 +18,7 @@ def update_rating(user, subject_id, value):
     r.save()
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_recommendations")
 def get(request):
     rec_type = request.GET.get('t', '')
     if len(rec_type) == 0:
@@ -31,6 +32,7 @@ def get(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_view_recommendations", "can_edit_student_info")
 def rate(request):
     batch = request.body
     if len(batch) > 0:

@@ -5,7 +5,7 @@ from .models import *
 import random
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import PermissionDenied
-from .decorators import logged_in_or_basicauth
+from .decorators import logged_in_or_basicauth, require_token_permissions
 from .oauth_client import *
 import base64
 import json
@@ -119,15 +119,35 @@ def login_touchstone(request):
     login(request, student.user)
 
     # Generate access token for the user
-    lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
-    token = generate_token(request, student.user, lifetime)
-    access_info = {'success': True, 'username': student.user.username, 'current_semester':
-                   int(student.current_semester), 'academic_id': student.academic_id,
-                   'access_token': token}
+    api_client = get_api_client(request)
 
     if "redirect" in request.GET:
+        redirect_url = request.GET["redirect"]
+        if (settings.RESTRICT_AUTH_REDIRECTS and redirect_url is not None and
+            RedirectURL.objects.filter(url=redirect_url).count() == 0):
+            return HttpResponse("Redirect URL not registered", status=403)
+
+        if settings.RESTRICT_AUTH_REDIRECTS and not api_client:
+            # If the API client is unrecognized, do not give them an access token!
+            raise HttpResponse("API client not registered with this redirect URL", status=403)
+
+        if not api_client or not student.has_approved_client(api_client):
+            # The user has never used this client - show an approval page
+            lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
+            request.session['token'] = generate_token(request, student.user, lifetime, api_client=api_client)
+            request.session['student'] = student.pk
+            return render(request, 'common/client_approval.html', {
+                'redirect': redirect_url,
+                'client_name': api_client.name if api_client else redirect_url,
+                'client_email': api_client.contact_email if api_client else "",
+                'client_permissions': (api_client.permissions_descriptions() if api_client else
+                                       ["non-specific FireRoad access"]),
+                'is_debug': settings.DEBUG
+            })
+
         # Redirect to the web application's page with a temporary code to get the access token
-        return finish_login_redirect(access_info, request.GET["redirect"])
+        return finish_login_redirect(make_access_info(request, student, api_client), redirect_url)
+
     elif "next" in request.GET:
         # Redirect to the given page in FireRoad
         redirect_dest = request.GET.get("next", "")
@@ -136,8 +156,62 @@ def login_touchstone(request):
         return redirect(redirect_dest)
     else:
         # Go to FireRoad's login success page, which is read by the mobile apps
+        access_info = make_access_info(request, student, api_client)
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
 
+def get_api_client(request):
+    """Determines the API client from the request's redirect URL."""
+    redirect_url = request.GET.get("redirect", None)
+    if not redirect_url:
+        return None
+    try:
+        redirect = RedirectURL.objects.get(url=redirect_url)
+    except ObjectDoesNotExist:
+        return None
+    else:
+        return redirect.client
+
+def make_access_info(request, student, api_client, token=None):
+    """Generates an access token and returns an access_info dictionary."""
+    if token is None:
+        lifetime = TOKEN_EXPIRY_WEB if "redirect" in request.GET else TOKEN_EXPIRY_MOBILE
+        token = generate_token(request, student.user, lifetime, api_client=api_client)
+    access_info = {'success': True, 'username': student.user.username, 'current_semester':
+                   int(student.current_semester), 'academic_id': student.academic_id,
+                   'access_token': token}
+    return access_info
+
+def approval_page_success(request):
+    """Called when the user clicks Approve on the client approval page."""
+    redirect_url = request.GET.get("redirect", None)
+    if not redirect_url:
+        return HttpResponseBadRequest("Approval requires a redirect URL.")
+
+    try:
+        student = Student.objects.get(pk=request.session['student'])
+    except ObjectDoesNotExist:
+        return HttpResponseBadRequest("The student no longer exists.")
+
+    token = request.session.get("token", None)
+    if not token:
+        return HttpResponseBadRequest("Token not found - please go through the login process again.")
+
+    api_client = get_api_client(request)
+    if api_client:
+        student.approve_client(api_client)
+        student.save()
+        api_client.save()
+
+    return finish_login_redirect(make_access_info(request, student, api_client, token=token), redirect_url)
+
+def approval_page_failure(request):
+    """Called when the user clicks Disapprove on the client approval page."""
+    redirect_url = request.GET.get("redirect", None)
+    if redirect_url:
+        if not re.search(r'^https?://', redirect_url): # Redirect requires a protocol
+            redirect_url = 'https://' + redirect_url
+        return redirect(redirect_url)
+    return redirect("/")
 
 def make_new_user():
     """Creates a new user using a random unique username and a long alphanumeric
@@ -156,6 +230,7 @@ def login_error_response(request, message):
     return render(request, 'common/login_fail.html', params)
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_academic_id", "can_view_student_info")
 def verify(request):
     """Verify that the given request has a user."""
     user = request.user
@@ -177,6 +252,7 @@ def signup(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_semester(request):
     user = request.user
     try:
@@ -221,6 +297,7 @@ def fetch_token(request):
     return HttpResponse(json.dumps({'success': True, 'access_info': access_info}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info", "can_view_academic_id")
 def user_info(request):
     """Returns a JSON object containing the logged-in student's information."""
     student = request.user.student
@@ -281,6 +358,7 @@ def auto_increment_semester(user):
 ### Preference Syncing
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def favorites(request):
     value = request.user.student.favorites
     try:
@@ -290,6 +368,7 @@ def favorites(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_favorites(request):
     try:
         favorites = json.loads(request.body)
@@ -305,6 +384,7 @@ def set_favorites(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set favorites"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def progress_overrides(request):
     value = request.user.student.progress_overrides
     try:
@@ -314,6 +394,7 @@ def progress_overrides(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_progress_overrides(request):
     try:
         progress_overrides = json.loads(request.body)
@@ -329,6 +410,7 @@ def set_progress_overrides(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set progress_overrides"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def notes(request):
     value = request.user.student.notes
     try:
@@ -338,6 +420,7 @@ def notes(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_notes(request):
     try:
         notes = json.loads(request.body)
@@ -353,6 +436,7 @@ def set_notes(request):
         return HttpResponse(json.dumps({'success': False, 'error': "Couldn't set notes"}), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_student_info")
 def custom_courses(request):
     value = request.user.student.custom_courses.all()
     try:
@@ -362,6 +446,7 @@ def custom_courses(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def set_custom_course(request):
     try:
         course_json = json.loads(request.body)
@@ -395,6 +480,7 @@ def set_custom_course(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_student_info")
 def remove_custom_course(request):
     try:
         course_json = json.loads(request.body)

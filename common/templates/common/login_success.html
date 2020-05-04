@@ -1,51 +1,15 @@
-<html>
-  <head>
-    <meta content='width=device-width, initial-scale=1' name='viewport'/>
-    <script type="application/json" id="access_info">{{access_info|safe}}</script>
-    <style type="text/css">
-    form > :not(button) {
-      display: none;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      text-align: center;
-    }
-    @media screen and (min-width: 480px) {
-      #par {
-        width: 60%;
-        margin: auto;
-      }
-    }
-    @media screen and (max-width: 480px) {
-      #par {
-        padding-left: 25px;
-        padding-right: 25px;
-      }
-    }
-    p {
-      font-weight: 300;
-    }
-    #topbar {
-      background: linear-gradient(#f14d50, #9b1e21);
-      color: white;
-    }
-    #heading {
-      padding: 10px;
-    }
-    </style>
-  </head>
-  <body>
-    <div id="topbar">
-      <h2 id="heading"><br/><br/>FireRoad Recommendations</h2>
-    </div>
-    <br/>
-    <br/>
-    <br/>
-    <div id="par">
-      <p>Login successful, syncing your account...</p>
-    </div>
-  </body>
-</html>
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block title %}
+<title>Success</title>
+<script type="application/json" id="access_info">{{access_info|safe}}</script>
+{% endblock %}
+
+{% block pagebody %}
+<div id="par">
+  <p>Login successful, syncing your account...</p>
+</div>
+
+{% endblock %}
+

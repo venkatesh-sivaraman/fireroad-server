@@ -1,90 +1,16 @@
-<html>
-  <head>
-    <meta content='width=device-width, initial-scale=1' name='viewport'/>
-    <style type="text/css">
-    form > :not(button) {
-      display: none;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-    }
-    @media screen and (min-width: 480px) {
-      #par {
-        width: 60%;
-        margin: auto;
-      }
-    }
-    @media screen and (max-width: 480px) {
-      #par {
-        padding-left: 25px;
-        padding-right: 25px;
-      }
-    }
-    p {
-      font-weight: 300;
-    }
-    a.submit {
-      padding:5px 15px;
-      margin-top: 15px;
-      background: none;
-      box-shadow: none;
-      border-style: solid;
-      border-color: #007aff;
-      border-width: 2px;
-      font-family: -apple-system, 'Helvetica Neue', sans-serif;
-      font-weight: 600;
-      font-size: 1.1em;
-      color: #007aff;
-      cursor:pointer;
-      -webkit-border-radius: 5px;
-      border-radius: 5px;
-      text-decoration: none;
-      padding: 6px 10px 6px 10px;
-    }
-    a.submit:hover {
-      background: #99caff;
-    }
-    a.cancel {
-      color: gray;
-      text-decoration: none;
-    }
-    a.cancel:hover, a.cancel:active {
-      color: #222;
-    }
-    #topbar {
-      background: linear-gradient(#f14d50, #9b1e21);
-      color: white;
-      text-align: center;
-    }
-    #heading {
-      padding: 10px;
-    }
-    #buttons {
-      text-align: center;
-    }
-    .fineprint {
-      font-size: 0.7em;
-    }
-    </style>
-  </head>
-  <body>
-    <div id="topbar">
-      <h2 id="heading"><br/><br/>Sync and Recommendations</h2>
-    </div>
-    <br/>
-    <div id="par">
-      <p>Would you like to <strong>sync your roads and schedules</strong> with CourseRoad and across your devices? FireRoad will also provide you with <strong>personalized suggestions</strong> based on your subject selections.</p>
-      <p>Tap <i>Allow and Continue</i> to enable this feature. You can also do so later in the settings view.</p>
-      <p class="fineprint">Sync and Recommendations requires MIT credentials. By enabling this feature, you are allowing FireRoad to store your <strong>roads, schedules, and subject ratings</strong> on a secure MIT server. FireRoad uses various machine learning algorithms to provide you with subject recommendations and to improve other users' recommendations anonymously. Recommendations are solely suggestions - please consult with faculty and course administrators for the most reliable and up-to-date information.</p>
-    </div>
-    <div id="buttons">
-      <br/>
-      <a class="submit" href="/login?sem={{ sem }}">Allow and Continue</a>
-      <br/><br/>
-      <a class="cancel" href="{% url 'decline' %}">Not Now</a>
-    </div>
-  </body>
-</html>
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block pagebody %}
+<div id="par">
+  <h2 id="heading">Sync and Recommendations</h2>
+  <p>Would you like to <strong>sync your roads and schedules</strong> with CourseRoad and across your devices? FireRoad will also provide you with <strong>personalized suggestions</strong> based on your subject selections.</p>
+  <p>Tap <i>Allow and Continue</i> to enable this feature. You can also do so later in the settings view.</p>
+  <p class="fineprint">Sync and Recommendations requires MIT credentials. By enabling this feature, you are allowing FireRoad to store your <strong>roads, schedules, and subject ratings</strong> on a secure MIT server. FireRoad uses various machine learning algorithms to provide you with subject recommendations and to improve other users' recommendations anonymously. Recommendations are solely suggestions - please consult with faculty and course administrators for the most reliable and up-to-date information.</p>
+</div>
+<div id="buttons" class="row">
+  <a class="mbtn waves-effect waves-light red white-text" href="/login?sem={{ sem }}">Allow and Continue</a>
+  <a class="mbtn waves-effect waves-light grey white-text" href="{% url 'decline' %}">Not Now</a>
+</div>
+
+{% endblock %}

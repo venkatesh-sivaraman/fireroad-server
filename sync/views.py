@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 from common.models import *
 import random
-from common.decorators import logged_in_or_basicauth
+from common.decorators import logged_in_or_basicauth, require_token_permissions
 import json
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -73,6 +73,7 @@ def delete_helper(request, model_cls):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_roads")
 def sync_road(request):
     operation, err_resp = get_operation(request)
     if operation is None:
@@ -82,6 +83,7 @@ def sync_road(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_roads")
 def roads(request):
     road_id = request.GET.get('id', None)
 
@@ -96,11 +98,13 @@ def roads(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_delete_roads")
 def delete_road(request):
     return delete_helper(request, Road)
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_edit_schedules")
 def sync_schedule(request):
     operation, err_resp = get_operation(request)
     if operation is None:
@@ -110,6 +114,7 @@ def sync_schedule(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 @logged_in_or_basicauth
+@require_token_permissions("can_view_schedules")
 def schedules(request):
     schedule_id = request.GET.get('id', None)
 
@@ -124,5 +129,6 @@ def schedules(request):
 
 @csrf_exempt
 @logged_in_or_basicauth
+@require_token_permissions("can_delete_schedules")
 def delete_schedule(request):
     return delete_helper(request, Schedule)

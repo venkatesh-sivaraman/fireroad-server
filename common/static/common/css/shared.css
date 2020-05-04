@@ -1,6 +1,12 @@
 .logo-img {
   vertical-align: middle;
   margin-top: -5px;
+  margin-right: 12px;
+}
+@media screen and (max-width: 480px) {
+  .logo-img {
+    margin-right: 2px !important;
+  }
 }
 .nav-wrapper {
   padding-left: 12px;

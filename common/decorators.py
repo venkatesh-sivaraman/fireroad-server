@@ -4,9 +4,10 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
+from django.conf import settings
 
 from .oauth_client import *
-from .models import Student
+from .models import Student, APIClient
 import json
 from .token_gen import *
 
@@ -37,16 +38,20 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
             auth = request.META[key].split()
             if len(auth) == 2:
                 if auth[0].lower() == "basic":
-                    # Basic authentication
+                    # Basic authentication - this is not an API client
                     uname, passwd = base64.b64decode(auth[1]).split(':')
                     user = authenticate(username=uname, password=passwd)
+                    permissions = APIClient.universal_permission_flag()
                 elif auth[0].lower() == "bearer":
                     # The client bears a FireRoad-issued token
-                    user, error = get_user_for_token(request, auth[1])
+                    user, permissions, error = extract_token_info(request, auth[1])
                     if error is not None:
                         return HttpResponse(json.dumps(error), status=401, content_type="application/json")
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
+                else:
+                    raise PermissionDenied
 
+                request.session['permissions'] = permissions
                 if user is not None:
                     if user.is_active:
                         login(request, user)
@@ -55,6 +60,9 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
         raise PermissionDenied
         #return redirect('login')
     else:
+        if 'permissions' not in request.session:
+            print("Setting universal permission flag - this should only occur in dev or from FireRoad-internal login.")
+            request.session['permissions'] = APIClient.universal_permission_flag()
         return view(request, *args, **kwargs)
 
 #############################################################################
@@ -117,5 +125,29 @@ def has_perm_or_basicauth(perm, realm = ""):
             return view_or_basicauth(func, request,
                                      lambda u: u.has_perm(perm),
                                      realm, *args, **kwargs)
+        return wrapper
+    return view_decorator
+
+def require_token_permissions(*permission_names):
+    """Decorator that makes sure that the request has a permissions flag that permits the
+    given permission names."""
+    def view_decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            # Passthrough for dev server and local testing
+            if not settings.RESTRICT_AUTH_REDIRECTS and settings.DEBUG:
+                return view_func(request, *args, **kwargs)
+
+            if not request.session["permissions"]:
+                print("Session object has no permissions set")
+                raise PermissionDenied
+            permissions = APIClient.from_permissions_flag(request.session["permissions"])
+            for p_name in permission_names:
+                try:
+                    if not getattr(permissions, p_name):
+                        raise PermissionDenied
+                except AttributeError:
+                    print("Attribute not found: " + p_name)
+                    raise PermissionDenied
+            return view_func(request, *args, **kwargs)
         return wrapper
     return view_decorator
