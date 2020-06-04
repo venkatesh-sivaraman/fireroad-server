@@ -40,11 +40,12 @@
 
 <h5 class="code">progressAssertions</h5>
 
-<p>A dictionary mapping requirement IDs to progress assertion dictionaries. Requirement IDs are defined as in <span class="code">progressOverrides</span>, while progress assertion values are dictionaries that can contain the given keys:</p>
+<p>A dictionary mapping requirement IDs to progress assertion dictionaries. Requirement IDs are defined as in <span class="code">progressOverrides</span>, while progress assertion values are dictionaries that can contain the given keys, in decreasing order of precedence:</p>
 
 <ul class="collection">
-  <li class="collection-item"><span class="code">substitutions</span> - A list of subject ID strings. If this key is present, the user is overriding the given requirement by completing this list of courses instead of the published list. This list may be empty, which corresponds to an automatic fulfillment of the requirement.</li>
+  <li class="collection-item"><span class="code">override</span> - An integer that specifies an absolute override to the progress of this requirement (equivalent to the old <span class="code">progressOverrides</span> values). This value is in units of subjects or units depending on the threshold criterion of the requirement. <em>The override value will be ignored if the requirement is not a plain-string requirement, or if the requirement does not have an explicitly specified threshold.</em></li>
   <li class="collection-item"><span class="code">ignore</span> - A boolean indicating whether to ignore this requirement. If this is <span class="code">true</span>, then the fulfillment status of this requirement should be ignored when computing parent fulfillment statuses.</li>
+  <li class="collection-item"><span class="code">substitutions</span> - A list of subject ID strings. If this key is present, the user is overriding the given requirement by completing this list of courses instead of the published list. This list may be empty, which corresponds to an automatic fulfillment of the requirement.</li>
 </ul>
 
 <h5>Example</h5>

@@ -178,27 +178,73 @@ class RequirementsProgress(object):
 
         return [], []
 
+    def override_requirement(self, manual_progress):
+        """
+        Sets the progress fulfillment variables based on a manual progress value, which is
+        expressed in either units or subjects depending on the requirement's threshold.
+        """
+        self.is_fulfilled = manual_progress >= self.threshold.get_actual_cutoff()
+        subjects = 0
+        units = 0
+        satisfied_courses = set()
+
+        if self.threshold.criterion == CRITERION_UNITS:
+            units = manual_progress
+            subjects = manual_progress / DEFAULT_UNIT_COUNT
+        else:
+            units = manual_progress * DEFAULT_UNIT_COUNT
+            subjects = manual_progress
+
+        subject_progress = ceiling_thresh(subjects, self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
+        unit_progress = ceiling_thresh(units, self.threshold.cutoff_for_criterion(CRITERION_UNITS))
+        #fill with dummy courses
+        random_ids = random.sample(range(1000, max(10000, subject_progress.progress + 1000)), subject_progress.progress)
+
+        for rand_id in random_ids:
+            dummy_course = Course(id = self.list_path + "_" + str(rand_id), subject_id = "gen_course_" + self.list_path + "_" + str(rand_id), title = "Generated Course " + self.list_path + " " + str(rand_id))
+            satisfied_courses.add(dummy_course)
+
+        self.subject_fulfillment = subject_progress
+        self.subject_progress = subject_progress.progress
+        self.subject_max = subject_progress.max
+        self.unit_fulfillment = unit_progress
+        self.unit_progress = unit_progress.progress
+        self.unit_max = unit_progress.max
+        progress = unit_progress if self.threshold is not None and self.threshold.criterion == CRITERION_UNITS else subject_progress
+        self.progress = progress.progress
+        self.progress_max = progress.max
+        self.percent_fulfilled = progress.get_percent()
+        self.fraction_fulfilled = progress.get_fraction()
+        self.satisfied_courses = list(satisfied_courses)
+
     def compute_assertions(self, courses, progress_assertions):
         """
         Computes the fulfillment of this requirement based on progress assertions, and returns
         True if the requirement has an assertion available or False otherwise.
 
         Assertions are in the format of a dictionary keyed by requirements list paths, where the
-        values are dictionaries containing two possible keys: "substitutions", which should be a
-        list of course IDs that combine to substitute for the requirement, and "ignore", which
-        indicates that the requirement is not to be used when satisfying later requirements. The
-        ignore flag takes precedence over substitutions, but for clarity it is preferred that only
-        one or the other is provided.
+        values are dictionaries containing three possible keys: "substitutions", which should be a
+        list of course IDs that combine to substitute for the requirement, "ignore", which
+        indicates that the requirement is not to be used when satisfying later requirements, and
+        "override", which is equivalent to the old manual progress value and indicates a progress
+        toward the requirement in the unit specified by the requirement's threshold type (only
+        used if the requirement is a plain string requirement and has a threshold). The order of
+        precedence is override, ignore, substitutions.
         """
         self.assertion = progress_assertions.get(self.list_path, None)
         self.is_bypassed = False
         if self.assertion is not None:
             substitutions = self.assertion.get("substitutions", None) #List of substitutions
             ignore = self.assertion.get("ignore", False)               #Boolean
+            override = self.assertion.get("override", 0)
         else:
             substitutions = None
             ignore = False
+            override = 0
 
+        if self.statement.is_plain_string and self.threshold is not None and override:
+            self.override_requirement(override)
+            return True
         if ignore:
             self.is_fulfilled = False
             subject_progress = Progress(0, 0)
@@ -291,28 +337,10 @@ class RequirementsProgress(object):
 
         if self.statement.requirement is not None:
             #it is a basic requirement
-            if self.statement.is_plain_string and not manual_progress == 0 and self.threshold is not None:
+            if self.statement.is_plain_string and manual_progress != 0 and self.threshold is not None:
                 #use manual progress
-                is_fulfilled = manual_progress >= self.threshold.get_actual_cutoff()
-                subjects = 0
-                units = 0
-
-                if self.threshold.criterion == CRITERION_UNITS:
-                    units = manual_progress
-                    subjects = manual_progress / DEFAULT_UNIT_COUNT
-                else:
-                    units = manual_progress * DEFAULT_UNIT_COUNT
-                    subjects = manual_progress
-
-                subject_progress = ceiling_thresh(subjects, self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
-                unit_progress = ceiling_thresh(units, self.threshold.cutoff_for_criterion(CRITERION_UNITS))
-                #fill with dummy courses
-                random_ids = random.sample(range(1000, max(10000, subject_progress.progress + 1000)), subject_progress.progress)
-
-                for rand_id in random_ids:
-                    dummy_course = Course(id = self.list_path + "_" + str(rand_id), subject_id = "gen_course_" + self.list_path + "_" + str(rand_id), title = "Generated Course " + self.list_path + " " + str(rand_id))
-                    satisfied_courses.add(dummy_course)
-
+                self.override_requirement(manual_progress)
+                return
             else:
                 #Example: requirement CI-H, we want to show how many have been fulfilled
                 whole_courses, half_courses = self.courses_satisfying_req(courses)
