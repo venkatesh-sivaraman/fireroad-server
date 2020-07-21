@@ -23,3 +23,24 @@
 a {
   color: rgb(224, 20, 20);
 }
+
+.file-example-content {
+  overflow-y: scroll;
+  max-height: 240px;
+}
+
+pre.code {
+  margin: 0 !important;
+}
+
+.json-key {
+  color: #1976D2 !important;
+}
+
+.json-string-value {
+  color: #e91e63 !important;
+}
+
+.json-number-value {
+  color: #4CAF50 !important;
+}
