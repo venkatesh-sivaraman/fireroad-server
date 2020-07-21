@@ -1,0 +1,187 @@
+{% extends "common/docs/base.html" %}
+
+{% block nav %}
+{% include "common/docs/sidebar.html" with active_id="file_formats" %}
+{% endblock %}
+
+{% block content %}
+<h2 class="red-text text-darken-4">File Formats</h2>
+
+<h4 class="red-text text-darken-4">Road File</h4>
+
+<p>The FireRoad road file (<span class="code">.road</span> file extension) uses a JSON format to specify a user's majors and minors, selected courses, and progress assertions (also known as substitutions or overrides). Each file is a JSON object containing the following keys:</p>
+
+<h5 class="code">coursesOfStudy</h5>
+
+<p>A list of majors and minors that the user has added (e.g. <span class="code">major6</span>, <span class="code">girs</span>). Each course of study corresponds in name to a requirements list.</p>
+
+<h5 class="code">selectedSubjects</h5>
+
+<p>A list of selected subjects, specifying basic information about the subject and when it appears in the road. Each subject is a JSON object with the following keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">subject_id</span> - the subject ID (e.g. "6.009")</li>
+  <li class="collection-item"><span class="code">title</span> - the subject title (e.g. "Fundamentals of Programming")</li>
+  <li class="collection-item"><span class="code">units</span> - the total number of units provided by this subject</li>
+  <li class="collection-item"><span class="code">semester</span> - the semester number in which this subject is placed. The semester numbers are zero-indexed, with the order as follows: <em>Previous Credit, Freshman Fall, Freshman IAP, Freshman Spring, ... , Senior Spring</em></li>
+  <li class="collection-item"><span class="code">overrideWarnings</span> - A boolean indicating whether the prereq/coreq and not-offered warnings should be hidden for this subject.</li>
+</ul>
+
+<strong>Notes:</strong>
+<ol>
+  <li>The information contained in each subject is intentionally redundant so that the road file can be displayed in a preliminary way without loading the entire course database.</li>
+  <li>The same subject ID may appear multiple times with different semester numbers, if the user selects the same subject for different semesters.</li>
+  <li>Subjects in the selected subjects list may be <strong>generic courses</strong>, which are defined in <a href="https://github.com/venkatesh-sivaraman/FireRoad/blob/master/FireRoad/Course.swift" target="_blank">the native apps' Course model</a>.
+</ol>
+
+<h5 class="code">progressOverrides</h5>
+
+<p><strong class="red-text text-darken-4">Deprecated - prefer <span class="code">progressAssertions</span> instead.</strong> A dictionary mapping requirement IDs to manual progress values. Requirement IDs are '.'-delimited strings that identify a particular requirements statement. For example, <span class="code">major3a.2</span> specifies the 3rd child of the 3-A major, which is a manual progress requirement defined as <span class="code">""72 units""{&gt;=72u}</span>. Manual progress values are integers specifying how far the user is toward fulfilling that requirement; the range is determined by the requirements statement. In the previous example, the value may range from 0 to 72.</p>
+
+<h5 class="code">progressAssertions</h5>
+
+<p>A dictionary mapping requirement IDs to progress assertion dictionaries. Requirement IDs are defined as in <span class="code">progressOverrides</span>, while progress assertion values are dictionaries that can contain the given keys, in decreasing order of precedence:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">override</span> - An integer that specifies an absolute override to the progress of this requirement (equivalent to the old <span class="code">progressOverrides</span> values). This value is in units of subjects or units depending on the threshold criterion of the requirement. <em>The override value will be ignored if the requirement is not a plain-string requirement, or if the requirement does not have an explicitly specified threshold.</em></li>
+  <li class="collection-item"><span class="code">ignore</span> - A boolean indicating whether to ignore this requirement. If this is <span class="code">true</span>, then the fulfillment status of this requirement should be ignored when computing parent fulfillment statuses.</li>
+  <li class="collection-item"><span class="code">substitutions</span> - A list of subject ID strings. If this key is present, the user is overriding the given requirement by completing this list of courses instead of the published list. This list may be empty, which corresponds to an automatic fulfillment of the requirement.</li>
+</ul>
+
+<h5>Example</h5>
+
+<p>Below is an example of a road file illustrating the use of progress assertions:</p>
+
+<div class="card hoverable">
+  <div class="card-content file-example-content">
+    <pre class="code">{
+  <span class="json-key">"coursesOfStudy"</span> : [
+    <span class="json-string-value">"girs"</span>,
+    <span class="json-string-value">"major6-7"</span>
+  ],
+  <span class="json-key">"progressAssertions"</span> : {
+    <span class="grey-text">// Fulfill independent inquiry with 21M.387</span>
+    <span class="json-key">"major6-2.1.1"</span> : {
+      <span class="json-key">"substitutions"</span> : [<span class="json-string-value">"21M.387"</span>]
+    },
+    <span class="grey-text">// Ignore 6.047 in lab subjects</span>
+    <span class="json-key">"major6-2.1.0.2"</span>: {
+      <span class="json-key">"ignore"</span>: <span class="json-number-value">true</span>
+    }
+  },
+  <span class="json-key">"selectedSubjects"</span> : [
+    {
+      <span class="json-key">"overrideWarnings"</span> : <span class="json-number-value">false</span>,
+      <span class="json-key">"semester"</span> : <span class="json-number-value">0</span>,
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Generic Physics I GIR"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"PHY1"</span>,
+      <span class="json-key">"units"</span> : <span class="json-number-value">12</span>
+    },
+    {
+      <span class="json-key">"overrideWarnings"</span> : <span class="json-number-value">false</span>,
+      <span class="json-key">"semester"</span> : <span class="json-number-value">1</span>,
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Principles of Chemical Science"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"5.112"</span>,
+      <span class="json-key">"units"</span> : <span class="json-number-value">12</span>
+    },
+    {
+      <span class="json-key">"overrideWarnings"</span> : <span class="json-number-value">false</span>,
+      <span class="json-key">"semester"</span> : <span class="json-number-value">4</span>,
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Fundamentals of Programming"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"6.009"</span>,
+      <span class="json-key">"units"</span> : <span class="json-number-value">12</span>
+    },
+    {
+      <span class="json-key">"overrideWarnings"</span> : <span class="json-number-value">false</span>,
+      <span class="json-key">"semester"</span> : <span class="json-number-value">4</span>,
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Advanced Music Performance"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"21M.480"</span>,
+      <span class="json-key">"units"</span> : <span class="json-number-value">6</span>
+    },
+    {
+      <span class="json-key">"overrideWarnings"</span> : <span class="json-number-value">false</span>,
+      <span class="json-key">"semester"</span> : <span class="json-number-value">6</span>,
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Advanced Music Performance"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"21M.480"</span>,
+      <span class="json-key">"units"</span> : <span class="json-number-value">6</span>
+    }
+  ]
+}</pre>
+  </div>
+</div>
+
+<h4 class="red-text text-darken-4">Schedule File</h4>
+
+<p>The FireRoad schedule file (<span class="code">.sched</span> file extension) uses a JSON format to specify a user's selected subjects and sections (e.g. for recitations). Each file is a JSON object containing only one key at the moment:</p>
+
+<h5 class="code">selectedSubjects</h5>
+
+<p>A list of selected subjects, specifying basic information about the subject and its selected sections. Each subject is a JSON object with the following keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">subject_id</span> - the subject ID (e.g. "6.009")</li>
+  <li class="collection-item"><span class="code">title</span> - the subject title (e.g. "Fundamentals of Programming")</li>
+  <li class="collection-item"><span class="code">allowedSections</span> - a dictionary of allowed schedule units, where the keys are the section type (e.g. "lecture", "recitation", "lab", "design"), and the values are lists of schedule unit numbers. This indicates the user-defined constraints on which schedule units can be selected. See below for information about the schedule units.</li>
+  <li class="collection-item"><span class="code">selectedSections</span> - a dictionary of selected schedule units, where the keys are the section type, and the values are single schedule unit numbers. See below for more about the schedule units.</li>
+</ul>
+
+<p><strong>Schedule units.</strong> The schedule unit is an internal model type in the FireRoad app, which represents the most granular weekly-repeating unit that a user can select in their schedule. For example, a user can select an 18.03 lecture that takes place MWF at 1pm; this would be represented by a single schedule unit.</p>
+
+<p>The course database defines the schedule units for each subject, which is then internally represented as a dictionary of section types (lecture, recitation, etc.) pointing to lists of schedule units as displayed on the registrar site. Rather than specify the exact times within the document, the schedule JSON file specifies the <em>index</em> of the schedule unit that has been selected/constrained. This allows the document to be robust to changes in the exact times of each section. (If the schedule units list becomes shorter than the index specified, the FireRoad app by default reverts to the first-generated schedule option.)</p>
+
+<h5>Example</h5>
+
+<p>Below is an example of a schedule file illustrating the use of schedule unit constraints:</p>
+
+<div class="card hoverable">
+  <div class="card-content file-example-content">
+    <pre class="code">{
+  <span class="json-key">"selectedSubjects"</span> : [
+    {
+      <span class="json-key">"selectedSections"</span> : {
+        <span class="json-key">"Recitation"</span> : <span class="json-number-value">8</span>,
+        <span class="json-key">"Lecture"</span> : <span class="json-number-value">0</span>
+      },
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Differential Equations"</span>,
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"18.03"</span>,
+      <span class="json-key">"allowedSections"</span> : {
+        <span class="json-key">"Recitation"</span> : [
+          <span class="json-number-value">0</span>,
+          <span class="json-number-value">3</span>,
+          <span class="json-number-value">4</span>,
+          <span class="json-number-value">7</span>,
+          <span class="json-number-value">8</span>,
+          <span class="json-number-value">9</span>
+        ]
+      }
+    },
+    {
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"6.031"</span>,
+      <span class="json-key">"selectedSections"</span> : {
+        <span class="json-key">"Lecture"</span> : <span class="json-number-value">0</span>
+      },
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Elements of Software Construction"</span>
+    },
+    {
+      <span class="json-key">"subject_id"</span> : <span class="json-string-value">"21G.501"</span>,
+      <span class="json-key">"selectedSections"</span> : {
+        <span class="json-key">"Lecture"</span> : <span class="json-number-value">1</span>
+      },
+      <span class="json-key">"title"</span> : <span class="json-string-value">"Japanese I"</span>
+    }
+  ]
+}</pre>
+  </div>
+</div>
+
+<h4 class="red-text text-darken-4">Requirements List File</h4>
+
+<p>For information about the requirements list file syntax (<span class="code">.reql</span> file extension), see the <a href="/requirements">Requirements Editor</a>.</p>
+
+<div id="sequential-nav">
+  <div class="col s6">
+    <a href="/reference/recommender" class="red-text text-darken-1"><i class="material-icons">chevron_left</i> Recommender</a>
+  </div>
+  <br/><br/>
+</div>
+{% endblock %}

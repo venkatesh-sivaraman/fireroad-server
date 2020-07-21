@@ -32,7 +32,7 @@ def get_json(request, list_id):
     except ObjectDoesNotExist:
         return HttpResponseBadRequest("the requirements list {} does not exist".format(list_id))
 
-def compute_progress(request, list_id, course_list, progress_overrides):
+def compute_progress(request, list_id, course_list, progress_overrides, progress_assertions):
     """Utility function for road_progress and progress that computes and returns
     the progress on the given requirements list."""
     try:
@@ -57,12 +57,12 @@ def compute_progress(request, list_id, course_list, progress_overrides):
 
     # Create a progress object for the requirements list
     prog = RequirementsProgress(req, list_id)
-    prog.compute(course_objs, progress_overrides)
+    prog.compute(course_objs, progress_overrides, progress_assertions)
     # to pretty-print, use these keyword arguments to json.dumps:
     # sort_keys=True, indent=4, separators=(',', ': ')
     return HttpResponse(json.dumps(prog.to_json_object(True)), content_type="application/json")
 
-@logged_in_or_basicauth
+#@logged_in_or_basicauth
 def road_progress_get(request, list_id):
     """Returns the raw JSON for a given requirements list including user
     progress. A 'road' query parameter should be passed that indicates the ID
@@ -78,7 +78,9 @@ def road_progress_get(request, list_id):
     try:
         road = Road.objects.get(user=request.user, pk=road_id)
     except ObjectDoesNotExist:
-        return HttpResponseBadRequest("the road does not exist on the server")
+        available_roads = Road.objects.filter(user=request.user)
+        return HttpResponseBadRequest("the road does not exist on the server. Available roads: " +
+                                      ", ".join(str(road.pk) for road in available_roads))
 
     try:
         contents = json.loads(Road.expand(road.contents))
@@ -86,8 +88,9 @@ def road_progress_get(request, list_id):
         return HttpResponseBadRequest("badly formatted road contents")
 
     progress_overrides = contents.get("progressOverrides", {})
+    progress_assertions = contents.get("progressAssertions", {})
 
-    return compute_progress(request, list_id, read_subjects(contents), progress_overrides)
+    return compute_progress(request, list_id, read_subjects(contents), progress_overrides, progress_assertions)
 
 def road_progress_post(request, list_id):
     """Returns the raw JSON for a given requirements list including user
@@ -98,8 +101,8 @@ def road_progress_post(request, list_id):
         return HttpResponseBadRequest("badly formatted road contents")
 
     progress_overrides = contents.get("progressOverrides", {})
-
-    result = compute_progress(request, list_id, read_subjects(contents), progress_overrides)
+    progress_assertions = contents.get("progressAssertions", {})
+    result = compute_progress(request, list_id, read_subjects(contents), progress_overrides, progress_assertions)
     return result
 
 def read_subjects(contents):
@@ -131,7 +134,7 @@ def progress(request, list_id, courses):
     """Returns the raw JSON for a given requirements list including user
     progress. The courses used to evaluate the requirements list are provided
     in courses as a comma-separated list of subject IDs."""
-    return compute_progress(request, list_id, [c for c in courses.split(",") if len(c)], {})
+    return compute_progress(request, list_id, [c for c in courses.split(",") if len(c)], {}, {})
 
 def list_reqs(request):
     """Return a JSON dictionary of all available requirements lists, with the

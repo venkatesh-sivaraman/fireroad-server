@@ -53,6 +53,8 @@
   <li class="collection-item"><span class="code">max</span> - the maximum possible progress, serving as a denominator for <span class="code">progress</span></li>
   <li class="collection-item"><span class="code">percent_fulfilled</span> - the percentage fulfilled</li>
   <li class="collection-item"><span class="code">sat_courses</span> - a list of courses that satisfies this requirement</li>
+  <li class="collection-item"><span class="code">is_bypassed</span> - if present, a boolean indicating whether this requirement has been bypassed because of a progress assertion on one of its ancestors in the tree</li>
+  <li class="collection-item"><span class="code">assertion</span> - if present, a JSON object representing a progress assertion that was made on this requirement by the input road file. The format is the same as the progress assertion object defined in the <a href="/reference/file_formats">road file spec</a>.</li>
 </ul>
 
 <div id="sequential-nav">
