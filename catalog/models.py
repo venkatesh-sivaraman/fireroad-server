@@ -103,6 +103,7 @@ class CourseFields:
     quarter_information = "quarter_information"
     related_subjects = "related_subjects"
     schedule = "schedule"
+    virtual_status = "virtual_status"
     url = "url"
     rating = "rating"
     in_class_hours = "in_class_hours"
@@ -169,6 +170,7 @@ CSV_HEADERS = {
     CourseAttribute.notOfferedYear:             (CourseFields.not_offered_year, string_converter),
     CourseAttribute.quarterInformation:         (CourseFields.quarter_information, string_converter),
     CourseAttribute.schedule:                   (CourseFields.schedule, string_converter),
+    CourseAttribute.virtualStatus:              (CourseFields.virtual_status, string_converter),
     CourseAttribute.URL:                        (CourseFields.url, string_converter),
     CourseAttribute.averageRating:              (CourseFields.rating, float_converter),
     CourseAttribute.averageInClassHours:        (CourseFields.in_class_hours, float_converter),
@@ -316,6 +318,7 @@ class Course(models.Model):
     enrollment_number = models.FloatField(default=0.0)
     related_subjects = models.CharField(null=True, max_length=250)
     schedule = models.TextField(null=True)
+    virtual_status = models.CharField(null=True, max_length=100)
 
     rating = models.FloatField(default=0.0)
     in_class_hours = models.FloatField(default=0.0)
@@ -376,6 +379,9 @@ class Course(models.Model):
             data[CourseFields.parent] = self.parent
         if self.children is not None and len(self.children) > 0:
             data[CourseFields.children] = self.children.split(",")
+
+        if self.virtual_status is not None and len(self.virtual_status) > 0:
+            data[CourseFields.virtual_status] = self.virtual_status
 
         if not full: return data
 

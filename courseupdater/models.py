@@ -15,6 +15,9 @@ class CatalogUpdate(models.Model):
     is_staged = models.BooleanField(default=False)
     is_started = models.BooleanField(default=False)
 
+    # Options for the parse
+    designate_virtual_status = models.BooleanField(default=False)
+
     def __str__(self):
         base = "Catalog update for {} on {}".format(self.semester, self.creation_date)
         if self.is_completed:
@@ -27,6 +30,11 @@ class CatalogUpdate(models.Model):
 
 class CatalogUpdateStartForm(forms.Form):
     semester = forms.CharField(label='Semester', max_length=30, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'e.g. fall-2019'}))
+    designate_virtual_status = forms.BooleanField(label='Designate subject virtual status',
+                                                  widget=forms.CheckboxInput(attrs={'class':
+                                                                                    'filled-in'}),
+                                                  initial=False,
+                                                  required=False)
 
     def clean_semester(self):
         """

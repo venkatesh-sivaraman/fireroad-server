@@ -111,6 +111,7 @@ class CourseAttribute:
     corequisites = "Coreqs"
     notes = "Notes"
     schedule = "Schedule"
+    virtualStatus = "Virtual Status"
     notOfferedYear = "Not Offered Year"
     hassRequirement = "Hass Attribute"
     GIR = "Gir Attribute"
@@ -170,6 +171,7 @@ ALL_ATTRIBUTES = [
     CourseAttribute.quarterInformation,
     CourseAttribute.instructors,
     CourseAttribute.schedule,
+    CourseAttribute.virtualStatus,
     CourseAttribute.URL,
     CourseAttribute.averageRating,
     CourseAttribute.averageInClassHours,
@@ -200,6 +202,7 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.offeredSummer,
     CourseAttribute.quarterInformation,
     CourseAttribute.instructors,
+    CourseAttribute.virtualStatus,
     CourseAttribute.communicationRequirement,
     CourseAttribute.hassRequirement,
     CourseAttribute.GIR,

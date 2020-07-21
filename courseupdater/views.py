@@ -160,7 +160,8 @@ def update_catalog(request):
         if request.method == 'POST':
             form = CatalogUpdateStartForm(request.POST)
             if form.is_valid():
-                update = CatalogUpdate(semester=form.cleaned_data['semester'])
+                update = CatalogUpdate(semester=form.cleaned_data['semester'],
+                                       designate_virtual_status=form.cleaned_data['designate_virtual_status'])
                 update.save()
                 return render(request, 'courseupdater/update_progress.html', {'update': update})
         else:

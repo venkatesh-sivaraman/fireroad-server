@@ -130,7 +130,9 @@ if __name__ == '__main__':
             print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
             equivalences_path = None
 
-        cp.parse(out_path, evaluations_path, equivalences_path, progress_callback=update_progress)
+        cp.parse(out_path, evaluations_path, equivalences_path,
+                 progress_callback=update_progress,
+                 write_virtual_status=update.designate_virtual_status)
 
         consensus_path = os.path.join(settings.CATALOG_BASE_DIR, semester + "-new")
         if os.path.exists(consensus_path):

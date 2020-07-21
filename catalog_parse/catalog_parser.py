@@ -187,7 +187,7 @@ def subject_title_regex(subject_id):
     additional subjects that this subject title may contain."""
     return "{}(?:{})?\\s*(\\([A-Z0-9.,\s-]+\\))?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
 
-def process_info_item(item, attributes):
+def process_info_item(item, attributes, write_virtual_status=False):
     """Determines the type of the given info item and adds it into the
     attributes dictionary."""
     case_insensitive_item = item.lower()
@@ -215,11 +215,13 @@ def process_info_item(item, attributes):
             attributes[CourseAttribute.hasFinal] = True
             trimmed_item = trimmed_item.replace(CatalogConstants.final_flag, "")
 
-        sched, quarter_info = parse_schedule(trimmed_item.strip().replace("\n", ""))
+        sched, quarter_info, virtual_status = parse_schedule(trimmed_item.strip().replace("\n", ""))
         if len(sched) > 0:
             attributes[CourseAttribute.schedule] = sched
         if len(quarter_info) > 0:
             attributes[CourseAttribute.quarterInformation] = quarter_info
+        if write_virtual_status:
+            attributes[CourseAttribute.virtualStatus] = virtual_status
         def_not_desc = True
 
     # Subject title
@@ -394,7 +396,7 @@ def merge_duplicates(courses):
 
     return merged_courses
 
-def courses_from_dept_code(dept_code):
+def courses_from_dept_code(dept_code, **options):
     """
     Loads courses from the catalog for the given department code (department +
     alphabetical code, such as "6a" or "21Gb", which defines a page on the
@@ -419,7 +421,7 @@ def courses_from_dept_code(dept_code):
         attribs = {CourseAttribute.subjectID: id.replace('[J]', '')}
         attribs[CourseAttribute.URL] = catalog_url + "#" + id
         for prop in props:
-            process_info_item(prop, attribs)
+            process_info_item(prop, attribs, **options)
 
         # The subject ID might have changed during parsing
         id = attribs[CourseAttribute.subjectID]
@@ -496,7 +498,8 @@ def write_courses(courses, filepath, attributes):
 
 ### Main method
 
-def parse(output_dir, evaluations_path=None, equivalences_path=None, write_related=True, progress_callback=None):
+def parse(output_dir, evaluations_path=None, equivalences_path=None, write_related=True,
+          progress_callback=None, write_virtual_status=False):
     """
     Parses the catalog from the web and writes the files to the given directory.
 
@@ -507,6 +510,7 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
     write_related: if True, compute the related and features files as well
     progress_callback: a function that takes the current progress (from 0-100) and an
         update string
+    write_virtual_status: if True, write the "Virtual Status" field
     """
 
     if not os.path.exists(output_dir):
@@ -533,7 +537,10 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
             if original_html is not None and (URL_LAST_PREFIX + total_code + URL_SUFFIX) not in original_html:
                 continue
 
-            addl_courses = [course for course in courses_from_dept_code(total_code) if course_code in course[CourseAttribute.subjectID]]
+            addl_courses = [course for course in courses_from_dept_code(
+                                total_code,
+                                write_virtual_status=write_virtual_status)
+                            if course_code in course[CourseAttribute.subjectID]]
             if len(addl_courses) == 0:
                 continue
 

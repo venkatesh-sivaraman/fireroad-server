@@ -20,9 +20,14 @@ location_regex = r"\(\s*([A-Z0-9,\s-]+)\s*\)"
 def parse_schedule(schedule):
     """
     Parse the given schedule string into a standardized format. Returns a
-    tuple ({subject_id: schedule string}, quarter information), where quarter
+    tuple ({subject_id: schedule string}, quarter information, virtual status), where quarter
     information may be empty. If no subject IDs are found in the schedule
     string, the schedule dictionary will have the empty string as the only key.
+
+    Virtual status may be empty (if no schedule) or one of the following strings:
+        "Virtual": All of the class's sections are marked virtual.
+        "In-Person": None of the class's sections are marked virtual.
+        "Virtual/In-Person": The class has sections both marked and not marked as virtual.
 
     Schedule:
         Lecture: MWF 10am (10-250)
@@ -33,9 +38,11 @@ def parse_schedule(schedule):
     """
 
     quarter_info = ""
+    has_virtual = False
+    has_in_person = False
 
     if len(schedule.strip()) == 0:
-        return "", quarter_info
+        return "", quarter_info, ""
 
     # Remove quarter information first
     lower_schedule = schedule.lower()
@@ -91,8 +98,16 @@ def parse_schedule(schedule):
 
                 for loc in location_comps:
                     type_comps.append("/".join([loc] + time_comps))
+                    if loc == "VIRTUAL":
+                        has_virtual = True
+                    else:
+                        has_in_person = True
 
         schedule_comps.append(",".join(type_comps))
 
     joined_scheds = {id: ";".join(schedule_comps) for id, schedule_comps in schedule_comps_by_id.items()}
-    return joined_scheds, quarter_info
+
+    virtual_items = (["Virtual"] if has_virtual else []) + (["In-Person"] if has_in_person else [])
+    joined_virtual = "/".join(virtual_items)
+
+    return joined_scheds, quarter_info, joined_virtual
