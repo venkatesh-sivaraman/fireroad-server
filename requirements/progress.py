@@ -123,6 +123,10 @@ class Progress(object):
         else:
             return "N/A"
 
+    def get_raw_fraction(self, unit):
+        denom = max(self.max, DEFAULT_UNIT_COUNT if unit == CRITERION_UNITS else 1)
+        return self.progress/denom
+
     def combine(self, p2, maxFunc):
         if maxFunc is not None:
             return Progress(self.progress + p2.progress, self.max + maxFunc(p2.max))
@@ -396,8 +400,8 @@ class RequirementsProgress(object):
                 else:
                     num_courses_satisfied += len(req_satisfied_courses)
 
-            satisfied_by_category = [sat for prog, sat in sorted(zip(open_children, satisfied_by_category), key = lambda z: z[0].fraction_fulfilled, reverse = True)]
-            sorted_progresses = sorted(open_children, key = lambda req: req.fraction_fulfilled, reverse = True)
+            satisfied_by_category = [sat for prog, sat in sorted(zip(open_children, satisfied_by_category), key = lambda z: z[0].raw_fraction_fulfilled, reverse = True)]
+            sorted_progresses = sorted(open_children, key = lambda req: req.raw_fraction_fulfilled, reverse = True)
 
             if self.threshold is None and self.distinct_threshold is None:
                 is_fulfilled = (num_reqs_satisfied > 0)
@@ -466,6 +470,7 @@ class RequirementsProgress(object):
             unit_progress = ceiling_thresh(unit_progress.progress, unit_progress.max)
             progress = unit_progress if self.threshold is not None and self.threshold.criterion == CRITERION_UNITS else subject_progress
 
+        progress_units = CRITERION_SUBJECTS if self.threshold is None else self.threshold.criterion
         self.is_fulfilled = is_fulfilled
         self.subject_fulfillment = subject_progress
         self.subject_progress = subject_progress.progress
@@ -477,6 +482,7 @@ class RequirementsProgress(object):
         self.progress_max = progress.max
         self.percent_fulfilled = progress.get_percent()
         self.fraction_fulfilled = progress.get_fraction()
+        self.raw_fraction_fulfilled = progress.get_raw_fraction(progress_units)
         self.satisfied_courses = list(satisfied_courses)
 
     def to_json_object(self, full = True, child_fn = None):
