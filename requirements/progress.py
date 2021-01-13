@@ -208,6 +208,7 @@ class RequirementsProgress(object):
             dummy_course = Course(id = self.list_path + "_" + str(rand_id), subject_id = "gen_course_" + self.list_path + "_" + str(rand_id), title = "Generated Course " + self.list_path + " " + str(rand_id))
             satisfied_courses.add(dummy_course)
 
+        progress_units = CRITERION_SUBJECTS if self.threshold is None else self.threshold.criterion
         self.subject_fulfillment = subject_progress
         self.subject_progress = subject_progress.progress
         self.subject_max = subject_progress.max
@@ -219,6 +220,7 @@ class RequirementsProgress(object):
         self.progress_max = progress.max
         self.percent_fulfilled = progress.get_percent()
         self.fraction_fulfilled = progress.get_fraction()
+        self.raw_fraction_fulfilled = progress.get_raw_fraction(progress_units)
         self.satisfied_courses = list(satisfied_courses)
 
     def compute_assertions(self, courses, progress_assertions):
@@ -250,6 +252,7 @@ class RequirementsProgress(object):
             self.override_requirement(override)
             return True
         if ignore:
+            progress_units = CRITERION_SUBJECTS if self.threshold is None else self.threshold.criterion
             self.is_fulfilled = False
             subject_progress = Progress(0, 0)
             self.subject_fulfillment = subject_progress
@@ -264,6 +267,7 @@ class RequirementsProgress(object):
             self.progress_max = progress.max
             self.percent_fulfilled = progress.get_percent()
             self.fraction_fulfilled = progress.get_fraction()
+            self.raw_fraction_fulfilled = progress.get_raw_fraction(progress_units)
             self.satisfied_courses = []
             return True
         if substitutions is not None:
@@ -289,6 +293,7 @@ class RequirementsProgress(object):
                 self.is_fulfilled = subs_satisfied == len(substitutions)
                 unit_progress = Progress(subs_satisfied * DEFAULT_UNIT_COUNT, len(substitutions) * DEFAULT_UNIT_COUNT)
                 progress = subject_progress
+            progress_units = CRITERION_SUBJECTS if self.threshold is None else self.threshold.criterion
             self.subject_fulfillment = subject_progress
             self.subject_progress = subject_progress.progress
             self.subject_max = subject_progress.max
@@ -299,6 +304,7 @@ class RequirementsProgress(object):
             self.progress_max = progress.max
             self.percent_fulfilled = progress.get_percent()
             self.fraction_fulfilled = progress.get_fraction()
+            self.raw_fraction_fulfilled = progress.get_raw_fraction(progress_units)
             self.satisfied_courses = list(satisfied_courses)
             return True
 
@@ -319,6 +325,7 @@ class RequirementsProgress(object):
             child.progress_max = 0
             child.percent_fulfilled = 0
             child.fraction_fulfilled = 0
+            child.raw_fraction_fulfilled = 0
             child.satisfied_courses = []
             child.assertion = None
             child.bypass_children()
