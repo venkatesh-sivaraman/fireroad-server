@@ -10,7 +10,8 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = ""
+# Unzip the catalog data into the data directory
+CATALOG_BASE_DIR = "data/catalogs"
 
 # Use the Django default login page for local debugging
 LOGIN_URL = "/admin/login"
@@ -52,7 +53,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE_CLASSES = [
-    #'django.middleware.security.SecurityMiddleware',
+    # Cors middleware should only be on local development (not settings_dev or settings_prod)
+    'middleware.cors.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

@@ -9,6 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.admin.views.decorators import staff_member_required
 from django.forms.models import model_to_dict
 from django.conf import settings
+from zipfile import ZipFile
+from StringIO import StringIO
 from requirements.diff import *
 import catalog_parse as cp
 
@@ -61,10 +63,10 @@ def compute_updated_files(version, base_dir):
     return updated_files, updated_version
 
 """Returns the numerical version for the given semester, e.g. "fall-2017"."""
-def current_version_for_semester(semester):
-    semester_dir = os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, semester_dir_prefix + semester)
+def current_version_for_catalog(catalog_name):
+    catalog_dir = os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, catalog_name)
     max_version = 0
-    for path in os.listdir(semester_dir):
+    for path in os.listdir(catalog_dir):
         if path.find(delta_file_prefix) == 0:
             ext_index = path.find(".txt")
             version = int(path[len(delta_file_prefix):ext_index])
@@ -136,7 +138,7 @@ def check(request):
 each one."""
 def semesters(request):
     sems = list_semesters()
-    resp = list(map(lambda x: {"sem": x, "v": current_version_for_semester(x)}, sems))
+    resp = list(map(lambda x: {"sem": x, "v": current_version_for_catalog(semester_dir_prefix + x)}, sems))
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 ### Catalog parser UI
@@ -310,3 +312,52 @@ def delete_correction(request, id):
         return redirect(reverse("catalog_corrections"))
     correction.delete()
     return redirect(reverse("catalog_corrections"))
+
+
+### Downloading the Catalog
+
+def write_data_and_deltas_to_zip(zf, dir_name, delta_header, base_path):
+    semester_path = os.path.join(settings.CATALOG_BASE_DIR, dir_name)
+    for path in os.listdir(semester_path):
+        if path.startswith("."): continue
+        with open(os.path.join(semester_path, path), "r") as file:
+            zf.writestr(os.path.join(base_path, dir_name, path), file.read())
+    
+    # Write a delta file for it as well
+    deltas_dir = os.path.join(settings.CATALOG_BASE_DIR,
+                                deltas_directory,
+                                dir_name)
+    updated_files, _ = compute_updated_files(0, deltas_dir)
+    zf.writestr(os.path.join(base_path,
+                                deltas_directory,
+                                dir_name,
+                                delta_file_prefix + "1.txt"),
+                "{}\n1\n{}".format(
+                    delta_header, "\n".join(updated_files)
+                ))
+
+@staff_member_required
+def download_catalog_data(request):
+    """
+    Downloads a ZIP file containing all of the necessary catalog data to start
+    a local copy of the server.
+    """
+    buffer = StringIO()
+    base_path = "catalogs"
+
+    with ZipFile(buffer, 'w') as zf:
+        semesters = list_semesters()
+        if semesters:
+            # First write the most recent semester's data
+            cat_name = semester_dir_prefix + semesters[-1]
+            write_data_and_deltas_to_zip(zf, cat_name, separator.join(semesters[-1].split("-")), base_path)
+
+        write_data_and_deltas_to_zip(zf, requirements_dir, "", base_path)
+
+        # Create a raw directory for future parses
+        zf.writestr(os.path.join(base_path, "raw", ".sentinel"), "This directory will hold raw catalog data results")
+
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/force-download')
+    response['Content-Disposition'] = 'attachment; filename="catalogs.zip"'
+    return response

@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Installing dependencies
-pip install django==1.11.15 pandas nltk lxml scipy scikit-learn requests pyjwt==1.6.4
+pip install django==1.11.15 pandas nltk==3.4 lxml scipy scikit-learn requests pyjwt==1.6.4
 echo
 echo
 
@@ -27,7 +27,7 @@ if [[ $keepbackend == "y" ]]; then
     echo "Migrating to database $NAME..."
 
     # Migrations
-    python manage.py makemigrations common catalog courseupdater sync recommend requirements
+    python manage.py makemigrations analytics common catalog courseupdater sync recommend requirements
     read -p "Ready to migrate? (y/n) " ready
     if [[ $ready != "y" ]]; then
       echo "Use the following command to migrate the database when ready:"

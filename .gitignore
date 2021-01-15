@@ -91,3 +91,5 @@ db.sqlite3
 .ipynb_checkpoints
 */migrations/*
 static/**/*
+
+data/catalogs/**
