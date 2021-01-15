@@ -10,7 +10,8 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-CATALOG_BASE_DIR = ""
+# Unzip the catalog data into the data directory
+CATALOG_BASE_DIR = "data/catalogs"
 
 # Use the Django default login page for local debugging
 LOGIN_URL = "/admin/login"

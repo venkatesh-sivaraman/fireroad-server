@@ -15,4 +15,6 @@ urlpatterns = [
     url(r'corrections/edit/(?P<id>\d+)', views.edit_correction, name='edit_catalog_correction'),
     url(r'corrections/new', views.new_correction, name='new_catalog_correction'),
     url(r'corrections/', views.view_corrections, name='catalog_corrections'),
+
+    url(r'download_data/', views.download_catalog_data, name='download_data')
 ]
