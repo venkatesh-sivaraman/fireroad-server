@@ -27,6 +27,7 @@ if [ ! -d $CATALOG_DIR ]; then
   mkdir -p $CATALOG_DIR/deltas/requirements
 
   echo "Done creating directories at $CATALOG_DIR. Follow the instructions in data/readme.md to run the catalog parser and create requirements lists."
+  exit 0
 fi
 
 # Set location of settings file
