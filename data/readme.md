@@ -78,7 +78,7 @@ Note that each of these scripts may take several minutes to run.
 
 ### Requirements Updates
 
-Requirements list updating follows a similar process to the course catalog, except that updates are entered manually instead of scraped. Therefore, you can edit the requirements lists directly in the Requirements Editor, deploy them, and then run the database update script:
+Requirements list updating follows a similar process to the course catalog, except that updates are entered manually instead of scraped. Therefore, you can create and edit the requirements lists directly in the Requirements Editor, deploy them, and then run the database update script:
 
 ```
 python update_db.py

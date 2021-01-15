@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Installing dependencies
-pip install django==1.11.15 pandas nltk lxml scipy scikit-learn requests pyjwt==1.6.4
+pip install django==1.11.15 pandas nltk==3.4 lxml scipy scikit-learn requests pyjwt==1.6.4
 echo
 echo
 
