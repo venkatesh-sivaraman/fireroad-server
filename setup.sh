@@ -27,7 +27,7 @@ if [[ $keepbackend == "y" ]]; then
     echo "Migrating to database $NAME..."
 
     # Migrations
-    python manage.py makemigrations common catalog courseupdater sync recommend requirements
+    python manage.py makemigrations analytics common catalog courseupdater sync recommend requirements
     read -p "Ready to migrate? (y/n) " ready
     if [[ $ready != "y" ]]; then
       echo "Use the following command to migrate the database when ready:"
