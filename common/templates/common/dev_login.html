@@ -1,0 +1,17 @@
+{% extends "common/auth_base.html" %}
+{% load static %}
+
+{% block pagebody %}
+<div id="par" class="login-pane">
+  <h3 id="heading">Dev Mode Login</h3>
+  <form class="login" method="POST">
+    {% csrf_token %}
+    
+    {{form.as_p}}
+    
+    <div style="display: flex; justify-content: center;">
+      <button type="submit" class="mbtn waves-effect waves-light red darken-1" style="color: white !important;">Login</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
