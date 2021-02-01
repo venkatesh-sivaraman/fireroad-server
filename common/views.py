@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import *
 import random
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import PermissionDenied
 from .decorators import logged_in_or_basicauth, require_token_permissions
 from .oauth_client import *
@@ -158,6 +159,42 @@ def login_touchstone(request):
         # Go to FireRoad's login success page, which is read by the mobile apps
         access_info = make_access_info(request, student, api_client)
         return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
+
+def dev_login(request):
+    if request.method == "POST":
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = authenticate(request=request,
+                                username=form.cleaned_data["username"],
+                                password=form.cleaned_data["password"])
+            if user is not None:
+                login(request, user)
+                try:
+                    student = Student.objects.get(user=user)
+                except:
+                    student = Student(user=user, academic_id=user.username, name=user.username)
+                    student.save()
+
+                if "redirect" in request.GET:
+                    # Provide login code info
+                    redirect_url = request.GET["redirect"]
+                    return finish_login_redirect(make_access_info(request, student, None), redirect_url)
+                elif "next" in request.GET:
+                    # Redirect to the given page in FireRoad
+                    redirect_dest = request.GET.get("next", "")
+                    if not redirect_dest:
+                        redirect_dest = "/"
+                    return redirect(redirect_dest)
+                else:
+                    # Go to FireRoad's login success page, which is read by the mobile apps
+                    access_info = make_access_info(request, student, api_client)
+                    return render(request, 'common/login_success.html', {'access_info': json.dumps(access_info)})
+            else:
+                form.add_error(None, "Unable to log you in - please make sure you entered the correct username and password.")
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'common/dev_login.html', {'form': form})
 
 def get_api_client(request):
     """Determines the API client from the request's redirect URL."""

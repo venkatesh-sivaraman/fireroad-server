@@ -44,3 +44,7 @@ pre.code {
 .json-number-value {
   color: #4CAF50 !important;
 }
+
+.login-pane {
+  max-width: 450px;
+}

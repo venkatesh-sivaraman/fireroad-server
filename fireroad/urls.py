@@ -17,6 +17,7 @@ from django.conf.urls import url, include
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.base import RedirectView
 from django.contrib import admin
+from common.views import dev_login
 from django.conf import settings
 
 # admin.autodiscover()
@@ -35,8 +36,11 @@ urlpatterns = [
 
 # Redirect to the appropriate login page if one is specified in the settings module
 if settings.LOGIN_URL:
-    if settings.LOGIN_URL.strip("/") != 'admin/login':
+    if settings.LOGIN_URL.strip("/") != 'dev_login':
         urlpatterns.insert(0, url(r'^admin/login/$', RedirectView.as_view(url=settings.LOGIN_URL,
+                                                                          permanent=True,
+                                                                          query_string=True)))
+        urlpatterns.insert(0, url(r'^dev_login/$', RedirectView.as_view(url=settings.LOGIN_URL,
                                                                           permanent=True,
                                                                           query_string=True)))
     if settings.LOGIN_URL.strip("/") != 'login':
