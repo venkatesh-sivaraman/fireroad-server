@@ -194,7 +194,6 @@ def dev_login(request):
     else:
         form = AuthenticationForm()
 
-    print(form)
     return render(request, 'common/dev_login.html', {'form': form})
 
 def get_api_client(request):

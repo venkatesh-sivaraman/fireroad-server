@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 CATALOG_BASE_DIR = "data/catalogs"
 
 # Use the Django default login page for local debugging
-LOGIN_URL = "/admin/login"
+LOGIN_URL = "/dev_login"
 
 # Security settings
 

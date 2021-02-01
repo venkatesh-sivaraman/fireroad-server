@@ -27,7 +27,6 @@ urlpatterns = [
     url(r'courses/', include('catalog.urls')),
     url(r'courseupdater/', include('courseupdater.urls')),
     url(r'recommend/', include('recommend.urls')),
-    url(r'admin/login', dev_login),
     url(r'admin/', admin.site.urls),
     url(r'sync/', include('sync.urls')),
     url(r'analytics/', include('analytics.urls')),
@@ -37,8 +36,11 @@ urlpatterns = [
 
 # Redirect to the appropriate login page if one is specified in the settings module
 if settings.LOGIN_URL:
-    if settings.LOGIN_URL.strip("/") != 'admin/login':
+    if settings.LOGIN_URL.strip("/") != 'dev_login':
         urlpatterns.insert(0, url(r'^admin/login/$', RedirectView.as_view(url=settings.LOGIN_URL,
+                                                                          permanent=True,
+                                                                          query_string=True)))
+        urlpatterns.insert(0, url(r'^dev_login/$', RedirectView.as_view(url=settings.LOGIN_URL,
                                                                           permanent=True,
                                                                           query_string=True)))
     if settings.LOGIN_URL.strip("/") != 'login':
