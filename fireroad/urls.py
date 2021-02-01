@@ -17,6 +17,7 @@ from django.conf.urls import url, include
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.base import RedirectView
 from django.contrib import admin
+from common.views import dev_login
 from django.conf import settings
 
 # admin.autodiscover()
@@ -26,6 +27,7 @@ urlpatterns = [
     url(r'courses/', include('catalog.urls')),
     url(r'courseupdater/', include('courseupdater.urls')),
     url(r'recommend/', include('recommend.urls')),
+    url(r'admin/login', dev_login),
     url(r'admin/', admin.site.urls),
     url(r'sync/', include('sync.urls')),
     url(r'analytics/', include('analytics.urls')),
