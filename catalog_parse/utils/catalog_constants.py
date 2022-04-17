@@ -124,6 +124,10 @@ class CourseAttribute:
     subjectLevel = "Subject Level"
     eitherPrereqOrCoreq = "Prereq or Coreq"
 
+    # Renumbering fields
+    oldID = "Old Subject Id"
+    newID = "New Subject Id"
+
     # Evaluation fields
     averageRating = "Rating"
     averageInClassHours = "In-Class Hours"
@@ -159,6 +163,8 @@ ALL_ATTRIBUTES = [
     CourseAttribute.oldPrerequisites,
     CourseAttribute.oldCorequisites,
     CourseAttribute.eitherPrereqOrCoreq,
+    CourseAttribute.oldID,
+    CourseAttribute.newID,
     CourseAttribute.description,
     CourseAttribute.jointSubjects,
     CourseAttribute.meetsWithSubjects,
@@ -192,6 +198,8 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.oldPrerequisites,
     CourseAttribute.oldCorequisites,
     CourseAttribute.eitherPrereqOrCoreq,
+    CourseAttribute.oldID,
+    CourseAttribute.newID,
     CourseAttribute.jointSubjects,
     CourseAttribute.equivalentSubjects,
     CourseAttribute.meetsWithSubjects,
