@@ -388,6 +388,9 @@ class Course(models.Model):
         if self.virtual_status is not None and len(self.virtual_status) > 0:
             data[CourseFields.virtual_status] = self.virtual_status
 
+        if self.old_id is not None and len(self.old_id) > 0:
+            data[CourseFields.old_id] = self.old_id
+
         if not full: return data
 
         data[CourseFields.lecture_units] = self.lecture_units
