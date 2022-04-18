@@ -491,7 +491,7 @@ def courses_from_dept_code(dept_code, **options):
             for item in RENUMBERING_DATA:
                 if item["newnum"] == id or item["oldnum"] == id:
                     course[CourseAttribute.oldID] = item["oldnum"]
-                    course[CourseAttribute.newID] = item["newnum"]
+                    course[CourseAttribute.subjectID] = item["newnum"]
                     break
 
     return courses

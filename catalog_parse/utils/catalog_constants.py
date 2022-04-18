@@ -124,9 +124,8 @@ class CourseAttribute:
     subjectLevel = "Subject Level"
     eitherPrereqOrCoreq = "Prereq or Coreq"
 
-    # Renumbering fields
+    # EECS renumbering (fall 2022)
     oldID = "Old Subject Id"
-    newID = "New Subject Id"
 
     # Evaluation fields
     averageRating = "Rating"
@@ -164,7 +163,6 @@ ALL_ATTRIBUTES = [
     CourseAttribute.oldCorequisites,
     CourseAttribute.eitherPrereqOrCoreq,
     CourseAttribute.oldID,
-    CourseAttribute.newID,
     CourseAttribute.description,
     CourseAttribute.jointSubjects,
     CourseAttribute.meetsWithSubjects,
@@ -199,7 +197,6 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.oldCorequisites,
     CourseAttribute.eitherPrereqOrCoreq,
     CourseAttribute.oldID,
-    CourseAttribute.newID,
     CourseAttribute.jointSubjects,
     CourseAttribute.equivalentSubjects,
     CourseAttribute.meetsWithSubjects,

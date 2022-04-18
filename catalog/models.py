@@ -112,7 +112,6 @@ class CourseFields:
     enrollment_number = "enrollment_number"
     either_prereq_or_coreq = "either_prereq_or_coreq"
     old_id = "old_id"
-    new_id = "new_id"
     public = "public"
     creator = "creator"
     custom_color = "custom_color"
@@ -180,7 +179,6 @@ CSV_HEADERS = {
     CourseAttribute.enrollment:                 (CourseFields.enrollment_number, float_converter),
     CourseAttribute.eitherPrereqOrCoreq:        (CourseFields.either_prereq_or_coreq, bool_converter),
     CourseAttribute.oldID:                      (CourseFields.old_id, string_converter),
-    CourseAttribute.newID:                      (CourseFields.new_id, string_converter),
     CourseAttribute.sourceSemester:             (CourseFields.source_semester, string_converter),
     CourseAttribute.isHistorical:               (CourseFields.is_historical, bool_converter),
     CourseAttribute.parent:                     (CourseFields.parent, string_converter),
@@ -289,7 +287,6 @@ class Course(models.Model):
 
     # EECS subject renumbering
     old_id = models.CharField(max_length=20, null=True)
-    new_id = models.CharField(max_length=20, null=True)
 
     gir_attribute = models.CharField(max_length=20, null=True)
     communication_requirement = models.CharField(max_length=30, null=True)
