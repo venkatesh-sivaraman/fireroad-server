@@ -10,6 +10,7 @@ import requests
 import re
 import sys
 import os
+import json
 
 from .utils import *
 
@@ -51,6 +52,10 @@ COURSE_NUMBERS = [
 ]
 
 ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
+RENUMBERING_URL = "https://eecsis.mit.edu/numbering.html"
+
+RENUMBERING_DATA = None
 
 # Stores the HTML of the last page retrieved
 LAST_PAGE_HTML = None
@@ -178,6 +183,29 @@ def extract_course_properties(elements):
     info_items.sort(key=lambda x: len(x.replace("\n", "")))
 
     return info_items
+
+def load_renumbering_data():
+    """
+    Downloads the EECS subject renumbering data, converts it to a Python
+    object, and stores it in RENUMBERING_DATA unless this has already been
+    done.
+    """
+    global RENUMBERING_DATA
+
+    if RENUMBERING_DATA is not None:
+        return
+
+    page = requests.get(RENUMBERING_URL)
+    assert page.status_code == 200
+
+    content = page.content
+    _, content = content.split("generatePage([")
+    content, _ = content.split("])")
+    content = "[" + content + "]"
+
+    RENUMBERING_DATA = json.loads(content)
+    assert RENUMBERING_DATA is not None
+    return
 
 ### Information Item Processing
 
@@ -454,6 +482,17 @@ def courses_from_dept_code(dept_code, **options):
         # For example, 6.260, 6.261 Advanced Topics in Communications
         if len(autofill_ids) > 0:
             autofill_ids = []
+
+    # Add old and new IDs for EECS renumbering
+    if dept_code[:-1] == "6":
+        load_renumbering_data()
+        for course in courses:
+            id = course[CourseAttribute.subjectID]
+            for item in RENUMBERING_DATA:
+                if item["newnum"] == id or item["oldnum"] == id:
+                    course[CourseAttribute.oldID] = item["oldnum"]
+                    course[CourseAttribute.newID] = item["newnum"]
+                    break
 
     return courses
 
