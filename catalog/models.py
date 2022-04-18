@@ -288,8 +288,8 @@ class Course(models.Model):
     either_prereq_or_coreq = models.BooleanField(default=False)
 
     # EECS subject renumbering
-    old_id = models.TextField(null=True)
-    new_id = models.TextField(null=True)
+    old_id = models.CharField(max_length=20, null=True)
+    new_id = models.CharField(max_length=20, null=True)
 
     gir_attribute = models.CharField(max_length=20, null=True)
     communication_requirement = models.CharField(max_length=30, null=True)
