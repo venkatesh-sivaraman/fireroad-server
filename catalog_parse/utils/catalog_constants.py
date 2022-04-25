@@ -124,7 +124,7 @@ class CourseAttribute:
     subjectLevel = "Subject Level"
     eitherPrereqOrCoreq = "Prereq or Coreq"
 
-    # EECS renumbering (fall 2022)
+    # Old subject ID (renumbering)
     oldID = "Old Subject Id"
 
     # Evaluation fields
