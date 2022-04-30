@@ -233,6 +233,11 @@ def process_info_item(item, attributes, write_virtual_status=False):
         attributes[CourseAttribute.title] = item[end:].replace(CatalogConstants.joint_class, "").strip()
         def_not_desc = True
 
+    # Old subject ID
+    elif re.match(r'\(\d{1,2}.[A-Z0-9]{1,4}\)$', item):
+        attributes[CourseAttribute.oldID] = item[1:-1]
+        def_not_desc = True
+
     # Subject level
     elif CatalogConstants.undergrad in case_insensitive_item and abs(len(item) - len(CatalogConstants.undergrad)) < 10:
         attributes[CourseAttribute.subjectLevel] = CatalogConstants.undergradValue
