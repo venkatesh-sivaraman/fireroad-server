@@ -77,8 +77,11 @@ def build_consensus(base_path, out_path, corrections=None):
 
         # Get set of old subject IDs that have been renumbered in future
         # semesters
-        old_ids = set().union(*(data.loc[:, CourseAttribute.oldID].dropna()
-                                for semester, data in semester_data[:i]))
+        old_ids = set().union(*(
+            data.loc[:, CourseAttribute.oldID].dropna()
+            if CourseAttribute.oldID in data.columns else []
+            for semester, data in semester_data[:i]
+        ))
         data = data.loc[~data[CourseAttribute.subjectID].isin(old_ids)]
 
         if consensus is None:
