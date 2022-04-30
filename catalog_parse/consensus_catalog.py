@@ -68,16 +68,17 @@ def build_consensus(base_path, out_path, corrections=None):
         print("No raw semester data found.")
         return
 
-    # Get set of old subject IDs that have been renumbered
-    old_ids = set().union(*(data.loc[:, CourseAttribute.oldID].dropna()
-                            for semester, data in semester_data))
-
     # Build consensus by iterating from new to old
     consensus = None
     last_size = 0
     for i, (semester, data) in enumerate(semester_data):
         data[CourseAttribute.sourceSemester] = semester[semester.find("-") + 1:]
         data[CourseAttribute.isHistorical] = "Y" if (i != 0) else ""
+
+        # Get set of old subject IDs that have been renumbered in future
+        # semesters
+        old_ids = set().union(*(data.loc[:, CourseAttribute.oldID].dropna()
+                                for semester, data in semester_data[:i]))
         data = data.loc[~data[CourseAttribute.subjectID].isin(old_ids)]
 
         if consensus is None:
