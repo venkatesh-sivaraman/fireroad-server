@@ -1,0 +1,13 @@
+@media (min-width: 767px) {
+  .syllabus-head {
+    margin-top: 12px;
+  }
+  .content {
+    margin-top: -64px;
+    padding-top: 64px;
+  }
+  .content-full-screen {
+    margin-top: -64px;
+    padding-top: 64px;
+  }
+}

@@ -1,0 +1,88 @@
+{% extends "syllabus/base.html" %}
+{% block title %}
+<title>Submit a syllabus</title>
+{% endblock %}
+{% block content %}
+<div class="row syllabus-head">
+  <div class="col s12">
+    <h4 class="red-text text-darken-4">Submit a Syllabus</h4>
+  </div>
+</div>
+<div class="row">
+  {% if not is_staff %}
+  <div class="col s12"><p>To submit a class syllabus, please upload the syllabus below and provide the class number and semester the syllabus is from. Then provide your email address (in case of any clarifications), and press Submit.</p></div>
+  <form enctype="multipart/form-data" class="col s12" id="form" method="post">
+    {% csrf_token %}
+      <div class="col s12 m3">
+        {{ form.is_committing.as_hidden }}
+        {{ form.email_address }}
+        {{ form.email_address.errors }}
+      </div>
+      <div class="col s12 m3">
+        {{ form.semester }}
+        {{ form.semester.errors }}
+      </div>
+      <div class="col s12 m3">
+        {{ form.year }}
+        {{ form.year.errors }}
+      </div>
+      <div class="col s12 m3">
+        {{ form.subject_id }}
+        {{ form.subject_id.errors }}
+      </div>
+      <div class="col s12 m3">
+        {{ form.file.label_tag }}
+        {{ form.file }}
+        {{ form.file.errors }}
+      </div>
+      <div class="col s12 m6">
+        <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Submit
+          <i class="material-icons right">send</i>
+        </button>
+    </div>
+    {{ form.non_field_errors }}
+  </form>
+  {% else %}
+  <div class="col s12">
+  <p>Click the Commit button below to save your changes. Once you have committed all necessary syllabi, visit the <a href="{% url 'review_all' %}">Review page</a> and click Deploy to apply the changes at the next database refresh.</p>
+  </div>
+    <form enctype="multipart/form-data" id="form" method="post">
+    <div class="col s12 m4">
+      {{ form.semester }}
+      {{ form.semester.errors }}
+    </div>
+    <div class="col s12 m4">
+      {{ form.year }}
+      {{ form.year.errors }}
+    </div>
+    <div class="col s12 m4">
+      {{ form.subject_id }}
+      {{ form.subject_id.errors }}
+    </div>
+    <div class="col s12 m4">
+      {{ form.file.label_tag }}
+      {{ form.file }}
+      {{ form.file.errors }}
+    </div>
+    <div class="col s12 m4">
+      {% csrf_token %}
+      {{ form.is_committing.as_hidden }}
+      {{ form.email_address.as_hidden }}
+      <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Commit</button>
+      <a id="reset-button" class="waves-effect waves-light mbtn grey right" onclick="$('#contents').val('{{ req.contents|escapejs }}');" style="float: right;">Reset</a>
+    </div>
+    {{ form.non_field_errors }}
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+{% if is_staff %}
+  $("#id_is_committing").val(1);
+  $("#id_email_address").val("{{ request.user.username }}");
+{% else %}
+  $("#id_is_committing").val(0);
+{% endif %}
+</script>
+{% endblock %}

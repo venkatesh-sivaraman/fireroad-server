@@ -31,6 +31,7 @@ urlpatterns = [
     url(r'sync/', include('sync.urls')),
     url(r'analytics/', include('analytics.urls')),
     url(r'requirements/', include('requirements.urls')),
+    url(r'syllabus/', include('syllabus.urls')),
     url(r'', include('common.urls')),
 ]
 
@@ -47,5 +48,3 @@ if settings.LOGIN_URL:
         urlpatterns.insert(0, url(r'^login/$', RedirectView.as_view(url=settings.LOGIN_URL,
                                                                     permanent=True,
                                                                     query_string=True)))
-
-

@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'requirements',
     'courseupdater',
     'catalog',
-    'analytics'
+    'analytics',
+    'syllabus'
 ]
 
 MIDDLEWARE_CLASSES = [
