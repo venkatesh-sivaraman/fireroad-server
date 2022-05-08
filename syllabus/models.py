@@ -11,8 +11,6 @@ import magic
 import shutil
 from uuid import uuid4
 
-from catalog.models import *
-
 SEMESTER_CHOICES = [
     ('Fall', 'fall'),
     ('IAP', 'iap'),
@@ -84,6 +82,7 @@ class FileValidator(object):
         )
 
 def validate_subject_id(subject_id):
+    from catalog.models import Course
     if Course.objects.filter(subject_id=subject_id).count() == 0:
         raise ValidationError(u'Must provide a valid subject ID')
 
@@ -157,3 +156,12 @@ class Syllabus(models.Model):
 
     def __unicode__(self):
         return u"{} {} {} syllabus".format(self.subject_id, self.semester, self.year)
+
+    def to_json_object(self):
+        return {
+            'semester': self.semester,
+            'year': self.year,
+            'subject_id': self.subject_id,
+            'file_url': settings.MY_BASE_URL + self.file.url,
+            'id': self.pk
+        }
