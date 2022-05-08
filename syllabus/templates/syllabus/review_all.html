@@ -11,21 +11,21 @@
     {% endif %}
   </div>
 </div>
-<div class="edit-req-list-card">
-  <div class="edit-req-list-row">
-    <div class="edit-req-list-left">
+<div class="syllabus-sub-list-card">
+  <div class="syllabus-sub-list-row">
+    <div class="syllabus-sub-list-left">
       <h5>Pending Review</h5>
       {% if pending %}
-      <div class="collection edit-req-list">
+      <div class="collection syllabus-sub-list">
         {% for syllabus_submission in pending %}
           <li class="collection-item" style="list-style: none;">
-            <a class="btn red-text text-darken-4 secondary-content dropdown-trigger" href="#" data-target='dropdown{{ edit_req.pk }}'><i class="material-icons">more_horiz</i></a>
+            <a class="btn red-text text-darken-4 secondary-content dropdown-trigger" href="#" data-target='dropdown-syllabus-{{ syllabus_submission.pk }}'><i class="material-icons">more_horiz</i></a>
             <a class="red-text text-darken-4" href="{% url 'syllabus_review' syllabus_submission.pk %}">
               <strong>{{ syllabus_submission.subject.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
             <em>{{ syllabus_submission.email_address }}</em>
             </a>
 
-            <ul id='dropdown{{ syllabus_submission.pk }}' class='dropdown-content'>
+            <ul id='dropdown-syllabus-{{ syllabus_submission.pk }}' class='dropdown-content'>
               <li><a href="{% url 'syllabus_review' syllabus_submission.pk %}" class="red-text text-darken-4">Review...</a></li>
               <li><a href="{% url 'syllabus_commit' syllabus_submission.pk %}" class="red-text text-darken-4">Commit</a></li>
               <li><a href="{% url 'syllabus_resolve' syllabus_submission.pk %}" class="red-text text-darken-4">Resolve without Committing</a></li>
@@ -37,10 +37,10 @@
       <p>No pending syllabus submissions!</p>
       {% endif %}
     </div>
-    <div class="edit-req-list-right">
+    <div class="syllabus-sub-list-right">
       <h5>Committed</h5>
       {% if committed %}
-      <div class="collection edit-req-list">
+      <div class="collection syllabus-sub-list">
         {% for syllabus_submission in committed %}
         <li class="collection-item" style="list-style: none;">
           <a class="btn mbtn red waves-effect waves-light secondary-content" href="{% url 'syllabus_uncommit' syllabus_submission.pk %}">Uncommit</a>
@@ -49,7 +49,7 @@
             <em>{{ syllabus_submission.email_address }}</em>
           </a>
 
-          <ul id='dropdown{{ syllabus_submission.pk }}' class='dropdown-content'>
+          <ul id='dropdown-syllabus-{{ syllabus_submission.pk }}' class='dropdown-content'>
             <li><a href="{% url 'syllabus_review' syllabus_submission.pk %}" class="red-text text-darken-4">Review...</a></li>
             <li><a href="{% url 'syllabus_uncommit' syllabus_submission.pk %}" class="red-text text-darken-4">Uncommit</a></li>
           </ul>

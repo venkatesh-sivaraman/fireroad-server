@@ -14,4 +14,5 @@ urlpatterns = [
     url(r'^resolve/(?P<syllabus_sub>\d+)', views.resolve, name='syllabus_resolve'),
     url(r'^uncommit/(?P<syllabus_sub>\d+)', views.uncommit, name='syllabus_uncommit'),
     url(r'^commit/(?P<syllabus_sub>\d+)', views.commit, name='syllabus_commit'),
+    url(r'^ignore_edit/', views.ignore_edit, name='syllabus_ignore_edit')
 ]

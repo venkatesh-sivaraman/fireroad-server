@@ -1,6 +1,10 @@
 from django.shortcuts import render, redirect, reverse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
+import os
 
 from .models import *
 from catalog.models import Course
@@ -10,7 +14,7 @@ def is_staff(request):
     """Returns whether or not the request's user is an authenticated staff member."""
     return request.user is not None and request.user.is_staff and request.user.is_authenticated()
 
-def save_syllabus_submission(form, committed):
+def save_syllabus_submission(form, committed, copy_file):
     data = form.cleaned_data
 
     try:
@@ -24,7 +28,9 @@ def save_syllabus_submission(form, committed):
                                                             subject=course,
                                                             file=data["file"],
                                                             committed=committed)
+
     syllabus_submission.save()
+    syllabus_submission.update_file_name(copy=copy_file)
 
 # Create your views here.
 def index(request):
@@ -39,20 +45,50 @@ def viewer(request):
     return render(request, 'syllabus/viewer.html', params)
 
 def create(request):
+    params = {
+        'active_id': 'new_doc',
+        'is_staff': is_staff(request)
+    }
+
     if request.method == 'POST':
-        form = SyllabusForm(request.POST, request.FILES)
+        copy_file = False
+        if "file" in request.FILES:
+            form = SyllabusForm(request.POST, request.FILES)
+        else:
+            syllabus_sub = request.POST["syllabus_sub"]
+            syllabus_submission = SyllabusSubmission.objects.get(pk=syllabus_sub)
+            form = SyllabusForm(request.POST, {"file": syllabus_submission.file})
+            copy_file = True
         print(form.errors)
 
         if form.is_valid():
             should_commit = is_staff(request)
-            save_syllabus_submission(form, committed=should_commit)
+            save_syllabus_submission(form, committed=should_commit, copy_file=copy_file)
             if should_commit:
                 return redirect('syllabus_review_all')
             return redirect('submit_success')
     else:
         form = SyllabusForm()
 
-    params = {'active_id': 'new_doc', 'is_staff': is_staff(request), 'form': form}
+        if 'like' in request.GET:
+            try:
+                syllabus_sub_id = int(request.GET['like'])
+                syllabus_submission = SyllabusSubmission.objects.get(pk=syllabus_sub_id)
+                params['syllabus_sub'] = syllabus_submission.pk
+                form = SyllabusForm({
+                    "is_committing": is_staff(request),
+                    "email_address": syllabus_submission.email_address,
+                    "semester": syllabus_submission.semester,
+                    "year": syllabus_submission.year,
+                    "subject_id": syllabus_submission.subject.subject_id
+                }, {
+                    "file": syllabus_submission.file
+                })
+            except ValueError:
+                pass
+
+    params['form'] = form
+
     return render(request, 'syllabus/create.html', params)
 
 
@@ -85,16 +121,16 @@ def review_all(request):
     if request.method == 'POST':
         form = DeploySyllabusForm(request.POST)
         if form.is_valid():
-            pass
-            # deployment = Deployment.objects.create(author=form.cleaned_data['email_address'], summary=form.cleaned_data['summary'])
-            # for edit_req in EditRequest.objects.filter(committed=True, resolved=False):
-            #     # Resolve this edit request, and show when it was deployed
-            #     edit_req.deployment = deployment
-            #     edit_req.committed = True
-            #     edit_req.resolved = True
-            #     edit_req.save()
-            # deployment.save()
-            # Go back and re-render the same page
+            deployment = SyllabusDeployment.objects.create(author=form.cleaned_data['email_address'], summary=form.cleaned_data['summary'])
+
+            for syllabus_submission in SyllabusSubmission.objects.filter(committed=True, resolved=False):
+                syllabus_submission.deployment = deployment
+                syllabus_submission.committed = True
+                syllabus_submission.resolved = True
+                syllabus_submission.save()
+            deployment.save()
+
+            form = DeploySyllabusForm()
     else:
         form = DeploySyllabusForm()
 
@@ -154,4 +190,9 @@ def resolve(request, syllabus_sub):
     syllabus_submission.committed = False
     syllabus_submission.resolved = True
     syllabus_submission.save()
+    syllabus_submission.remove_file()
+    return redirect(reverse('syllabus_review_all'))
+
+@staff_member_required
+def ignore_edit(request):
     return redirect(reverse('syllabus_review_all'))

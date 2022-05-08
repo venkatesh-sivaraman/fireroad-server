@@ -1,6 +1,6 @@
 {% extends "syllabus/base.html" %}
 {% block title %}
-<title>Submit a syllabus</title>
+<title>Submit a Syllabus</title>
 {% endblock %}
 {% block content %}
 <div class="row syllabus-head">
@@ -30,8 +30,8 @@
         {{ form.subject_id }}
         {{ form.subject_id.errors }}
       </div>
-      <div class="col s12 m3">
-        {{ form.file.label_tag }}
+      <div class="col s12 m6 file-input">
+        <!-- {{ form.file.label_tag }} -->
         {{ form.file }}
         {{ form.file.errors }}
       </div>
@@ -59,8 +59,8 @@
       {{ form.subject_id }}
       {{ form.subject_id.errors }}
     </div>
-    <div class="col s12 m4">
-      {{ form.file.label_tag }}
+    <div class="col s12 m6 file-input">
+      <!-- {{ form.file.label_tag }} -->
       {{ form.file }}
       {{ form.file.errors }}
     </div>
@@ -68,8 +68,11 @@
       {% csrf_token %}
       {{ form.is_committing.as_hidden }}
       {{ form.email_address.as_hidden }}
+      {% if syllabus_sub is not None %}
+      <input name="syllabus_sub" value="{{ syllabus_sub }}" style="display: none;">
+      {% endif %}
       <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Commit</button>
-      <a id="reset-button" class="waves-effect waves-light mbtn grey right" onclick="$('#contents').val('{{ req.contents|escapejs }}');" style="float: right;">Reset</a>
+      <a id="reset-button" class="waves-effect waves-light mbtn grey right" href="/syllabus/ignore_edit" style="float: right;">Cancel</a>
     </div>
     {{ form.non_field_errors }}
   </form>
@@ -84,5 +87,18 @@
 {% else %}
   $("#id_is_committing").val(0);
 {% endif %}
+$(".file-input").find("a").attr("target", "_blank");
+$(".file-input").find("a").siblings("input").attr("required", false);
+$("#form").submit(function() {
+  if ($(".file-input").find("a").length > 0 && $(".file-input").find("input").get(0).files.length == 0) {
+    const hiddenInput = document.createElement("input");
+    hiddenInput.value = $(".file-input").find("a").attr("href");
+    hiddenInput.name = "file";
+    hiddenInput.style = "display: none;"
+    $(".file-input").append(hiddenInput);
+    $(".file-input").find("input").get(0).remove();
+  }
+  return true;
+});
 </script>
 {% endblock %}
