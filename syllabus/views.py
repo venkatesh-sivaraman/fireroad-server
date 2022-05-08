@@ -3,6 +3,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+from django.db.models import Q
 
 import os
 
@@ -17,15 +18,10 @@ def is_staff(request):
 def save_syllabus_submission(form, committed, copy_file):
     data = form.cleaned_data
 
-    try:
-        course = Course.objects.get(subject_id=data["subject_id"])
-    except ObjectDoesNotExist:
-        course = Course.objects.get(old_id=data["subject_id"])
-
     syllabus_submission = SyllabusSubmission.objects.create(email_address=data["email_address"],
                                                             semester=data["semester"],
                                                             year=data["year"],
-                                                            subject=course,
+                                                            subject_id=data["subject_id"],
                                                             file=data["file"],
                                                             committed=committed)
 
@@ -40,8 +36,50 @@ def index(request):
 def success(request):
     return render(request, 'syllabus/success.html')
 
+def syllabus_sortkey(syllabus):
+    year_start = int(syllabus.year)
+    semester_val = 0
+
+    if syllabus.semester != 'Fall':
+        year_start -= 1
+
+    if syllabus.semester == 'IAP':
+        semester_val = 1
+    elif syllabus.semester == 'Spring':
+        semester_val = 2
+    elif syllabus.semester == 'Summer':
+        semester_val = 3
+
+    return (str(syllabus.subject_id), year_start, semester_val, syllabus.pk)
+
 def viewer(request):
-    params = {'active_id': 'viewer', 'is_staff': is_staff(request)}
+    params = {
+        'active_id': 'viewer',
+        'is_staff': is_staff(request)
+    }
+
+    if 'subject_id' in request.GET:
+        subject_id = request.GET['subject_id']
+
+        query = Q(subject_id__istartswith=subject_id)
+        syllabi = Syllabus.objects.filter(query)
+        params['search_query'] = subject_id
+    else:
+        syllabi = Syllabus.objects.all()
+        params['search_query'] = ''
+
+    syllabi_by_subject = {}
+    for syllabus in syllabi:
+        if syllabus.subject_id in syllabi_by_subject:
+            syllabi_by_subject[syllabus.subject_id].append(syllabus)
+        else:
+            syllabi_by_subject[syllabus.subject_id] = [syllabus]
+
+    for subject_id in syllabi_by_subject:
+        syllabi_by_subject[subject_id] = sorted(syllabi_by_subject[subject_id], key=syllabus_sortkey, reverse=True)
+
+    params['syllabi_by_subject'] = sorted(syllabi_by_subject.items())
+
     return render(request, 'syllabus/viewer.html', params)
 
 def create(request):
@@ -80,7 +118,7 @@ def create(request):
                     "email_address": syllabus_submission.email_address,
                     "semester": syllabus_submission.semester,
                     "year": syllabus_submission.year,
-                    "subject_id": syllabus_submission.subject.subject_id
+                    "subject_id": syllabus_submission.subject_id
                 }, {
                     "file": syllabus_submission.file
                 })

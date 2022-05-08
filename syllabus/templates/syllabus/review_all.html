@@ -21,7 +21,7 @@
           <li class="collection-item" style="list-style: none;">
             <a class="btn red-text text-darken-4 secondary-content dropdown-trigger" href="#" data-target='dropdown-syllabus-{{ syllabus_submission.pk }}'><i class="material-icons">more_horiz</i></a>
             <a class="red-text text-darken-4" href="{% url 'syllabus_review' syllabus_submission.pk %}">
-              <strong>{{ syllabus_submission.subject.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
+              <strong>{{ syllabus_submission.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
             <em>{{ syllabus_submission.email_address }}</em>
             </a>
 
@@ -45,7 +45,7 @@
         <li class="collection-item" style="list-style: none;">
           <a class="btn mbtn red waves-effect waves-light secondary-content" href="{% url 'syllabus_uncommit' syllabus_submission.pk %}">Uncommit</a>
           <a class="red-text text-darken-4" href="{% url 'syllabus_review' syllabus_submission.pk %}">
-            <strong>{{ syllabus_submission.subject.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
+            <strong>{{ syllabus_submission.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
             <em>{{ syllabus_submission.email_address }}</em>
           </a>
 

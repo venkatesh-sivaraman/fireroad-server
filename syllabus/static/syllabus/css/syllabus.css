@@ -41,3 +41,14 @@
     -ms-transition: background-color 2500ms linear;
     transition: background-color 250ms linear;
 }
+
+
+.searchbar.input-field input[type=search] {
+  padding-left: 30px;
+  width: calc(100% - 30px);
+}
+
+.searchbar.input-field input[type=search]:focus:not(.browser-default) {
+  background-color: inherit;
+  border-bottom: 1px solid rgb(224, 20, 20);
+}

@@ -11,6 +11,8 @@ import magic
 import shutil
 from uuid import uuid4
 
+from catalog.models import *
+
 SEMESTER_CHOICES = [
     ('Fall', 'fall'),
     ('IAP', 'iap'),
@@ -81,18 +83,22 @@ class FileValidator(object):
             self.content_types == other.content_types
         )
 
+def validate_subject_id(subject_id):
+    if Course.objects.filter(subject_id=subject_id).count() == 0:
+        raise ValidationError(u'Must provide a valid subject ID')
+
 class SyllabusForm(forms.Form):
     is_committing = forms.BooleanField(label='commit')
     email_address = forms.CharField(label='Email address', max_length=100, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Email address'}))
     semester = forms.ChoiceField(label='Semester', choices=SEMESTER_CHOICES, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Semester (e.g. Fall)'}))
     year = forms.CharField(label='Year', max_length=4, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Year (e.g. 2022)'}))
-    subject_id = forms.CharField(label='Course Number', max_length=20, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Course number (e.g. 18.01)'}))
+    subject_id = forms.CharField(label='Course Number', max_length=20, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Course number (e.g. 18.01)'}), validators=[validate_subject_id])
     file = forms.FileField(label='Syllabus File', widget=forms.ClearableFileInput(attrs={'class': 'input-field', 'accept': 'application/pdf'}), validators=[FileValidator(max_size=1024*1024, content_types=('application/pdf',))])
 
 def rename_file(inst, filename):
     upload_to = 'syllabus/'
     _, ext = os.path.splitext(filename)
-    new_name = 'syllabus_' + inst.subject.subject_id.replace('.', '_') + '_' + inst.semester + '_' + inst.year + ext
+    new_name = 'syllabus_' + inst.subject_id.replace('.', '_') + '_' + inst.semester + '_' + inst.year + ext
 
     fss = FileSystemStorage()
     filepath = fss.get_available_name(os.path.join(upload_to, new_name))
@@ -102,7 +108,7 @@ class SyllabusSubmission(models.Model):
     email_address = models.CharField(max_length=100)
     semester = models.CharField(max_length=6, choices=SEMESTER_CHOICES)
     year = models.CharField(max_length=4)
-    subject = models.ForeignKey('catalog.Course', on_delete=models.CASCADE, related_name='+')
+    subject_id = models.CharField(max_length=20)
     file = models.FileField(upload_to=rename_file)
     timestamp = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
@@ -110,7 +116,7 @@ class SyllabusSubmission(models.Model):
     deployment = models.ForeignKey(SyllabusDeployment, null=True, on_delete=models.SET_NULL, related_name='syllabus_submissions')
 
     def __unicode__(self):
-        return u"{}{}{} request for '{}' by {}: {}".format("(Resolved) " if self.resolved else "", "(Committed) " if self.committed else "", self.type, self.subject_id, self.email_address, self.reason)
+        return u"{}{}{} {} {} syllabus by {}".format("(Resolved) " if self.resolved else "", "(Committed) " if self.committed else "", self.subject_id, self.semester, self.year, self.email_address)
 
     def update_file_name(self, copy=True):
         current_filepath = self.file.path
@@ -118,7 +124,7 @@ class SyllabusSubmission(models.Model):
         _, ext = os.path.splitext(current_filepath)
         upload_to = 'syllabus/'
 
-        proper_file_prefix = 'syllabus_' + self.subject.subject_id.replace('.', '_') + '_' + self.semester + '_' + self.year
+        proper_file_prefix = 'syllabus_' + self.subject_id.replace('.', '_') + '_' + self.semester + '_' + self.year
 
         fss = FileSystemStorage()
         filepath = fss.get_available_name(os.path.join(upload_to, proper_file_prefix + ext))
@@ -145,9 +151,9 @@ class SyllabusSubmission(models.Model):
 class Syllabus(models.Model):
     semester = models.CharField(max_length=6, choices=SEMESTER_CHOICES)
     year = models.CharField(max_length=4)
-    subject = models.ForeignKey('catalog.Course', on_delete=models.CASCADE, related_name='syllabi')
+    subject_id = models.CharField(max_length=20)
     file = models.FileField()
     timestamp = models.DateTimeField(null=False)
 
     def __unicode__(self):
-        return u"{} {} {} syllabus".format(self.subject, self.semester, self.year)
+        return u"{} {} {} syllabus".format(self.subject_id, self.semester, self.year)

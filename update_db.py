@@ -170,7 +170,7 @@ def perform_syllabus_deployments():
                 syllabus = Syllabus.objects.create(
                     semester = syllabus_submission.semester,
                     year = syllabus_submission.year,
-                    subject = syllabus_submission.subject,
+                    subject_id = syllabus_submission.subject_id,
                     file = syllabus_submission.file,
                     timestamp = syllabus_submission.timestamp
                 )
