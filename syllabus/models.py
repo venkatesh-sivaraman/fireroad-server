@@ -92,7 +92,7 @@ class SyllabusForm(forms.Form):
     semester = forms.ChoiceField(label='Semester', choices=SEMESTER_CHOICES, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Semester (e.g. Fall)'}))
     year = forms.CharField(label='Year', max_length=4, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Year (e.g. 2022)'}))
     subject_id = forms.CharField(label='Course Number', max_length=20, widget=forms.TextInput(attrs={'class': 'input-field', 'placeholder': 'Course number (e.g. 18.01)'}), validators=[validate_subject_id])
-    file = forms.FileField(label='Syllabus File', widget=forms.ClearableFileInput(attrs={'class': 'input-field', 'accept': 'application/pdf'}), validators=[FileValidator(max_size=1024*1024, content_types=('application/pdf',))])
+    file = forms.FileField(label='Syllabus File', widget=forms.ClearableFileInput(attrs={'class': 'input-field', 'accept': 'application/pdf'}), validators=[FileValidator(max_size=1024*1024*5, content_types=('application/pdf',))])
 
 def rename_file(inst, filename):
     upload_to = 'syllabus/'

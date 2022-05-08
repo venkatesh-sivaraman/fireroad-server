@@ -104,7 +104,7 @@ def create(request):
             save_syllabus_submission(form, committed=should_commit, copy_file=copy_file)
             if should_commit:
                 return redirect('syllabus_review_all')
-            return redirect('submit_success')
+            return redirect('syllabus_success')
     else:
         form = SyllabusForm()
 
