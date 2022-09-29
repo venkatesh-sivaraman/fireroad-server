@@ -242,13 +242,13 @@ class RequirementsStatement(models.Model):
     def __str__(self):
         thresh_desc = self.threshold_description()
         if self.requirement is not None:
-            return "{}{}{}".format(self.title + ": " if self.title is not None else "", self.requirement, " (" + thresh_desc + ")" if len(thresh_desc) > 0 else "")
+            return "{}{}{}".format(self.title.encode("utf8") + ": " if self.title is not None else "", self.requirement.encode("utf8"), " (" + thresh_desc + ")" if len(thresh_desc) > 0 else "")
         elif self.requirements.all().exists():
             connection_string = self.get_connection_type_display()
             if len(thresh_desc) > 0:
                 connection_string += " ({})".format(thresh_desc)
 
-            return "{}{} of \n".format(self.title + ": " if self.title is not None else "", connection_string) + "\n".join([str(r) for r in self.requirements.all()])
+            return "{}{} of \n".format(self.title.encode("utf8") + ": " if self.title is not None else "", connection_string) + "\n".join([str(r) for r in self.requirements.all()])
 
         return self.title if self.title is not None else "No title"
 
