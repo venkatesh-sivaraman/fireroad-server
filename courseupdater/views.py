@@ -10,7 +10,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.forms.models import model_to_dict
 from django.conf import settings
 from zipfile import ZipFile
-from StringIO import StringIO
+from io import StringIO
 from requirements.diff import *
 import catalog_parse as cp
 

@@ -7,7 +7,7 @@ FireRoad is an iOS/Android application that allows MIT students to plan their co
 Follow these instructions to set up and run your own instance of the FireRoad server. You may want to create a new virtual environment using `conda`, for example:
 
 ```
-conda create -n fireroad python=2.7
+conda create -n fireroad python=3.10
 conda activate fireroad
 ```
 

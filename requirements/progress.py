@@ -1,4 +1,4 @@
-from reqlist import *
+from .reqlist import *
 import random
 from catalog.models import Course
 

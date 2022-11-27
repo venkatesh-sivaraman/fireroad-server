@@ -11,7 +11,7 @@ from .oauth_client import *
 import base64
 import json
 import re
-from token_gen import *
+from .token_gen import *
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from catalog.models import Course, CourseFields

@@ -11,7 +11,7 @@ import requests
 from courseupdater.views import *
 from sync.models import Road
 import re
-from progress import RequirementsProgress
+from .progress import RequirementsProgress
 from catalog.models import Course, Attribute, HASSAttribute, GIRAttribute, CommunicationAttribute
 import logging
 

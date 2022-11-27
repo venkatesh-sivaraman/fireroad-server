@@ -12,11 +12,11 @@ import os
 import requests
 from courseupdater.views import *
 import re
-from progress import RequirementsProgress
+from .progress import RequirementsProgress
 from catalog.models import Course, Attribute, HASSAttribute, GIRAttribute, CommunicationAttribute
 import logging
-from reqlist import *
-from views import REQUIREMENTS_EXT
+from .reqlist import *
+from .views import REQUIREMENTS_EXT
 from django.http import Http404
 from .diff import build_diff
 

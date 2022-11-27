@@ -33,8 +33,8 @@ def unwrapped_component(component):
     and unwrapped out of any parenthesis pairs."""
     unwrapping = component.strip(" \t\n\r")
     while unwrapping[0] == "(" and unwrapping[-1] == ")":
-	# Make sure these parentheses are not closed within the string
-	indent_level = 0
+        # Make sure these parentheses are not closed within the string
+        indent_level = 0
         stop_unwrapping = False
         for i in range(len(unwrapping)):
             if unwrapping[i] == "(":
@@ -46,7 +46,7 @@ def unwrapped_component(component):
                     break
         if stop_unwrapping:
             break
-	unwrapping = unwrapping[1:-1]
+        unwrapping = unwrapping[1:-1]
 
     return unwrapping
 

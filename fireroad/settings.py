@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'analytics'
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     # Cors middleware should only be on local development (not settings_dev or settings_prod)
     'middleware.cors.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
