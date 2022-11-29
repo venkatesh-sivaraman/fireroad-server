@@ -43,7 +43,7 @@ class RequestCounterMiddleware(MiddlewareMixin):
         if len(user_agent) > 150:
             user_agent = user_agent[:150]
         tally.user_agent = user_agent
-        if hasattr(request, "user") and request.user and request.user.is_authenticated():
+        if hasattr(request, "user") and request.user and request.user.is_authenticated:
             tally.is_authenticated = True
             try:
                 student = request.user.student

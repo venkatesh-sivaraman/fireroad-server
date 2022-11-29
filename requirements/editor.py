@@ -87,7 +87,7 @@ def save_change_request(form, type, list_id="", committed=False):
 
 def is_staff(request):
     """Returns whether or not the request's user is an authenticated staff member."""
-    return request.user is not None and request.user.is_staff and request.user.is_authenticated()
+    return request.user is not None and request.user.is_staff and request.user.is_authenticated
 
 def populate_initial_text(request, params, edit_req):
     params['initial_text'] = edit_req.contents
