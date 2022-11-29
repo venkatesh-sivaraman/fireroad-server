@@ -105,7 +105,7 @@ def load_course_elements(url):
 
 def get_inner_html(node):
     """Gets the inner HTML of a node, including tags."""
-    children = ''.join(etree.tostring(e).decode('utf-8') for e in node)
+    children = ''.join(etree.tostring(e) for e in node)
     if node.text is None:
         return children
     return node.text + children
@@ -496,10 +496,7 @@ def write_courses(courses, filepath, attributes):
         csv_comps.append([writing_description_for_attribute(course, attrib) for attrib in attributes])
 
     with open(filepath, 'w') as file:
-        if sys.version_info > (3, 0):
-            file.write("\n".join(",".join(item) for item in csv_comps))
-        else:
-            file.write("\n".join(",".join(item) for item in csv_comps).encode('utf-8'))
+        file.write("\n".join(",".join(item) for item in csv_comps))
 
 ### Main method
 

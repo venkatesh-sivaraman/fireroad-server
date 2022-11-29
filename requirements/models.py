@@ -23,8 +23,8 @@ class RequirementsList(RequirementsStatement):
 
     #description = models.TextField(null=True)
 
-    def __unicode__(self):
-        return u"{} - {}".format(self.short_title, self.title)
+    def __str__(self):
+        return "{} - {}".format(self.short_title, self.title)
 
     def to_json_object(self, full=True, child_fn=None):
         """Encodes this requirements list into a dictionary that can be sent
@@ -114,7 +114,7 @@ class RequirementsList(RequirementsStatement):
         # Parse top-level list
         top_level_sections = []
         while len(lines) > 0 and len(lines[0]) > 0:
-            if lines.count <= 2:
+            if len(lines) <= 2:
                 print("{}: Not enough lines for top-level sections - need variable names and descriptions on two separate lines.".format(self.list_id))
                 return
 
@@ -182,8 +182,8 @@ class Deployment(models.Model):
     summary = models.CharField(max_length=2000)
     date_executed = models.DateTimeField(null=True)
 
-    def __unicode__(self):
-        return u"{}Deployment by {} at {} ({} edits): {}".format("(Pending) " if self.date_executed is None else "", self.author, self.timestamp, self.edit_requests.count(), self.summary)
+    def __str__(self):
+        return "{}Deployment by {} at {} ({} edits): {}".format("(Pending) " if self.date_executed is None else "", self.author, self.timestamp, self.edit_requests.count(), self.summary)
 
 # Edit requests
 
@@ -206,5 +206,5 @@ class EditRequest(models.Model):
     committed = models.BooleanField(default=False)
     deployment = models.ForeignKey(Deployment, null=True, on_delete=models.SET_NULL, related_name='edit_requests')
 
-    def __unicode__(self):
-        return u"{}{}{} request for '{}' by {}: {}".format("(Resolved) " if self.resolved else "", "(Committed) " if self.committed else "", self.type, self.list_id, self.email_address, self.reason)
+    def __str__(self):
+        return "{}{}{} request for '{}' by {}: {}".format("(Resolved) " if self.resolved else "", "(Committed) " if self.committed else "", self.type, self.list_id, self.email_address, self.reason)

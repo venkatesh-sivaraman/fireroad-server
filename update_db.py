@@ -71,7 +71,7 @@ def update_catalog_with_file(path, semester):
                 for key, val in info.items():
                     if key not in CSV_HEADERS: continue
                     prop, converter = CSV_HEADERS[key]
-                    setattr(course, prop, converter(val.decode('utf-8')))
+                    setattr(course, prop, converter(val))
                 course.save()
 
 def parse_related_file(path):
@@ -144,7 +144,7 @@ def perform_deployments():
                     continue
 
                 with open(os.path.join(settings.CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
-                    file.write(edit_req.contents.encode('utf-8'))
+                    file.write(edit_req.contents)
 
                 edit_req.committed = False
                 edit_req.save()
@@ -169,8 +169,8 @@ def update_requirements():
     for path_name in req_urls[REQUIREMENTS_INFO_KEY]:
         print(path_name)
         new_req = RequirementsList.objects.create(list_id=os.path.basename(path_name))
-        with open(os.path.join(settings.CATALOG_BASE_DIR, path_name), 'rb') as file:
-            new_req.parse(file.read().decode('utf-8'))
+        with open(os.path.join(settings.CATALOG_BASE_DIR, path_name), 'r') as file:
+            new_req.parse(file.read())
         new_req.save()
 
     print("The database was successfully updated with {} requirements files.".format(len(req_urls[REQUIREMENTS_INFO_KEY])))
@@ -187,7 +187,7 @@ def check_for_edits():
     if edit_requests.count() > 0:
         message += "You have {} unresolved edit requests:\n".format(edit_requests.count())
         for req in edit_requests:
-            message += unicode(req).encode("utf-8") + "\n"
+            message += str(req) + "\n"
         message += "\n"
     return message
 
@@ -379,5 +379,5 @@ if __name__ == '__main__':
             message += traceback.format_exc()
 
     if len(message) > 0 and len(sys.argv) > 2:
-        email_results(message.decode("utf-8"), sys.argv[2:])
+        email_results(message, sys.argv[2:])
     print(message)

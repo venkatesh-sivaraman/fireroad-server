@@ -161,7 +161,7 @@ def preview(request):
     if request.method != 'POST':
         return HttpResponseBadRequest("Must use POST")
 
-    req_contents = request.body.decode('utf-8')
+    req_contents = request.body
     req_list = RequirementsList.objects.create()
     try:
         req_list.parse(req_contents, full=True)

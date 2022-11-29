@@ -194,7 +194,7 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
                     for other_course in courses[id].get(equiv_key, []):
                         if '.' not in other_course: continue
                         depts.add(other_course[:other_course.find('.')])
-                file.write((",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n").encode('utf-8'))
+                file.write((",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n"))
 
 def find_related_regions(related_matrix, min_count=5, threshold=0.2):
     """

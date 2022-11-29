@@ -164,9 +164,9 @@ class APIClient(models.Model):
             items.append("View your recommendations")
         return items
 
-    def __unicode__(self):
-        return u"{} (by {}) - {} permissions".format(self.name, self.contact_name,
-                                                     self.num_permissions())
+    def __str__(self):
+        return "{} (by {}) - {} permissions".format(self.name, self.contact_name,
+                                                    self.num_permissions())
 
 class RedirectURL(models.Model):
     """Defines a registered redirect URL for the login endpoint."""
