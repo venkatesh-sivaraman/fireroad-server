@@ -8,6 +8,7 @@ longer identifiable.
 """
 
 from .models import *
+from django.utils.deprecation import MiddlewareMixin
 
 EXCLUDE_PATH_PREFIXES = [
     "/favicon.ico",
@@ -24,7 +25,7 @@ EXCLUDE_USER_AGENTS = [
     "spider"
 ]
 
-class RequestCounterMiddleware(object):
+class RequestCounterMiddleware(MiddlewareMixin):
     """A middleware that saves a RequestCount object each time a page is requested."""
 
     def process_response(self, request, response):
