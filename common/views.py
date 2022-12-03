@@ -37,8 +37,8 @@ def login_oauth(request):
         return login_error_response(request, 'Please try again later.')
 
     # Save the user's profile, check if there are any other accounts
-    email = result.get(u'email', None)
-    sub = result.get(u'sub', None)
+    email = result.get('email', None)
+    sub = result.get('sub', None)
     if sub is None:
         return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
 
@@ -50,7 +50,7 @@ def login_oauth(request):
 
         if email is None:
             email = "user{}@fireroad.mit.edu".format(user.username)
-        student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
+        student = Student(user=user, unique_id=sub, academic_id=email, name=result.get('name', 'Anonymous'))
         student.current_semester = info.get('sem', '0')
         student.save()
     else:

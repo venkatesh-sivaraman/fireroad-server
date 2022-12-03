@@ -1,6 +1,7 @@
 from .reqlist import *
 import random
 from catalog.models import Course
+from functools import reduce
 
 def ceiling_thresh(progress, maximum):
     """Creates a progress object
@@ -31,7 +32,7 @@ def sum_progresses(progresses, criterion_type, maxFunc):
         mapfunc = lambda p: p.subject_fulfillment
     elif criterion_type == CRITERION_UNITS:
         mapfunc = lambda p: p.unit_fulfillment
-    sum_progress = reduce(lambda p1, p2: p1.combine(p2, maxFunc), map(mapfunc, progresses))
+    sum_progress = reduce(lambda p1, p2: p1.combine(p2, maxFunc), list(map(mapfunc, progresses)))
     return sum_progress
 
 
@@ -46,7 +47,7 @@ def force_unfill_progresses(satisfied_by_category, current_distinct_threshold, c
     unit_cutoff = current_threshold.cutoff_for_criterion(CRITERION_UNITS)
 
     #list of subjects by category sorted by units
-    max_unit_subjects = map(lambda sat_cat: sorted(sat_cat, key = lambda s: s.total_units), satisfied_by_category)
+    max_unit_subjects = [sorted(sat_cat, key = lambda s: s.total_units) for sat_cat in satisfied_by_category]
 
     #split subjects into two sections: fixed and free
     #fixed subjects: must have one subject from each category
@@ -202,7 +203,7 @@ class RequirementsProgress(object):
         subject_progress = ceiling_thresh(subjects, self.threshold.cutoff_for_criterion(CRITERION_SUBJECTS))
         unit_progress = ceiling_thresh(units, self.threshold.cutoff_for_criterion(CRITERION_UNITS))
         #fill with dummy courses
-        random_ids = random.sample(range(1000, max(10000, subject_progress.progress + 1000)), subject_progress.progress)
+        random_ids = random.sample(list(range(1000, max(10000, subject_progress.progress + 1000))), subject_progress.progress)
 
         for rand_id in random_ids:
             dummy_course = Course(id = self.list_path + "_" + str(rand_id), subject_id = "gen_course_" + self.list_path + "_" + str(rand_id), title = "Generated Course " + self.list_path + " " + str(rand_id))
@@ -437,7 +438,7 @@ class RequirementsProgress(object):
                     satisfied_courses = set()
                     num_courses_satisfied = 0
 
-                    for i, child in zip(range(num_progresses_to_count), open_children):
+                    for i, child in zip(list(range(num_progresses_to_count)), open_children):
                         satisfied_courses.update(satisfied_by_category[i])
                         if child.statement.connection_type == CONNECTION_TYPE_ALL:
                             num_courses_satisfied += (child.is_fulfilled and len(child.satisfied_courses) > 0)
@@ -502,7 +503,7 @@ class RequirementsProgress(object):
         stmt_json[JSONProgressConstants.progress] = self.progress
         stmt_json[JSONProgressConstants.progress_max] = self.progress_max
         stmt_json[JSONProgressConstants.percent_fulfilled] = self.percent_fulfilled
-        stmt_json[JSONProgressConstants.satisfied_courses] = map(lambda c: c.subject_id, self.satisfied_courses)
+        stmt_json[JSONProgressConstants.satisfied_courses] = [c.subject_id for c in self.satisfied_courses]
 
         if self.is_bypassed:
             stmt_json[JSONProgressConstants.is_bypassed] = self.is_bypassed

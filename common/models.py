@@ -119,11 +119,11 @@ class APIClient(models.Model):
 
     def _format_abilities_list(self, abilities):
         if len(abilities) > 1:
-            abilities[-1] = u"and " + abilities[-1]
+            abilities[-1] = "and " + abilities[-1]
         if len(abilities) == 2:
-            text = u" ".join(abilities)
+            text = " ".join(abilities)
         else:
-            text = u", ".join(abilities)
+            text = ", ".join(abilities)
 
         return text[0].upper() + text[1:].lower()
 

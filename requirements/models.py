@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 
 from django.db import models
 from django import forms
@@ -77,14 +77,14 @@ class RequirementsList(RequirementsStatement):
             if "=" in comp:
                 arg_comps = comp.split("=")
                 if len(arg_comps) != 2:
-                    print("{}: Unexpected number of = symbols in first line argument".format(self.list_id))
+                    print(("{}: Unexpected number of = symbols in first line argument".format(self.list_id)))
                     continue
                 if arg_comps[0].strip() == "threshold":
                     self.threshold_type = THRESHOLD_TYPE_GTE
                     try:
                         self.threshold_cutoff = int(arg_comps[1])
                     except:
-                        print("{}: Invalid threshold argument {}".format(self.list_id, arg_comps[1]))
+                        print(("{}: Invalid threshold argument {}".format(self.list_id, arg_comps[1])))
                         continue
                     self.threshold_criterion = CRITERION_SUBJECTS
                 elif arg_comps[0].strip() == "url":
@@ -103,10 +103,10 @@ class RequirementsList(RequirementsStatement):
 
         self.save()
         if len(lines) == 0:
-            print("{}: Reached end of file early!".format(self.list_id))
+            print(("{}: Reached end of file early!".format(self.list_id)))
             return
         if len(lines[0]) != 0:
-            print("{}: Third line isn't empty (contains \"{}\")".format(self.list_id, lines[0]))
+            print(("{}: Third line isn't empty (contains \"{}\")".format(self.list_id, lines[0])))
             return
 
         lines.pop(0)
@@ -115,14 +115,14 @@ class RequirementsList(RequirementsStatement):
         top_level_sections = []
         while len(lines) > 0 and len(lines[0]) > 0:
             if len(lines) <= 2:
-                print("{}: Not enough lines for top-level sections - need variable names and descriptions on two separate lines.".format(self.list_id))
+                print(("{}: Not enough lines for top-level sections - need variable names and descriptions on two separate lines.".format(self.list_id)))
                 return
 
             var_name = undecorated_component(lines.pop(0))
             description = undecorated_component(lines.pop(0).replace("\\n", "\n"))
 
             if SyntaxConstants.declaration_character in var_name or SyntaxConstants.declaration_character in description:
-                print("{}: Encountered ':=' symbol in top-level section. Maybe you forgot the required empty line after the last section's description line?".format(self.list_id))
+                print(("{}: Encountered ':=' symbol in top-level section. Maybe you forgot the required empty line after the last section's description line?".format(self.list_id)))
             top_level_sections.append((var_name, description))
 
         if len(lines) == 0:
@@ -136,11 +136,11 @@ class RequirementsList(RequirementsStatement):
             if len(current_line) == 0:
                 continue
             if SyntaxConstants.declaration_character not in current_line:
-                print("{}: Unexpected line: {}".format(self.list_id, current_line))
+                print(("{}: Unexpected line: {}".format(self.list_id, current_line)))
                 continue
             comps = current_line.split(SyntaxConstants.declaration_character)
             if len(comps) != 2:
-                print("{}: Can't have more than one occurrence of \"{}\" on a line".format(self.list_id, SyntaxConstants.declaration_character))
+                print(("{}: Can't have more than one occurrence of \"{}\" on a line".format(self.list_id, SyntaxConstants.declaration_character)))
                 continue
 
             declaration = comps[0]
@@ -158,7 +158,7 @@ class RequirementsList(RequirementsStatement):
 
         for name, description in top_level_sections:
             if name not in variables:
-                print("{}: Undefined variable: {}".format(self.list_id, name))
+                print(("{}: Undefined variable: {}".format(self.list_id, name)))
                 return
 
             req = variables[name]

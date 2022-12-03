@@ -51,11 +51,11 @@ excluded_courses = { "girs" }
 # Don't generate related-subject recommendations for these subjects
 excluded_subjects = ["18.01", "18.02", "8.01", "8.02"]
 
-ROAD_SELECTED_SUBJECTS_KEY = u"selectedSubjects"
-ROAD_SUBJECT_ID_KEY = u"id"
-ROAD_SUBJECT_ID_ALT_KEY = u"subject_id"
-ROAD_SEMESTER_KEY = u"semester"
-ROAD_COURSES_KEY = u"coursesOfStudy"
+ROAD_SELECTED_SUBJECTS_KEY = "selectedSubjects"
+ROAD_SUBJECT_ID_KEY = "id"
+ROAD_SUBJECT_ID_ALT_KEY = "subject_id"
+ROAD_SEMESTER_KEY = "semester"
+ROAD_COURSES_KEY = "coursesOfStudy"
 
 keyword_indexes = {}
 
@@ -92,8 +92,8 @@ def generate_subject_features(features_path):
 
     subject_arrays = {}
     dim = len(keyword_indexes)
-    print("Dimension of vectors: 1 by {}".format(dim))
-    for subject_id, keywords in subjects.items():
+    print(("Dimension of vectors: 1 by {}".format(dim)))
+    for subject_id, keywords in list(subjects.items()):
         mat = np.zeros((dim,))
         for k in keywords:
             mat[k] = 1
@@ -295,7 +295,7 @@ class RankList(object):
         """Replaces an equivalent object with another object."""
         idx = next((i for i in range(len(self.list)) if self.list[i][0] == object), None)
         if idx is None:
-            print("Didn't find {} in rank list.".format(object))
+            print(("Didn't find {} in rank list.".format(object)))
         self.list[idx] = (new_object, self.list[idx][1])
 
     def __contains__(self, object):
@@ -388,13 +388,13 @@ def basic_rating_predictor(profiles, subject_ids, subject_id_dict, course_data=N
     """
 
     profiles = [p for p in profiles if len(p.filtered_rated_subjects()) > 0]
-    print("{} users with available rated subjects".format(len(profiles)))
+    print(("{} users with available rated subjects".format(len(profiles))))
     similarities = user_similarities(profiles)
 
     # Build course semester distributions
     course_distributions = {} # Keys are subject IDs, values are dictionaries {semester: count}
     for prof in profiles:
-        for subj, semesters in prof.roads[0].items():
+        for subj, semesters in list(prof.roads[0].items()):
             if subj not in course_distributions:
                 course_distributions[subj] = {}
             for sem in semesters:
@@ -421,7 +421,7 @@ def basic_rating_predictor(profiles, subject_ids, subject_id_dict, course_data=N
 
             top_ratings.add(subject, rating)
 
-        subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in top_ratings.items()}
+        subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in list(top_ratings.items())}
         if len(subject_items) < REC_MIN_COUNT:
             continue
         yield Recommendation(user=User.objects.get(username=profile.username), rec_type=DEFAULT_RECOMMENDATION_TYPE, subjects=json.dumps(subject_items))
@@ -446,11 +446,11 @@ def by_major_predictor(profiles, subject_ids, subject_id_dict, course_data=None)
         applicable_users = [p for p in profiles if course in p.courses_of_study]
         if len(applicable_users) < BY_MAJOR_USER_CUTOFF: continue
 
-        print("Generating recommendations for {}...".format(course))
+        print(("Generating recommendations for {}...".format(course)))
 
         course_distributions = {} # Keys are subject IDs, values are dictionaries {semester: count}
         for prof in applicable_users:
-            for subj, semesters in prof.roads[0].items():
+            for subj, semesters in list(prof.roads[0].items()):
                 if subj not in course_distributions:
                     course_distributions[subj] = {}
                 for sem in semesters:
@@ -470,10 +470,10 @@ def by_major_predictor(profiles, subject_ids, subject_id_dict, course_data=None)
                     continue
                 if update_by_equivalent_subjects(subj, recs, prof, course_data):
                     continue
-                relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in course_distributions[subj].items()) * avg_ratings.get(subj, -99999)
+                relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in list(course_distributions[subj].items())) * avg_ratings.get(subj, -99999)
                 recs.add(subj, relevance)
 
-            subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in recs.items()}
+            subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in list(recs.items())}
             if len(subject_items) < REC_MIN_COUNT:
                 continue
             yield Recommendation(user=User.objects.get(username=prof.username), rec_type="course:" + course, subjects=json.dumps(subject_items))
@@ -496,7 +496,7 @@ def related_subjects_predictor(profiles, subject_ids, subject_id_dict, course_da
 
         course_distributions = {} # Keys are subject IDs, values are dictionaries {semester: count}
         for prof in applicable_users:
-            for subj, semesters in prof.roads[0].items():
+            for subj, semesters in list(prof.roads[0].items()):
                 if subj == subject_id: continue
                 if subj not in course_distributions:
                     course_distributions[subj] = {}
@@ -505,15 +505,15 @@ def related_subjects_predictor(profiles, subject_ids, subject_id_dict, course_da
                         course_distributions[subj][sem] = 0
                     course_distributions[subj][sem] += 1
 
-        course_totals = {subj: float(sum(freqs.values())) / float(len(applicable_users)) for subj, freqs in course_distributions.items() if subj not in covered_subjects}
+        course_totals = {subj: float(sum(freqs.values())) / float(len(applicable_users)) for subj, freqs in list(course_distributions.items()) if subj not in covered_subjects}
         if len(course_totals) < BY_MAJOR_REC_COUNT:
             continue
 
         avg_ratings = {subj: sum(prof.regression_predictions[subject_id_dict[subj]] for prof in applicable_users) / len(applicable_users) for subj in course_distributions if subj in subject_id_dict}
 
-        covered_subjects |= set(subj for subj, prop in course_totals.items() if prop >= RELATED_SUBJECTS_FREQ_CUTOFF)
+        covered_subjects |= set(subj for subj, prop in list(course_totals.items()) if prop >= RELATED_SUBJECTS_FREQ_CUTOFF)
 
-        print("Generating recommendations for {} ({} related courses)...".format(subject_id, len(course_totals)))
+        print(("Generating recommendations for {} ({} related courses)...".format(subject_id, len(course_totals))))
 
         # For each applicable user, generate a rank list by degree of
         # commonness and proximity with the user's current semester
@@ -526,16 +526,16 @@ def related_subjects_predictor(profiles, subject_ids, subject_id_dict, course_da
                     continue
                 if update_by_equivalent_subjects(subj, recs, prof, course_data):
                     continue
-                relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in course_distributions[subj].items()) * avg_ratings.get(subj, -99999)
+                relevance = sum((1.0 - abs(sem - prof.semester) * SEMESTER_DISTANCE_COEFFICIENT) * freq for sem, freq in list(course_distributions[subj].items())) * avg_ratings.get(subj, -99999)
                 recs.add(subj, relevance)
 
-            subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in recs.items()}
+            subject_items = {subj: float("{:.2f}".format(rating)) for subj, rating in list(recs.items())}
             if len(subject_items) < REC_MIN_COUNT:
                 continue
             rec = Recommendation(user=User.objects.get(username=prof.username), rec_type="subject:" + subject_id, subjects=json.dumps(subject_items))
             best_recommendation_per_user[prof.username].add(rec, random_perturbation(float(sum(subject_items.values())) / float(len(subject_items))))
 
-    for prof, list in best_recommendation_per_user.items():
+    for prof, list in list(best_recommendation_per_user.items()):
         if len(list.objects()) > 0:
             for rec in list.objects():
                 yield rec
@@ -583,13 +583,13 @@ if __name__ == '__main__':
         all_user_ids = set(rating_data.keys()) & set(road_data.keys())
         if verbose:
             for user_id in all_user_ids:
-                print(user_id + ":")
+                print((user_id + ":"))
                 if user_id in rating_data:
-                    print(rating_data[user_id])
+                    print((rating_data[user_id]))
                 if user_id in road_data:
-                    print(road_data[user_id])
+                    print((road_data[user_id]))
                 if user_id in majors_data:
-                    print(majors_data[user_id])
+                    print((majors_data[user_id]))
 
         # Close the connection because computation will take a while
         if django.VERSION[1] >= 10 or django.VERSION[0] >= 2:
@@ -599,7 +599,7 @@ if __name__ == '__main__':
 
         # Build user profiles
         subject_ids = sorted(subject_arrays.keys())
-        subject_id_dict = dict(zip(subject_ids, range(len(subject_ids))))
+        subject_id_dict = dict(list(zip(subject_ids, list(range(len(subject_ids))))))
         X_test = np.vstack([subject_arrays[id] for id in subject_ids])
         subject_dists = subject_distances(X_test)
         profiles = [UserRecommenderProfile.build(user_id,

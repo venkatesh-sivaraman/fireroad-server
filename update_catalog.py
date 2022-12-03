@@ -52,7 +52,7 @@ def update_progress(progress, message):
 def get_corrections():
     """Gets the corrections from the CatalogCorrection table and formats them
     appropriately."""
-    raw_corrections = CatalogCorrection.objects.all().values()
+    raw_corrections = list(CatalogCorrection.objects.all().values())
     corrections = []
     def format(value):
         if isinstance(value, bool):
@@ -61,7 +61,7 @@ def get_corrections():
 
     for corr in raw_corrections:
         new_corr = {}
-        for k, v in corr.items():
+        for k, v in list(corr.items()):
             if k in FIELD_TO_CSV and k != "offered_this_year" and format(v):
                 new_corr[FIELD_TO_CSV[k]] = format(v)
         corrections.append(new_corr)
@@ -97,7 +97,7 @@ def write_diff(old_path, new_path, diff_path):
     wrote_to_file = False
     for i, id in enumerate(ids):
         if i % 100 == 0:
-            print(i, "of", len(ids))
+            print((i, "of", len(ids)))
         old_course = old_courses.get(id, "")
         new_course = new_courses.get(id, "")
 

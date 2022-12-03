@@ -352,7 +352,7 @@ class RequirementsStatement(models.Model):
         try:
             cutoff = int(number_string)
         except ValueError:
-            print("Couldn't get number out of modifier string {}".format(modifier))
+            print(("Couldn't get number out of modifier string {}".format(modifier)))
 
         return (threshold_type, cutoff, criterion)
 
@@ -362,7 +362,7 @@ class RequirementsStatement(models.Model):
         if "|" in modifier:
             comps = modifier.split("|")
             if len(comps) != 2:
-                print("Unsupported number of components in modifier string: {}".format(modifier))
+                print(("Unsupported number of components in modifier string: {}".format(modifier)))
                 return
 
             if len(comps[0]) > 0:

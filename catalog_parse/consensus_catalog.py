@@ -33,7 +33,7 @@ def make_corrections(corrections, consensus):
                     if correction[col]:
                         if col not in consensus.columns:
                             consensus[col] = ""
-                        print("Correction for {}: {} ==> {}".format(idx, col, correction[col]))
+                        print(("Correction for {}: {} ==> {}".format(idx, col, correction[col])))
                         consensus.ix[idx][col] = correction[col]
 
         elif subject_id in consensus.index:
@@ -42,12 +42,12 @@ def make_corrections(corrections, consensus):
             for col in correction:
                 if col == "Subject Id": continue
                 if correction[col]:
-                    print("Correction for {}: {} ==> {}".format(subject_id, col, correction[col]))
+                    print(("Correction for {}: {} ==> {}".format(subject_id, col, correction[col])))
                     consensus_row[col] = correction[col]
 
         else:
             # Add the subject
-            print("Correction: adding subject {}".format(subject_id))
+            print(("Correction: adding subject {}".format(subject_id)))
             consensus.loc[subject_id] = {col: correction.get(col, None) for col in consensus.columns}
 
 
@@ -63,7 +63,7 @@ def build_consensus(base_path, out_path, corrections=None):
         semester_data[semester] = all_courses
 
     # Sort in reverse chronological order
-    semester_data = sorted(semester_data.items(), key=lambda x: semester_sort_key(x[0]), reverse=True)
+    semester_data = sorted(list(semester_data.items()), key=lambda x: semester_sort_key(x[0]), reverse=True)
     if len(semester_data) == 0:
         print("No raw semester data found.")
         return
@@ -90,7 +90,7 @@ def build_consensus(base_path, out_path, corrections=None):
             consensus = pd.concat([consensus, data], sort=False)
 
         consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
-        print("Added {} courses with {}.".format(len(consensus) - last_size, semester))
+        print(("Added {} courses with {}.".format(len(consensus) - last_size, semester)))
         last_size = len(consensus)
 
     consensus.set_index(CourseAttribute.subjectID, inplace=True)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     out_path = sys.argv[2]
 
     if os.path.exists(out_path):
-        print("Fatal: the directory {} already exists. Please delete it or choose a different location.".format(out_path))
+        print(("Fatal: the directory {} already exists. Please delete it or choose a different location.".format(out_path)))
         exit(1)
 
     build_consensus(in_path, out_path)

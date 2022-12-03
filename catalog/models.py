@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+
 from django.core.exceptions import ObjectDoesNotExist
 
 from django.db import models
@@ -33,7 +33,7 @@ class Attribute:
         are combined together to form a course that satisfies each attribute's
         requirement, and a unique id is assigned to the course only if it makes
         sense for each attribute to exist multiple times in a list of courses"""
-        new_attr = cls(" ".join(map(lambda a: a.requirement,attrs)),True)
+        new_attr = cls(" ".join([a.requirement for a in attrs]),True)
         for attr in attrs:
             new_attr.course = attr.modify_course(new_attr.course)
             new_attr.needs_unique_id = new_attr.needs_unique_id and attr.needs_unique_id
@@ -189,7 +189,7 @@ CSV_HEADERS = {
     "Custom Color":                             (CourseFields.custom_color, string_converter)
 }
 
-FIELD_TO_CSV = {field_name: csv_header for csv_header, (field_name, _) in CSV_HEADERS.items()}
+FIELD_TO_CSV = {field_name: csv_header for csv_header, (field_name, _) in list(CSV_HEADERS.items())}
 
 # Create your models here.
 class Course(models.Model):

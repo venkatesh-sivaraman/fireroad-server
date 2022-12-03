@@ -48,7 +48,7 @@ def deploy_catalog_updates():
 
         update.is_completed = True
         update.save()
-        print("Successfully deployed {}".format(update))
+        print(("Successfully deployed {}".format(update)))
 
 def update_catalog_with_file(path, semester):
     """Updates the catalog database using the given CSV file path."""
@@ -60,15 +60,15 @@ def update_catalog_with_file(path, semester):
                 headers = comps
                 continue
             if headers is None:
-                print("Can't read CSV file {} - no headers".format(path))
-            info = dict(zip(headers, comps))
+                print(("Can't read CSV file {} - no headers".format(path)))
+            info = dict(list(zip(headers, comps)))
             try:
                 course = Course.public_courses().get(subject_id=info[CourseAttribute.subjectID])
             except ObjectDoesNotExist:
                 course = Course.objects.create(public=True, subject_id=info[CourseAttribute.subjectID])
             finally:
                 course.catalog_semester = semester
-                for key, val in info.items():
+                for key, val in list(info.items()):
                     if key not in CSV_HEADERS: continue
                     prop, converter = CSV_HEADERS[key]
                     setattr(course, prop, converter(val))
@@ -128,7 +128,7 @@ def write_delta_file(delta, outpath):
         file.write(str(version_num) + "\n")
         file.write("\n".join(delta))
 
-    print("Delta file written to {}.".format(delta_file_path))
+    print(("Delta file written to {}.".format(delta_file_path)))
 
 def perform_deployments():
     """Performs any pending deployments of updated requirements files."""
@@ -140,7 +140,7 @@ def perform_deployments():
         try:
             for edit_req in deployment.edit_requests.all().order_by('pk'):
                 if len(edit_req.contents) == 0:
-                    print("Edit request {} has no contents, skipping".format(edit_req))
+                    print(("Edit request {} has no contents, skipping".format(edit_req)))
                     continue
 
                 with open(os.path.join(settings.CATALOG_BASE_DIR, requirements_dir, edit_req.list_id + ".reql"), 'w') as file:
@@ -153,7 +153,7 @@ def perform_deployments():
             deployment.date_executed = timezone.now()
             deployment.save()
         except:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
 
     # Write delta file
     if len(delta) > 0:
@@ -173,7 +173,7 @@ def update_requirements():
             new_req.parse(file.read())
         new_req.save()
 
-    print("The database was successfully updated with {} requirements files.".format(len(req_urls[REQUIREMENTS_INFO_KEY])))
+    print(("The database was successfully updated with {} requirements files.".format(len(req_urls[REQUIREMENTS_INFO_KEY]))))
 
 ### EDIT REQUESTS
 
@@ -201,7 +201,7 @@ def log_analytics_summary(output_path, num_hours=26):
 
     # Count up total summary statistics over the past num_hours hours
     out_file = open(output_path, "a")
-    for offset in reversed(range(1, 25)):
+    for offset in reversed(list(range(1, 25))):
         early_time = timezone.now() - timezone.timedelta(hours=offset)
         early_time = early_time.replace(minute=0)
         late_time = timezone.now() - timezone.timedelta(hours=offset - 1)
@@ -259,7 +259,7 @@ def save_backups_by_doc_type(doc_type, backup_type):
     if backup_type.objects.all().count() > 0:
         yesterday = timezone.now() - timezone.timedelta(days=1)
         docs_to_check = doc_type.objects.filter(modified_date__gte=yesterday)
-        print("Checking documents from {} to {}".format(yesterday, timezone.now()))
+        print(("Checking documents from {} to {}".format(yesterday, timezone.now())))
     else:
         print("Checking all documents")
         docs_to_check = doc_type.objects.all()
@@ -282,8 +282,8 @@ def save_backups_by_doc_type(doc_type, backup_type):
                                          contents=document.contents)
                 new_backup.save()
                 num_diff_backups += 1
-    print("{} backups created for new documents, {} for old documents".format(
-            num_new_backups, num_diff_backups))
+    print(("{} backups created for new documents, {} for old documents".format(
+            num_new_backups, num_diff_backups)))
 
 def save_backups():
     """Saves backups for any roads that don't have a backup yet or are significantly different
@@ -304,14 +304,14 @@ def clean_db():
         if obj.date < expired_threshold:
             num_objs += 1
             obj.delete()
-    print("{} OAuth caches deleted".format(num_objs))
+    print(("{} OAuth caches deleted".format(num_objs)))
 
     num_objs = 0
     for obj in TemporaryCode.objects.all():
         if obj.date < expired_threshold:
             num_objs += 1
             obj.delete()
-    print("{} temporary codes deleted".format(num_objs))
+    print(("{} temporary codes deleted".format(num_objs)))
 
 
 def email_results(message, recipients):

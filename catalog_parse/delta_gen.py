@@ -40,7 +40,7 @@ def write_delta_file(semester_name, delta, outpath):
         file.write(str(version_num) + "\n")
         file.write("\n".join(delta))
 
-    print("Delta file written to {}.".format(delta_file_path))
+    print(("Delta file written to {}.".format(delta_file_path)))
 
 def delta_file_name(path):
     if ".txt" in path:
@@ -96,8 +96,8 @@ if __name__ == '__main__':
     delta = make_delta(new_directory, old_directory)
     for file in delta:
         print(file)
-    if raw_input("Ready to write files?") in ['y', 'yes', '\n']:
+    if eval(input("Ready to write files?")) in ['y', 'yes', '\n']:
         commit_delta(new_directory, old_directory, server_path, delta)
-        print("Old files moved to {}. New files moved to {}.".format(os.path.join(os.path.dirname(old_directory), old_name + "-old"), old_directory))
+        print(("Old files moved to {}. New files moved to {}.".format(os.path.join(os.path.dirname(old_directory), old_name + "-old"), old_directory)))
     else:
         print("Aborting.")

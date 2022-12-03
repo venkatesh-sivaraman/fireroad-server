@@ -104,7 +104,7 @@ def populate_initial_text(request, params, edit_req):
 def create(request):
     if request.method == 'POST':
         form = EditForm(request.POST)
-        print(form.errors)
+        print((form.errors))
         if form.is_valid():
             should_commit = is_staff(request)
             save_change_request(form, REQUEST_TYPE_CREATE, list_id=form.cleaned_data['new_list_id'], committed=should_commit)
@@ -186,7 +186,7 @@ def show_in_row(requirement):
 
 def make_row(requirement):
     """Returns HTML for displaying the given requirement in a row."""
-    html = u"<div class=\"course-list\"><div class=\"course-list-inner\">"
+    html = "<div class=\"course-list\"><div class=\"course-list-inner\">"
 
     if requirement.requirements.exists():
         reqs = requirement.requirements.all()
@@ -228,15 +228,15 @@ def presentation_items(requirement, level, always_show_title=False):
         title_text = requirement.title
         if len(desc) > 0 and requirement.connection_type != CONNECTION_TYPE_ALL and not requirement.is_plain_string:
             title_text += " (" + desc + ")"
-        items.append(u"<{} class=\"req-title\">{}</{}>".format(tag, title_text, tag))
+        items.append("<{} class=\"req-title\">{}</{}>".format(tag, title_text, tag))
     elif len(desc) > 0 and (requirement.connection_type != CONNECTION_TYPE_ALL or always_show_title) and not requirement.is_plain_string:
-        items.append(u"<h4 class=\"req-title\">{}:</h4>".format(desc[0].upper() + desc[1:]))
+        items.append("<h4 class=\"req-title\">{}:</h4>".format(desc[0].upper() + desc[1:]))
 
     if requirement.description is not None and len(requirement.description) > 0:
-        items.append(u"<p class=\"req\">{}</p>".format(requirement.description.replace("\n\n", "<br/><br/>")))
+        items.append("<p class=\"req\">{}</p>".format(requirement.description.replace("\n\n", "<br/><br/>")))
 
     if level == 0 and requirement.title is None and len(desc) > 0 and not (requirement.connection_type != CONNECTION_TYPE_ALL or always_show_title):
-        items.append(u"<h4 class=\"req-title\">{}:</h4>".format(desc[0].upper() + desc[1:]))
+        items.append("<h4 class=\"req-title\">{}:</h4>".format(desc[0].upper() + desc[1:]))
 
     if show_in_row(requirement):
         # Show all the child requirements in a single row
@@ -259,10 +259,10 @@ def build_presentation_items(list):
         ret = presentation_items(list, 0)
     else:
         if list.title is not None and len(list.title) > 0:
-            ret.append(u"<h1 class=\"req-title\">{}</h1>".format(list.title))
+            ret.append("<h1 class=\"req-title\">{}</h1>".format(list.title))
 
         if list.description is not None and len(list.description) > 0:
-            ret.append(u"<p class=\"req\">{}</p>".format(list.description.replace("\n\n", "<br/><br/>")))
+            ret.append("<p class=\"req\">{}</p>".format(list.description.replace("\n\n", "<br/><br/>")))
 
         for top_req in list.requirements.all():
             rows = presentation_items(top_req, 0)

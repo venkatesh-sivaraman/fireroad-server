@@ -52,7 +52,7 @@ def compute_progress(request, list_id, course_list, progress_overrides, progress
                 course_objs.append(Course.make_generic(subject_id,unique_generic_id))
                 unique_generic_id += 1
             except ValueError:
-                print("Warning: course {} does not exist in the catalog".format(subject_id))
+                print(("Warning: course {} does not exist in the catalog".format(subject_id)))
 
 
     # Create a progress object for the requirements list

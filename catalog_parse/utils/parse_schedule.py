@@ -94,7 +94,7 @@ def parse_schedule(schedule):
                         time_comps.append("1")
                         time_comps.append(submatch.group(4))
                     else:
-                        print("Couldn't get time of day in", time)
+                        print(("Couldn't get time of day in", time))
 
                 for loc in location_comps:
                     type_comps.append("/".join([loc] + time_comps))
@@ -105,7 +105,7 @@ def parse_schedule(schedule):
 
         schedule_comps.append(",".join(type_comps))
 
-    joined_scheds = {id: ";".join(schedule_comps) for id, schedule_comps in schedule_comps_by_id.items()}
+    joined_scheds = {id: ";".join(schedule_comps) for id, schedule_comps in list(schedule_comps_by_id.items())}
 
     virtual_items = (["Virtual"] if has_virtual else []) + (["In-Person"] if has_in_person else [])
     joined_virtual = "/".join(virtual_items)

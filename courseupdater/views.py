@@ -11,7 +11,7 @@ from django.forms.models import model_to_dict
 from django.conf import settings
 from zipfile import ZipFile
 from io import StringIO
-from requirements.diff import *
+from .requirements.diff import *
 import catalog_parse as cp
 
 version_recursion_threshold = 100
@@ -56,7 +56,7 @@ def compute_updated_files(version, base_dir):
             break
         semester, version, delta = read_delta(url)
         if version != version_num:
-            print("Wrong version number in {}".format(url))
+            print(("Wrong version number in {}".format(url)))
         updated_files.update(set(delta))
         updated_version = version_num
         version_num += 1
@@ -91,7 +91,7 @@ def compute_semester_delta(semester_comps, version_num, req_version_num=-1):
     if req_version_num != -1:
         updated_files, updated_version = compute_updated_files(req_version_num,
                                                                os.path.join(settings.CATALOG_BASE_DIR, deltas_directory, requirements_dir))
-        urls_to_update = list(map(lambda x: requirements_dir + '/' + x + '.reql', sorted(list(updated_files))))
+        urls_to_update = list([requirements_dir + '/' + x + '.reql' for x in sorted(list(updated_files))])
         resp['rv'] = updated_version
         resp['r_delta'] = urls_to_update
     return resp
@@ -138,7 +138,7 @@ def check(request):
 each one."""
 def semesters(request):
     sems = list_semesters()
-    resp = list(map(lambda x: {"sem": x, "v": current_version_for_catalog(semester_dir_prefix + x)}, sems))
+    resp = list([{"sem": x, "v": current_version_for_catalog(semester_dir_prefix + x)} for x in sems])
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 ### Catalog parser UI
@@ -232,9 +232,9 @@ CORRECTION_DIFF_EXCLUDE = set(["id", "subject_id", "author", "date_added", "offe
 def view_corrections(request):
     """Creates the page that displays all current catalog corrections."""
     diffs = []
-    for correction in CatalogCorrection.objects.order_by("subject_id").values():
+    for correction in list(CatalogCorrection.objects.order_by("subject_id").values()):
         subject_id = correction["subject_id"]
-        changed_course = Course.public_courses().filter(subject_id=subject_id).values().first()
+        changed_course = list(Course.public_courses().filter(subject_id=subject_id).values()).first()
 
         diff = {}
         if changed_course:
