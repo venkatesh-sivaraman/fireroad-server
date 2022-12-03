@@ -11,7 +11,7 @@ from django.forms.models import model_to_dict
 from django.conf import settings
 from zipfile import ZipFile
 from io import StringIO
-from .requirements.diff import *
+from requirements.diff import *
 import catalog_parse as cp
 
 version_recursion_threshold = 100
