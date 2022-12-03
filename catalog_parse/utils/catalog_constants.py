@@ -111,6 +111,9 @@ class CourseAttribute:
     corequisites = "Coreqs"
     notes = "Notes"
     schedule = "Schedule"
+    scheduleFall = "Schedule Fall"
+    scheduleIAP = "Schedule Iap"
+    scheduleSpring = "Schedule Spring"
     virtualStatus = "Virtual Status"
     notOfferedYear = "Not Offered Year"
     hassRequirement = "Hass Attribute"
@@ -121,6 +124,9 @@ class CourseAttribute:
     equivalentSubjects = "Equivalent Subjects"
     URL = "URL"
     quarterInformation = "Quarter Information"
+    quarterInformationFall = "Quarter Information Fall"
+    quarterInformationIAP = "Quarter Information Iap"
+    quarterInformationSpring = "Quarter Information Spring"
     subjectLevel = "Subject Level"
     eitherPrereqOrCoreq = "Prereq or Coreq"
 
@@ -173,8 +179,14 @@ ALL_ATTRIBUTES = [
     CourseAttribute.offeredSpring,
     CourseAttribute.offeredSummer,
     CourseAttribute.quarterInformation,
+    CourseAttribute.quarterInformationFall,
+    CourseAttribute.quarterInformationIAP,
+    CourseAttribute.quarterInformationSpring,
     CourseAttribute.instructors,
     CourseAttribute.schedule,
+    CourseAttribute.scheduleFall,
+    CourseAttribute.scheduleIAP,
+    CourseAttribute.scheduleSpring,
     CourseAttribute.virtualStatus,
     CourseAttribute.URL,
     CourseAttribute.averageRating,
@@ -206,6 +218,9 @@ CONDENSED_ATTRIBUTES = [
     CourseAttribute.offeredSpring,
     CourseAttribute.offeredSummer,
     CourseAttribute.quarterInformation,
+    CourseAttribute.quarterInformationFall,
+    CourseAttribute.quarterInformationIAP,
+    CourseAttribute.quarterInformationSpring,
     CourseAttribute.instructors,
     CourseAttribute.virtualStatus,
     CourseAttribute.communicationRequirement,

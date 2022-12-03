@@ -215,11 +215,27 @@ def process_info_item(item, attributes, write_virtual_status=False):
             attributes[CourseAttribute.hasFinal] = True
             trimmed_item = trimmed_item.replace(CatalogConstants.final_flag, "")
 
-        sched, quarter_info, virtual_status = parse_schedule(trimmed_item.strip().replace("\n", ""))
+        sched, quarter_info, sem, virtual_status = parse_schedule(trimmed_item.strip().replace("\n", ""))
+
+        sched_attrs = [CourseAttribute.schedule]
+        quarter_info_attrs = [CourseAttribute.quarterInformation]
+
+        if sem == "Fall":
+            sched_attrs.append(CourseAttribute.scheduleFall)
+            quarter_info_attrs.append(CourseAttribute.quarterInformationFall)
+        elif sem == "IAP":
+            sched_attrs.append(CourseAttribute.scheduleIAP)
+            quarter_info_attrs.append(CourseAttribute.quarterInformationIAP)
+        elif sem == "Spring":
+            sched_attrs.append(CourseAttribute.scheduleSpring)
+            quarter_info_attrs.append(CourseAttribute.quarterInformationSpring)
+
         if len(sched) > 0:
-            attributes[CourseAttribute.schedule] = sched
+            for attr in sched_attrs:
+                attributes[attr] = sched
         if len(quarter_info) > 0:
-            attributes[CourseAttribute.quarterInformation] = quarter_info
+            for attr in quarter_info_attrs:
+                attributes[attr] = quarter_info
         if write_virtual_status:
             attributes[CourseAttribute.virtualStatus] = virtual_status
         def_not_desc = True
@@ -451,8 +467,12 @@ def courses_from_dept_code(dept_code, **options):
                 courses.append(copied_course)
         else:
             # Use only the first item in the schedule dictionary
-            if CourseAttribute.schedule in attribs:
-                attribs[CourseAttribute.schedule] = list(attribs[CourseAttribute.schedule].values())[0]
+            for attrib in [CourseAttribute.schedule,
+                           CourseAttribute.scheduleFall,
+                           CourseAttribute.scheduleIAP,
+                           CourseAttribute.scheduleSpring]:
+                if attrib in attribs:
+                    attribs[attrib] = list(attribs[attrib].values())[0]
             courses.append(attribs)
 
         # Autofill regions that were empty with the subsequent course information
