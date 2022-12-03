@@ -3,7 +3,7 @@ from django.urls import re_path
 from . import views
 
 from django.views.generic import TemplateView
-from django.contrib.auth import logout
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     re_path('verify/', views.verify, name='verify'),
@@ -12,7 +12,7 @@ urlpatterns = [
     re_path('^login/', views.login_oauth, name='login'),
     re_path('^dev_login/', views.dev_login, name='dev_login'),
     re_path('login_touchstone/', views.login_touchstone, name='login_touchstone'),
-    re_path('logout/', logout, {'next_page': 'index'}, name='logout'),
+    re_path('logout/', LogoutView.as_view(), name='logout'),
     re_path('set_semester/', views.set_semester, name='set_semester'),
     re_path('prefs/favorites/', views.favorites, name='favorites'),
     re_path('prefs/set_favorites/', views.set_favorites, name='set_favorites'),

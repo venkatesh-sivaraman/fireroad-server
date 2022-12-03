@@ -105,7 +105,7 @@ def load_course_elements(url):
 
 def get_inner_html(node):
     """Gets the inner HTML of a node, including tags."""
-    children = ''.join(etree.tostring(e) for e in node)
+    children = ''.join(etree.tostring(e, encoding="unicode") for e in node)
     if node.text is None:
         return children
     return node.text + children

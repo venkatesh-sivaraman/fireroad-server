@@ -16,6 +16,8 @@ CATALOG_BASE_DIR = "data/catalogs"
 # Use the Django default login page for local debugging
 LOGIN_URL = "/dev_login"
 
+LOGOUT_REDIRECT_URL = "/"
+
 # Security settings
 
 # If True, login redirects will be required to be registered as a RedirectURL
