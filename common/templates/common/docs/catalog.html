@@ -10,13 +10,92 @@
 <h4 class="red-text text-darken-4">Course Lookup</h4>
 
 <h5>/courses/all <span class="grey-text">(GET)</span></h5>
-<p>Returns a JSON list of all courses in the current version of the catalog, in numerically sorted order. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version.</p>
+<p>Returns a JSON list of all courses in the current version of the catalog, sorted by subject ID as strings. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version.</p>
+
+<p>Each entry in the abbreviated version is a dictionary that has the following keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">subject_id</span> - subject ID string, e.g. "6.1200".</li>
+  <li class="collection-item"><span class="code">title</span> - the full title, e.g. "Mathematics for Computer Science".</li>
+  <li class="collection-item"><span class="code">total_units</span> - number of units.</li>
+  <li class="collection-item"><span class="code">offered_fall</span>, <span class="code">offered_IAP</span>, <span class="code">offered_spring</span>, <span class="code">offered_summer</span> - whether the class is offered in the given semester.</li>
+  <li class="collection-item"><span class="code">public</span> - whether the subject is a custom subject. For catalog subjects, this is always false.</li>
+</ul>
+
+<p>These dictionaries may optionally contain the keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">level</span> - undergraduate or graduate. Possible values: "U", "G".</li>
+
+  <li class="collection-item"><span class="code">is_historical</span> - whether the subject is historical, i.e. not in the current catalog.</li>
+  <li class="collection-item"><span class="code">source_semester</span> - for historical subjects, the semester info is sourced from, e.g. "fall-2018".</li>
+
+  <li class="collection-item"><span class="code">joint_subjects</span> - list of equivalent subject IDs, e.g. ["18.062"].</li>
+  <li class="collection-item"><span class="code">equivalent_subjects</span> - list of subject IDs that credit cannot also be received for, e.g. for 8.02, ["8.021", "8.022", "ES.802", "ES.8022"].</li>
+  <li class="collection-item"><span class="code">meets_with_subjects</span> - list of subject IDS that the subject meets with.</li>
+
+  <li class="collection-item"><span class="code">quarter_information</span> - string representing when subject ends or begins, e.g. "0,apr 14" meaning subject ends on Apr 14, or "1,4/4" means subject begins on 4/4.</li>
+  <li class="collection-item"><span class="code">not_offered_year</span> - school year subject is not offered in, e.g. "2022-2023".</li>
+
+  <li class="collection-item"><span class="code">instructors</span> - list of instructors. Each entry represents a semester, and multiple instructors can appear in a single semester, e.g. ["Spring: A. Hacker", "Fall: A. Hacker, B. Bitdiddle"].</li>
+  <li class="collection-item"><span class="code">communication_requirement</span> - possible values: "CI-H", "CI-HW".</li>
+  <li class="collection-item"><span class="code">hass_attribute</span> - comma-separated string, with possible values: "HASS-A", "HASS-E", "HASS-H", "HASS-S".</li>
+  <li class="collection-item"><span class="code">gir_attribute</span> - possible values: "BIOL", "CAL1", "CAL2", "CHEM", "LAB", "LAB2", "PHY1", "PHY2", "REST".</li>
+
+  <li class="collection-item"><span class="code">children</span> - for subjects that meet with several classes per semester, e.g. ["5.601", "5.602"].</li>
+  <li class="collection-item"><span class="code">parent</span> - parent subject IDs for subjects that are children, e.g. for 5.601 or 5.602, "5.60".</li>
+
+  <li class="collection-item"><span class="code">virtual_status</span> - possible values: "In-Person", "Virtual".</li>
+  <li class="collection-item"><span class="code">old_id</span> - old subject ID, e.g. "6.009".</li>
+</ul>
+
+<p>With <span class="code">full</span>, dictionaries will contain the above information, plus the following keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">lecture_units</span>, <span class="code">lab_units</span>, <span class="code">design_units</span>, <span class="code">preparation_units</span> - number of units for each kind, sum to <span class="code">total_units</span>.</li>
+
+  <li class="collection-item"><span class="code">is_variable_units</span> - whether the number of units is arranged.</li>
+  <li class="collection-item"><span class="code">is_half_class</span> - whether the subject counts as a half class for requirements purposes. This is false for all subjects except some 21M ones.</li>
+  <li class="collection-item"><span class="code">has_final</span> - whether the subject has a final.</li>
+</ul>
+
+<p>With <span class="code">full</span>, dictionaries may optionally have the keys:</p>
+
+<ul class="collection">
+  <li class="collection-item"><span class="code">description</span> - catalog description.</li>
+  <li class="collection-item"><span class="code">prerequisites</span> - string representing prerequisites. Separated by commas and slashes, e.g. "18.701/(18.703, (18.06/18.700))/''permission of instructor''".</li>
+  <li class="collection-item"><span class="code">corequisites</span> - string representing corequisites. Separated by commas and slashes, e.g. "GIR:CAL2, (CC.010/CC.011/CC.A10)".</li>
+  <li class="collection-item"><span class="code">schedule</span> - string representing latest class schedule, e.g. "Lecture,4-237/MWF/0/1;Recitation,34-101/TR/0/1,34-301/TR/0/2". More specifically, a schedule is a semicolon-separated list of sections.
+    <ul class="bullet-list">
+      <li>Each section is a comma-separated list.
+      <ul class="bullet-list">
+        <li>The first entry of a section is either "Lecture", "Recitation", "Lab", or "Design".</li>
+        <li>Each subsequent entry in a section is a meeting.
+        <ul class="bullet-list">
+          <li>Each meeting is either "TBA" or a slash-separated list.</li>
+          <li>The first entry is the room number, e.g. "54-1423", "VIRTUAL", "NORTH SHORE".</li>
+          <li>The second entry is one or more characters from "M", "T", "W", "R", "F", "S".</li>
+          <li>The third entry is either "0" or "1".</li>
+          <li>If the third entry is "0", the fourth entry is a non-evening hour, e.g. "9" or "1-2.30".</li>
+          <li>If the third entry is "1", the fourth entry is an evening hour, e.g. "4-7 PM" or "5.30 PM".</li>
+        </ul></li>
+      </ul></li>
+    </ul>
+  </li>
+  <li class="collection-item"><span class="code">url</span> - catalog URL.</li>
+  <li class="collection-item"><span class="code">related_subjects</span> - list of related subject IDs, as determined by Fireroad's natural language processing.</li>
+  <li class="collection-item"><span class="code">rating</span> - average rating, as a number out of 7.0, according to course evaluations.</li>
+  <li class="collection-item"><span class="code">enrollment_number</span> - average number of enrolled students, according to course evaluations.</li>
+  <li class="collection-item"><span class="code">in_class_hours</span>, <span class="code">out_of_class_hours</span> - average number of in-class or out-of-class hours, according to course evaluations.</li>
+</ul>
+
 
 <h5>/courses/dept/&lt;dept code&gt; <span class="grey-text">(GET)</span></h5>
 <p>Returns a JSON list containing all subjects in the given department (the subject ID prefix, such as "6", "WGS"), in numerically sorted order. If the department does not exist, returns an empty list. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version.</p>
 
 <h5>/courses/lookup/&lt;subject ID&gt; <span class="grey-text">(GET)</span></h5>
 <p>Returns a JSON description of the course with the given subject ID, or a 404 error if the course is not present.</p>
+<p>The JSON description is the same format as the <span class="code">full</span> version of the all courses lookup API.</p>
 
 <h5>/courses/search/&lt;search term&gt; <span class="grey-text">(GET)</span></h5>
 <p>Returns a JSON list of courses for the given search term. Currently only the subject ID and subject title are searched. Takes Boolean query parameter <span class="code">full</span>, indicating whether to return the full set of information for each subject or an abbreviated version. Also takes query parameters to filter the results:</p>
