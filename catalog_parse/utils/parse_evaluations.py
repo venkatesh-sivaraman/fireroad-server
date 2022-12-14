@@ -36,21 +36,27 @@ def parse_evaluations(evals, courses):
     """
 
     for i, course_attribs in enumerate(courses):
-        subject_id = course_attribs[CourseAttribute.subjectID]
-        if subject_id not in evals:
+        subject_ids = list(filter(None, [
+            course_attribs.get(CourseAttribute.subjectID),
+            course_attribs.get(CourseAttribute.oldID)
+        ]))
+        if not any(x in evals for x in subject_ids):
             continue
 
         averaging_data = {}
-        for term_data in evals[subject_id]:
-            # if course is offered fall/spring but an eval is for IAP, ignore
-            if EvaluationConstants.iap_term in term_data[EvaluationConstants.term] and (course_attribs.get(CourseAttribute.offeredFall, False) or course_attribs.get(CourseAttribute.offeredSpring, False)):
+        for subject_id in subject_ids:
+            if subject_id not in evals:
                 continue
-
-            for key in KEYS_TO_AVERAGE:
-                if key not in term_data:
+            for term_data in evals[subject_id]:
+                # if course is offered fall/spring but an eval is for IAP, ignore
+                if EvaluationConstants.iap_term in term_data[EvaluationConstants.term] and (course_attribs.get(CourseAttribute.offeredFall, False) or course_attribs.get(CourseAttribute.offeredSpring, False)):
                     continue
-                value = term_data[key]
-                averaging_data.setdefault(key, []).append(value)
+
+                for key in KEYS_TO_AVERAGE:
+                    if key not in term_data:
+                        continue
+                    value = term_data[key]
+                    averaging_data.setdefault(key, []).append(value)
 
         for eval_key, course_key in KEYS_TO_AVERAGE.items():
             if eval_key not in averaging_data: continue
