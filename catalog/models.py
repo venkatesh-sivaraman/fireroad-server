@@ -101,8 +101,14 @@ class CourseFields:
     has_final = "has_final"
     not_offered_year = "not_offered_year"
     quarter_information = "quarter_information"
+    quarter_information_fall = "quarter_information_fall"
+    quarter_information_IAP = "quarter_information_IAP"
+    quarter_information_spring = "quarter_information_spring"
     related_subjects = "related_subjects"
     schedule = "schedule"
+    schedule_fall = "schedule_fall"
+    schedule_IAP = "schedule_IAP"
+    schedule_spring = "schedule_spring"
     virtual_status = "virtual_status"
     url = "url"
     rating = "rating"
@@ -170,7 +176,13 @@ CSV_HEADERS = {
     CourseAttribute.hasFinal:                   (CourseFields.has_final, bool_converter),
     CourseAttribute.notOfferedYear:             (CourseFields.not_offered_year, string_converter),
     CourseAttribute.quarterInformation:         (CourseFields.quarter_information, string_converter),
+    CourseAttribute.quarterInformationFall:     (CourseFields.quarter_information_fall, string_converter),
+    CourseAttribute.quarterInformationIAP:      (CourseFields.quarter_information_IAP, string_converter),
+    CourseAttribute.quarterInformationSpring:   (CourseFields.quarter_information_spring, string_converter),
     CourseAttribute.schedule:                   (CourseFields.schedule, string_converter),
+    CourseAttribute.scheduleFall:               (CourseFields.schedule_fall, string_converter),
+    CourseAttribute.scheduleIAP:                (CourseFields.schedule_IAP, string_converter),
+    CourseAttribute.scheduleSpring:             (CourseFields.schedule_spring, string_converter),
     CourseAttribute.virtualStatus:              (CourseFields.virtual_status, string_converter),
     CourseAttribute.URL:                        (CourseFields.url, string_converter),
     CourseAttribute.averageRating:              (CourseFields.rating, float_converter),
@@ -317,12 +329,20 @@ class Course(models.Model):
     not_offered_year = models.CharField(max_length=15, null=True)
 
     quarter_information = models.CharField(max_length=30, null=True)
+    quarter_information_fall = models.CharField(max_length=30, null=True)
+    quarter_information_IAP = models.CharField(max_length=30, null=True)
+    quarter_information_spring = models.CharField(max_length=30, null=True)
 
     url = models.CharField(max_length=75, null=True)
 
     enrollment_number = models.FloatField(default=0.0)
     related_subjects = models.CharField(null=True, max_length=250)
+
     schedule = models.TextField(null=True)
+    schedule_fall = models.TextField(null=True)
+    schedule_IAP = models.TextField(null=True)
+    schedule_spring = models.TextField(null=True)
+
     virtual_status = models.CharField(null=True, max_length=100)
 
     rating = models.FloatField(default=0.0)
@@ -368,6 +388,13 @@ class Course(models.Model):
 
         if self.quarter_information is not None and len(self.quarter_information) > 0:
             data[CourseFields.quarter_information] = self.quarter_information
+        if self.quarter_information_fall is not None and len(self.quarter_information_fall) > 0:
+            data[CourseFields.quarter_information_fall] = self.quarter_information_fall
+        if self.quarter_information_IAP is not None and len(self.quarter_information_IAP) > 0:
+            data[CourseFields.quarter_information_IAP] = self.quarter_information_IAP
+        if self.quarter_information_spring is not None and len(self.quarter_information_spring) > 0:
+            data[CourseFields.quarter_information_spring] = self.quarter_information_spring
+
         if self.not_offered_year is not None and len(self.not_offered_year) > 0:
             data[CourseFields.not_offered_year] = self.not_offered_year
 
@@ -410,8 +437,16 @@ class Course(models.Model):
             data[CourseFields.corequisites] = self.corequisites
         if self.either_prereq_or_coreq:
             data[CourseFields.either_prereq_or_coreq] = self.either_prereq_or_coreq
+
         if self.schedule is not None and len(self.schedule) > 0:
             data[CourseFields.schedule] = self.schedule
+        if self.schedule_fall is not None and len(self.schedule_fall) > 0:
+            data[CourseFields.schedule_fall] = self.schedule_fall
+        if self.schedule_IAP is not None and len(self.schedule_IAP) > 0:
+            data[CourseFields.schedule_IAP] = self.schedule_IAP
+        if self.schedule_spring is not None and len(self.schedule_spring) > 0:
+            data[CourseFields.schedule_spring] = self.schedule_spring
+
         if self.url is not None and len(self.url) > 0:
             data[CourseFields.url] = self.url
         if self.related_subjects is not None and len(self.related_subjects) > 0:
