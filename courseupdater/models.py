@@ -71,13 +71,14 @@ class CatalogCorrectionForm(forms.ModelForm):
 
     class Meta:
         model = CatalogCorrection
-        fields = ["subject_id", "title", "parent", "children", "description", "instructors", "gir_attribute", "communication_requirement", "hass_attribute", "total_units", "lecture_units", "lab_units", "preparation_units", "design_units", "offered_fall", "offered_IAP", "offered_spring", "offered_summer", "is_variable_units", "is_half_class"]
+        fields = ["subject_id", "title", "parent", "children", "description", "instructors", "gir_attribute", "communication_requirement", "hass_attribute", "equivalent_subjects", "old_id", "total_units", "lecture_units", "lab_units", "preparation_units", "design_units", "offered_fall", "offered_IAP", "offered_spring", "offered_summer", "is_variable_units", "is_half_class"]
         labels = {
             "gir_attribute": "GIR Attribute (e.g. PHY1, REST)",
             "communication_requirement": "Communication Requirement (e.g. CI-H)",
             "hass_attribute": "HASS Attribute (comma-separated)",
             "is_variable_units": "Variable units",
-            "is_half_class": "Half class"
+            "is_half_class": "Half class",
+            "old_id": "Old subject ID"
         }
         widgets = {
             "description": forms.TextInput,
