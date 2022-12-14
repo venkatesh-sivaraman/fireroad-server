@@ -357,6 +357,9 @@ class Course(models.Model):
         Returns a JSON object representing this course suitable for returning
         from an HTTP request. If full is False, returns only the basic metadata
         about the course.
+
+        If you edit this, edit the documentation too:
+        common/templates/common/docs/catalog.html
         """
         data = {
             CourseFields.subject_id:            self.subject_id,
