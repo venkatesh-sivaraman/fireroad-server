@@ -68,7 +68,7 @@ Then, run the script as directed below.
 python update_catalog.py [SEASON]-[YEAR]
 ```
 
-where `[SEASON]-[YEAR]` specifies the current semester (e.g. `fall-2020`). Once this script is started, you can navigate to the catalog update page in the UI to watch the progress and review the results. When it is finished, you will need to click Deploy Update. Finally, run the database update script:
+where `[SEASON]-[YEAR]` specifies the current semester (e.g. `fall-2020` for the fall semester in the calendar year 2020 — note that this does not follow the internal convention of calling the semester `2021fa` because it is in the 2020-21 academic year). Once this script is started, you can navigate to the catalog update page in the UI to watch the progress and review the results. When it is finished, you will need to click Deploy Update. Finally, run the database update script:
 
 ```
 python update_db.py
