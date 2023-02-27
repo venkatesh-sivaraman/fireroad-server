@@ -51,6 +51,9 @@ def parse_evaluations(evals, courses):
                 # if course is offered fall/spring but an eval is for IAP, ignore
                 if EvaluationConstants.iap_term in term_data[EvaluationConstants.term] and (course_attribs.get(CourseAttribute.offeredFall, False) or course_attribs.get(CourseAttribute.offeredSpring, False)):
                     continue
+                # if no respondents, ignore
+                if term_data[EvaluationConstants.responded_raters] == 0:
+                    continue
 
                 for key in KEYS_TO_AVERAGE:
                     if key not in term_data:
