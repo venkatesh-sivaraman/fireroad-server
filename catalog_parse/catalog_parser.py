@@ -232,7 +232,10 @@ def process_info_item(item, attributes, write_virtual_status=False):
 
         if len(sched) > 0:
             for attr in sched_attrs:
-                attributes[attr] = sched
+                if attr in attributes:
+                    attributes[attr].update(sched)
+                else:
+                    attributes[attr] = sched
         if len(quarter_info) > 0:
             for attr in quarter_info_attrs:
                 attributes[attr] = quarter_info
