@@ -1,0 +1,95 @@
+{% extends "syllabus/base.html" %}
+{% block title %}
+<title>Review Syllabus Submissions</title>
+{% endblock %}
+{% block content %}
+<div class="row edit-head">
+  <div class="col s8 red-text text-darken-4">
+    <h4>Review Syllabus Submissions</h4>
+    {% if deployments > 0 %}
+    <p class="red-text text-darken-4">{{ deployments }} deployment{% if deployments != 1 %}s{% endif %} pending execution at the next database refresh.</p>
+    {% endif %}
+  </div>
+</div>
+<div class="syllabus-sub-list-card">
+  <div class="syllabus-sub-list-row">
+    <div class="syllabus-sub-list-left">
+      <h5>Pending Review</h5>
+      {% if pending %}
+      <div class="collection syllabus-sub-list">
+        {% for syllabus_submission in pending %}
+          <li class="collection-item" style="list-style: none;">
+            <a class="btn red-text text-darken-4 secondary-content dropdown-trigger" href="#" data-target='dropdown-syllabus-{{ syllabus_submission.pk }}'><i class="material-icons">more_horiz</i></a>
+            <a class="red-text text-darken-4" href="{% url 'syllabus_review' syllabus_submission.pk %}">
+              <strong>{{ syllabus_submission.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
+            <em>{{ syllabus_submission.email_address }}</em>
+            </a>
+
+            <ul id='dropdown-syllabus-{{ syllabus_submission.pk }}' class='dropdown-content'>
+              <li><a href="{% url 'syllabus_review' syllabus_submission.pk %}" class="red-text text-darken-4">Review...</a></li>
+              <li><a href="{% url 'syllabus_commit' syllabus_submission.pk %}" class="red-text text-darken-4">Commit</a></li>
+              <li><a href="{% url 'syllabus_resolve' syllabus_submission.pk %}" class="red-text text-darken-4">Resolve without Committing</a></li>
+            </ul>
+          </li>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No pending syllabus submissions!</p>
+      {% endif %}
+    </div>
+    <div class="syllabus-sub-list-right">
+      <h5>Committed</h5>
+      {% if committed %}
+      <div class="collection syllabus-sub-list">
+        {% for syllabus_submission in committed %}
+        <li class="collection-item" style="list-style: none;">
+          <a class="btn mbtn red waves-effect waves-light secondary-content" href="{% url 'syllabus_uncommit' syllabus_submission.pk %}">Uncommit</a>
+          <a class="red-text text-darken-4" href="{% url 'syllabus_review' syllabus_submission.pk %}">
+            <strong>{{ syllabus_submission.subject_id }} {{syllabus_submission.semester}} {{syllabus_submission.year}}</strong><br/>
+            <em>{{ syllabus_submission.email_address }}</em>
+          </a>
+
+          <ul id='dropdown-syllabus-{{ syllabus_submission.pk }}' class='dropdown-content'>
+            <li><a href="{% url 'syllabus_review' syllabus_submission.pk %}" class="red-text text-darken-4">Review...</a></li>
+            <li><a href="{% url 'syllabus_uncommit' syllabus_submission.pk %}" class="red-text text-darken-4">Uncommit</a></li>
+          </ul>
+          </li>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p>No changes committed yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col s12"><p>Be sure all syllabus submissions are correct, and add a descriptive change summary before deploying.
+  </p></div>
+  <form class="col s12" id="form" method="post">
+    {% csrf_token %}
+      <div class="col s12 m4">
+        {{ form.email_address }}
+        {{ form.email_address.errors }}
+      </div>
+      <div class="col s12 m8">
+        {% if num_to_deploy > 0 %}
+        <button class="btn mbtn red waves-effect waves-light" style="float: right;" type="submit" name="action">Deploy {{ num_to_deploy }} {% if num_to_deploy == 1 %}Syllabus{% else %}Syllabi{% endif %}
+          <i class="material-icons right">cloud_upload</i>
+        </button>
+        {% else %}
+        <button class="btn mbtn grey waves-effect waves-light" style="float: right;" type="submit" name="action" disabled>Nothing to Deploy</button>
+        {% endif %}
+        <div style="overflow: hidden; padding-right: 16px;">
+          {{ form.summary }}
+          {{ form.summary.errors }}
+        </div>
+    </div>
+    {{ form.non_field_errors }}
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+  $('.dropdown-trigger').dropdown();
+</script>
+{% endblock %}

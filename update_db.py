@@ -9,6 +9,7 @@ from courseupdater.views import *
 from courseupdater.models import CatalogUpdate
 import catalog_parse as cp
 from requirements.models import *
+from syllabus.models import *
 from catalog.models import *
 from sync.models import *
 from django.db import DatabaseError, transaction
@@ -130,7 +131,7 @@ def write_delta_file(delta, outpath):
 
     print("Delta file written to {}.".format(delta_file_path))
 
-def perform_deployments():
+def perform_requirement_deployments():
     """Performs any pending deployments of updated requirements files."""
 
     delta = set()
@@ -159,6 +160,27 @@ def perform_deployments():
     if len(delta) > 0:
         write_delta_file(sorted(delta), os.path.join(settings.CATALOG_BASE_DIR, "deltas", requirements_dir))
 
+def perform_syllabus_deployments():
+    """Performs any pending deployments of updated syllabi"""
+
+    for deployment in SyllabusDeployment.objects.filter(date_executed=None).order_by('pk'):
+        print(deployment)
+        try:
+            for syllabus_submission in deployment.syllabus_submissions.all().order_by('pk'):
+                syllabus = Syllabus.objects.create(
+                    semester = syllabus_submission.semester,
+                    year = syllabus_submission.year,
+                    subject_id = syllabus_submission.subject_id,
+                    file = syllabus_submission.file,
+                    timestamp = syllabus_submission.timestamp
+                )
+
+                syllabus.save()
+
+            deployment.date_executed = timezone.now()
+            deployment.save()
+        except:
+            print(traceback.format_exc())
 
 def update_requirements():
     """Parses the current set of requirements and adds them to the database."""
@@ -245,7 +267,7 @@ def document_contents_differ(old, new, threshold=20):
             if not isinstance(old_elem, list) or not isinstance(new_elem, list):
                 continue
 
-            # Compare the membership 
+            # Compare the membership
             old_values = set(json.dumps(elem) for elem in old_elem)
             new_values = set(json.dumps(elem) for elem in new_elem)
             if max(len(old_values - new_values), len(new_values - old_values)) >= 2:
@@ -348,7 +370,7 @@ if __name__ == '__main__':
         message += traceback.format_exc()
 
     try:
-        perform_deployments()
+        perform_requirement_deployments()
     except:
         message += "Error performing requirements deployment:\n"
         message += traceback.format_exc()
@@ -357,6 +379,12 @@ if __name__ == '__main__':
         update_requirements()
     except:
         message += "Updating requirements DB failed:\n"
+        message += traceback.format_exc()
+
+    try:
+        perform_syllabus_deployments()
+    except:
+        message += "Error performing syllabus deployment:\n"
         message += traceback.format_exc()
 
     try:

@@ -1,0 +1,31 @@
+{% extends "syllabus/base.html" %}
+{% block title %}
+<title>Syllabus Viewer</title>
+{% endblock %}
+{% block content %}
+<div class="row syllabus-head">
+  <div class="col s8 red-text text-darken-4">
+    <h4>Syllabus Viewer</h4>
+  </div>
+</div>
+<div class="row">
+    <form action="{% url 'syllabus_viewer' %}">
+      <div class="input-field searchbar">
+        <label class="label-icon" for="search"><i class="material-icons">search</i></label>
+        <input id="search" type="search" name="subject_id" value="{{ search_query }}">
+      </div>
+    </form>
+</div>
+<div class="row">
+  {% for subject_id, syllabi in syllabi_by_subject %}
+  <div class="row">
+    <h6><b>{{ subject_id }}</b></h6>
+    {% for syllabus in syllabi %}
+    <div class="col s12">
+      <a href="{{ syllabus.file.url }}" target="_blank">{{ syllabus.semester }} {{syllabus.year}}</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
