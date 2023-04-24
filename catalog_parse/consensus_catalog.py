@@ -10,7 +10,7 @@ import csv
 import re
 import pandas as pd
 import numpy as np
-from .utils.catalog_constants import *
+from utils.catalog_constants import *
 
 KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
 
@@ -78,15 +78,26 @@ def build_consensus(base_path, out_path, corrections=None):
         # Get set of old subject IDs that have been renumbered in future
         # semesters
         old_ids = set().union(*(
-            data.loc[:, CourseAttribute.oldID].dropna()
+            data.loc[:, CourseAttribute.oldID].replace("", np.nan).dropna()
             if CourseAttribute.oldID in data.columns else []
             for semester, data in semester_data[:i]
         ))
+        # Remove the old IDs
         data = data.loc[~data[CourseAttribute.subjectID].isin(old_ids)]
 
         if consensus is None:
             consensus = data
         else:
+            # Propagate old ID field to newer semesters
+            for _, subject_id, old_id in (
+                data.replace("", np.nan)
+                .dropna(subset=[CourseAttribute.oldID])
+                .loc[:, (CourseAttribute.subjectID, CourseAttribute.oldID)]
+                .itertuples()
+            ):
+                consensus[CourseAttribute.oldID][
+                    consensus[CourseAttribute.subjectID] == subject_id
+                ] = old_id
             consensus = pd.concat([consensus, data], sort=False)
 
         consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
@@ -94,7 +105,8 @@ def build_consensus(base_path, out_path, corrections=None):
         last_size = len(consensus)
 
     consensus.set_index(CourseAttribute.subjectID, inplace=True)
-    make_corrections(corrections, consensus)
+    if corrections is not None:
+        make_corrections(corrections, consensus)
 
     print("Writing courses...")
     seen_departments = set()
