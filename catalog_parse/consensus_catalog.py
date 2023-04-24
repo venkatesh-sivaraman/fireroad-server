@@ -88,16 +88,17 @@ def build_consensus(base_path, out_path, corrections=None):
         if consensus is None:
             consensus = data
         else:
-            # Propagate old ID field to newer semesters
-            for _, subject_id, old_id in (
-                data.replace("", np.nan)
-                .dropna(subset=[CourseAttribute.oldID])
-                .loc[:, (CourseAttribute.subjectID, CourseAttribute.oldID)]
-                .itertuples()
-            ):
-                consensus[CourseAttribute.oldID][
-                    consensus[CourseAttribute.subjectID] == subject_id
-                ] = old_id
+            if CourseAttribute.oldID in data.columns:
+                # Propagate old ID field to newer semesters
+                for _, subject_id, old_id in (
+                    data.replace("", np.nan)
+                    .dropna(subset=[CourseAttribute.oldID])
+                    .loc[:, (CourseAttribute.subjectID, CourseAttribute.oldID)]
+                    .itertuples()
+                ):
+                    consensus[CourseAttribute.oldID][
+                        consensus[CourseAttribute.subjectID] == subject_id
+                    ] = old_id
             consensus = pd.concat([consensus, data], sort=False)
 
         consensus = consensus.drop_duplicates(subset=[CourseAttribute.subjectID], keep='first')
