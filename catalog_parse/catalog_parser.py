@@ -185,7 +185,10 @@ def subject_title_regex(subject_id):
     """Makes a regex that detects a subject title when the subject ID is present,
     for example, "6.006 Introduction to Algorithms". Also detects parenthesized
     additional subjects that this subject title may contain."""
-    return "{}(?:{})?\\s*(\\([A-Z0-9.,\s-]+\\))?\\s+".format(re.escape(subject_id), re.escape(CatalogConstants.joint_class))
+    return r"{}(?:{})?\s*(\([A-Z0-9.,\s-]+\))?\s+".format(
+        re.escape(subject_id),
+        r"|".join(re.escape(x) for x in CatalogConstants.joint_class)
+    )
 
 def process_info_item(item, attributes, write_virtual_status=False):
     """Determines the type of the given info item and adds it into the
@@ -249,7 +252,11 @@ def process_info_item(item, attributes, write_virtual_status=False):
         if match.group(1) is not None and len(match.group(1)) > 0:
             attributes[CourseAttribute.subjectID] = match.group(0).strip()
         end = match.end(0)
-        attributes[CourseAttribute.title] = item[end:].replace(CatalogConstants.joint_class, "").strip()
+        title = item[end:]
+        for suffix in CatalogConstants.joint_class:
+            title = re.sub(re.escape(suffix) + r"$", "", title)
+        title = title.strip()
+        attributes[CourseAttribute.title] = title
         def_not_desc = True
 
     # Old subject ID
@@ -283,6 +290,9 @@ def process_info_item(item, attributes, write_virtual_status=False):
             elif prefix.lower() == CatalogConstants.equivalent_subj_prefix:
                 attributes[CourseAttribute.equivalentSubjects] = contents
             elif prefix.lower() == CatalogConstants.joint_subj_prefix:
+                for suffix in CatalogConstants.joint_class:
+                    for i in range(len(contents)):
+                        contents[i] = re.sub(re.escape(suffix) + r"$", "", contents[i])
                 attributes[CourseAttribute.jointSubjects] = contents
             else:
                 print("Unrecognized prefix")
@@ -411,7 +421,7 @@ def merge_duplicates(courses):
                         total_course[key] = correct_val
 
                 # The 'best' value is the longest value
-                best_val = max(vals, key=lambda x: len(str(x)))
+                best_val = max(vals, key=lambda x: len(unicode(x)))
                 total_course[key] = best_val
             merged_courses.append(total_course)
         else:
@@ -442,8 +452,15 @@ def courses_from_dept_code(dept_code, **options):
             continue
 
         props = extract_course_properties(nodes)
-        attribs = {CourseAttribute.subjectID: id.replace('[J]', '')}
-        attribs[CourseAttribute.URL] = catalog_url + "#" + id
+
+        id = id.replace('[J]', '')
+        if id.endswith('J'):
+            id = id[:-1]
+
+        attribs = {
+            CourseAttribute.subjectID: id,
+            CourseAttribute.URL: catalog_url + "#" + id
+        }
         for prop in props:
             process_info_item(prop, attribs, **options)
 

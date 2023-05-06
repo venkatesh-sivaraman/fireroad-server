@@ -86,7 +86,7 @@ class CatalogConstants:
         "Partial Lab": "LAB2"
     }
 
-    joint_class = "[J]"
+    joint_class = ["[J]", "J"]
     gir_suffix = "[GIR]"
 
 class CourseAttribute:

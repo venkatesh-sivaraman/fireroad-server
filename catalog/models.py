@@ -138,6 +138,8 @@ def int_converter(value):
     return int(value) if len(value) > 0 else 0
 def list_converter(value):
     modified = value.replace("[J]", "").replace("\\n", "\n")
+    if value.endswith("J"):
+        value = value[:-1]
     if "#,#" in value:
         modified = modified.replace(" ", "")
     modified = modified.strip().replace(";", ",")

@@ -118,7 +118,7 @@ def read_condensed_courses(source):
             else:
                 id = line[keys["Subject Id"]]
                 def course_dict_value(key):
-                    val = line[keys[key]].replace('[J]', '')
+                    val = line[keys[key]].replace('[J]', '').replace('J', '')
                     if key in equiv_subject_keys:
                         return re.findall(r'[A-z0-9.]+', val)
                     return val

@@ -78,7 +78,7 @@ def parse_related_file(path):
     """Updates the catalog database with the related subjects file."""
     with open(path, 'r') as file:
         for line in file:
-            comps = line.strip().replace("[J]", "").split(",")
+            comps = line.strip().replace("[J]", "").replace("J", "").split(",")
             try:
                 course = Course.public_courses().get(subject_id=comps[0])
                 course.related_subjects = ",".join(comps[1:])
