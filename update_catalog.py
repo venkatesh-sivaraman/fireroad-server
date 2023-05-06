@@ -130,7 +130,7 @@ if __name__ == '__main__':
             print("No equivalences file found - consider adding one (see catalog_parse/utils/parse_equivalences.py).")
             equivalences_path = None
 
-        cp.parse(out_path, evaluations_path, equivalences_path,
+        cp.parse(out_path, equivalences_path=equivalences_path,
                  progress_callback=update_progress,
                  write_virtual_status=update.designate_virtual_status)
 
@@ -139,7 +139,10 @@ if __name__ == '__main__':
             shutil.rmtree(consensus_path)
 
         # Get corrections and convert from field names to CSV headings
-        cp.build_consensus(os.path.join(settings.CATALOG_BASE_DIR, "raw"), consensus_path, corrections=get_corrections())
+        cp.build_consensus(os.path.join(settings.CATALOG_BASE_DIR, "raw"),
+                           consensus_path,
+                           corrections=get_corrections(),
+                           evaluations_path=evaluations_path)
 
         # Write a diff so it's easier to visualize changes
         update_progress(95.0, "Finding differences...")

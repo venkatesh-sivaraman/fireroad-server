@@ -34,12 +34,9 @@ def parse_evaluations(evals, courses):
     """
     Adds attributes to each course based on eval data in the given dictionary.
     """
-
-    for i, course_attribs in enumerate(courses):
-        subject_ids = list(filter(None, [
-            course_attribs.get(CourseAttribute.subjectID),
-            course_attribs.get(CourseAttribute.oldID)
-        ]))
+    for i, course in courses.iterrows():
+        # i is the index of the DataFrame, which is the subject ID
+        subject_ids = list(filter(None, [i, course[CourseAttribute.oldID]]))
         if not any(x in evals for x in subject_ids):
             continue
 
@@ -49,7 +46,9 @@ def parse_evaluations(evals, courses):
                 continue
             for term_data in evals[subject_id]:
                 # if course is offered fall/spring but an eval is for IAP, ignore
-                if EvaluationConstants.iap_term in term_data[EvaluationConstants.term] and (course_attribs.get(CourseAttribute.offeredFall, False) or course_attribs.get(CourseAttribute.offeredSpring, False)):
+                if (EvaluationConstants.iap_term in term_data[EvaluationConstants.term] and
+                        (course[CourseAttribute.offeredFall] == "Y" or
+                         course[CourseAttribute.offeredSpring] == "Y")):
                     continue
                 # if no respondents, ignore
                 if term_data[EvaluationConstants.responded_raters] == 0:
@@ -63,4 +62,6 @@ def parse_evaluations(evals, courses):
 
         for eval_key, course_key in KEYS_TO_AVERAGE.items():
             if eval_key not in averaging_data: continue
-            course_attribs[course_key] = sum(averaging_data[eval_key]) / float(len(averaging_data[eval_key]))
+            n = len(averaging_data[eval_key])
+            value = sum(averaging_data[eval_key]) / float(n)
+            course.loc[course_key] = "{:.2f}".format(value)
