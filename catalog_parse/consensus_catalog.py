@@ -11,6 +11,7 @@ import re
 import pandas as pd
 import numpy as np
 from utils.catalog_constants import *
+from utils.parse_evaluations import *
 
 KEYS_TO_WRITE = [key for key in CONDENSED_ATTRIBUTES if key != CourseAttribute.subjectID] + [CourseAttribute.sourceSemester, CourseAttribute.isHistorical]
 
@@ -51,9 +52,15 @@ def make_corrections(corrections, consensus):
             consensus.loc[subject_id] = {col: correction.get(col, None) for col in consensus.columns}
 
 
-def build_consensus(base_path, out_path, corrections=None):
+def build_consensus(base_path, out_path, corrections=None,
+                    evaluations_path=None):
     if not os.path.exists(out_path):
         os.mkdir(out_path)
+
+    if evaluations_path is not None:
+        eval_data = load_evaluation_data(evaluations_path)
+    else:
+        eval_data = None
 
     semester_data = {}
 
@@ -109,6 +116,9 @@ def build_consensus(base_path, out_path, corrections=None):
     if corrections is not None:
         make_corrections(corrections, consensus)
 
+    if eval_data is not None:
+        parse_evaluations(eval_data, consensus)
+
     print("Writing courses...")
     seen_departments = set()
     for subject_id in consensus.index:
@@ -146,15 +156,20 @@ def write_df(df, path):
         file.write(df.to_csv(header=False, quoting=csv.QUOTE_NONNUMERIC).replace('""', ''))
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Provide the directory containing raw semester catalog data, and the directory into which to write the output.")
-        exit()
+    if len(sys.argv) < 2:
+        print("Usage: python consensus_catalog.py raw-dir out-dir [evaluations-file]")
+        exit(1)
 
     in_path = sys.argv[1]
     out_path = sys.argv[2]
+
+    if len(sys.argv) > 2:
+        eval_path = sys.argv[3]
+    else:
+        eval_path = None
 
     if os.path.exists(out_path):
         print("Fatal: the directory {} already exists. Please delete it or choose a different location.".format(out_path))
         exit(1)
 
-    build_consensus(in_path, out_path)
+    build_consensus(in_path, out_path, evaluations_path=eval_path)

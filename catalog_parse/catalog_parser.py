@@ -543,13 +543,12 @@ def write_courses(courses, filepath, attributes):
 
 ### Main method
 
-def parse(output_dir, evaluations_path=None, equivalences_path=None, write_related=True,
+def parse(output_dir, equivalences_path=None, write_related=True,
           progress_callback=None, write_virtual_status=False):
     """
     Parses the catalog from the web and writes the files to the given directory.
 
     output_dir: path to a directory into which to write the results
-    evaluations_path: path to a JS file containing subject evaluations
     equivalences_path: path to a JSON file containing equivalences, i.e.
         [[["6.0001", "6.0002"], "6.00"], ...]
     write_related: if True, compute the related and features files as well
@@ -560,11 +559,6 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
-
-    if evaluations_path is not None:
-        eval_data = load_evaluation_data(evaluations_path)
-    else:
-        eval_data = None
 
     # Parse each department
     all_courses = []
@@ -594,10 +588,6 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
             if original_html is None:
                 original_html = LAST_PAGE_HTML
 
-        # Add in eval information
-        if eval_data is not None:
-            parse_evaluations(eval_data, dept_courses)
-
         dept_courses = merge_duplicates(dept_courses)
         course_dict = {course[CourseAttribute.subjectID]: course for course in dept_courses}
 
@@ -625,18 +615,15 @@ def parse(output_dir, evaluations_path=None, equivalences_path=None, write_relat
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: python catalog_parser.py output-dir [evaluations-file] [equivalences-file]")
+        print("Usage: python catalog_parser.py output-dir [equivalences-file]")
         exit(1)
 
     output_dir = sys.argv[1]
-    if len(sys.argv) > 2:
-        eval_path = sys.argv[2]
-    else:
-        eval_path = None
 
-    if len(sys.argv) > 3:
-        equiv_path = sys.argv[3]
+    if len(sys.argv) > 2:
+        equiv_path = sys.argv[2]
     else:
         equiv_path = None
 
-    parse(output_dir, eval_path, equiv_path, write_related=(not '-norel' in sys.argv))
+    parse(output_dir, equivalences_path=equiv_path,
+          write_related=('-norel' not in sys.argv))
