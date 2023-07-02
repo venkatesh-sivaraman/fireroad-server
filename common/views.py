@@ -108,6 +108,7 @@ def login_touchstone(request):
         # Only set the current semester if there's a real new value
         if request.GET.get('sem', '') and int(request.GET['sem']) != 0:
             student.current_semester = request.GET['sem']
+        student.name = student_name
         if student.user is None:
             user = make_new_user()
             user.save()
