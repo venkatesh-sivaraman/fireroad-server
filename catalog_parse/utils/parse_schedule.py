@@ -6,7 +6,7 @@ from .catalog_constants import *
 # 12.S592: Lecture: xyz
 subject_id_regex = r'^([A-Z0-9.-]+)(\[J\])?$'
 
-quarter_info_regex = r"\(?(begins|ends)\s+(.+?)(\.|\))"
+quarter_info_regex = r"\(?(begins|ends|meets)\s+(.+?)(\.|\))"
 
 # Class type regex matches "Lecture:abc XX:"
 class_type_regex = r"([A-z0-9.-]+):(.+?)(?=\Z|\w+:)"
@@ -55,7 +55,12 @@ def parse_schedule(schedule):
     if match is not None:
         schedule_type = match.group(1)
         date = match.group(2)
-        quarter_info = ("1" if schedule_type == "begins" else "0") + "," + date
+        if schedule_type == "begins":
+            quarter_info = "1," + date
+        elif schedule_type == "ends":
+            quarter_info = "0," + date
+        elif schedule_type == "meets":
+            quarter_info = "2," + date
 
     trimmed_schedule = re.sub(quarter_info_regex, "", schedule, flags=re.I)
 
