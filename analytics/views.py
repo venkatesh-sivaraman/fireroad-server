@@ -83,7 +83,7 @@ def total_requests(request, time_frame=None):
     timezone.activate(DISPLAY_TIME_ZONE)
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1)
-    labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
+    labels, counts = list(zip(*((format_date(t, format), item.get(1, 0)) for t, item in data)))
     return HttpResponse(json.dumps({"labels": labels, "data": counts, "total": "{:,}".format(sum(counts))}), content_type="application/json")
 
 USER_AGENT_TYPES = [
@@ -127,7 +127,7 @@ def logged_in_users(request, time_frame=None):
     early_time, delta, format = get_time_bounds(time_frame)
     data = RequestCount.tabulate_requests(early_time, delta, lambda _: 1, distinct_users=True)
     total_data = RequestCount.tabulate_requests(early_time, None, lambda _: 1, distinct_users=True)
-    labels, counts = itertools.izip(*((format_date(t, format), item.get(1, 0)) for t, item in data))
+    labels, counts = list(zip(*((format_date(t, format), item.get(1, 0)) for t, item in data)))
     return HttpResponse(json.dumps({"labels": labels, "data": counts, "total": "{:,}".format(total_data.get(1, 0))}), content_type="application/json")
 
 SEMESTERS = [
@@ -170,7 +170,7 @@ def user_semesters(request, time_frame=None):
     labels = SEMESTERS
 
     semester_buckets = [0 for _ in SEMESTERS]
-    for semester, count in data.items():
+    for semester, count in list(data.items()):
         if not semester or semester < 0 or semester >= len(semester_buckets):
             continue
         semester_buckets[semester] += count
@@ -184,7 +184,7 @@ def request_paths(request, time_frame=None):
     data = RequestCount.tabulate_requests(early_time, None, lambda request: request.path)
     labels = set(data.keys()) - set([None])
     counts = {label: data.get(label, 0) for label in labels}
-    labels, counts = itertools.izip(*sorted(counts.items(), key=lambda x: x[1], reverse=True))
+    labels, counts = list(zip(*sorted(list(counts.items()), key=lambda x: x[1], reverse=True)))
     if len(labels) > 15:
         labels = labels[:15]
         counts = counts[:15]

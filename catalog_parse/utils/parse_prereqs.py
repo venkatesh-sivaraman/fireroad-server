@@ -58,12 +58,12 @@ def process_req_list_item(item):
             paren_levels.append("")
         elif c == ")":
             if len(paren_levels) <= 1:
-                print("Invalid prerequisite syntax:", item)
+                print(("Invalid prerequisite syntax:", item))
                 continue
             sub_key = "#@%" + str(len(substitutions)) + "%@#"
             last_item = paren_levels.pop()
             sub_result = process_single_level_req_item(last_item)
-            for key, sub in substitutions.items():
+            for key, sub in list(substitutions.items()):
                 sub_result = sub_result.replace("''" + key + "''", "(" + sub + ")")
             substitutions[sub_key] = sub_result
             paren_levels[-1] += sub_key
@@ -71,9 +71,9 @@ def process_req_list_item(item):
             paren_levels[-1] += c
 
     if len(paren_levels) == 0:
-        print("Unmatched parentheses:", item)
+        print(("Unmatched parentheses:", item))
     result = process_single_level_req_item(paren_levels[-1])
-    for key, sub in substitutions.items():
+    for key, sub in list(substitutions.items()):
         result = result.replace("''" + key + "''", "(" + sub + ")")
     return result
 
@@ -134,7 +134,7 @@ def process_single_level_req_item(item):
             filtered_item = filtered_item[match.end(0):].strip()
             continue
 
-        print(filtered_item, "doesn't match anything")
+        print((filtered_item, "doesn't match anything"))
         break
 
     if is_or:

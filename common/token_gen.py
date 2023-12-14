@@ -7,7 +7,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
 from django.utils import timezone
 import datetime
-from oauth_client import generate_random_string, LOGIN_TIMEOUT
+from .oauth_client import generate_random_string, LOGIN_TIMEOUT
 from .models import TemporaryCode, APIClient
 from django.core.exceptions import PermissionDenied
 

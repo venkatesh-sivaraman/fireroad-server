@@ -119,11 +119,11 @@ class APIClient(models.Model):
 
     def _format_abilities_list(self, abilities):
         if len(abilities) > 1:
-            abilities[-1] = u"and " + abilities[-1]
+            abilities[-1] = "and " + abilities[-1]
         if len(abilities) == 2:
-            text = u" ".join(abilities)
+            text = " ".join(abilities)
         else:
-            text = u", ".join(abilities)
+            text = ", ".join(abilities)
 
         return text[0].upper() + text[1:].lower()
 
@@ -164,9 +164,9 @@ class APIClient(models.Model):
             items.append("View your recommendations")
         return items
 
-    def __unicode__(self):
-        return u"{} (by {}) - {} permissions".format(self.name, self.contact_name,
-                                                     self.num_permissions())
+    def __str__(self):
+        return "{} (by {}) - {} permissions".format(self.name, self.contact_name,
+                                                    self.num_permissions())
 
 class RedirectURL(models.Model):
     """Defines a registered redirect URL for the login endpoint."""

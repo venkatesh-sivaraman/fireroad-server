@@ -31,9 +31,9 @@ instructor_regex = r"(?:^|\s|[:])[A-Z]\. \w+"
 
 # For type checking str or unicode in Python 2 and 3
 try:
-    basestring
+    str
 except NameError:
-    basestring = str
+    str = str
 
 COURSE_NUMBERS = [
     "1", "2", "3", "4",
@@ -83,7 +83,7 @@ def load_course_elements(url):
     course_ids = []
     courses = []
     for element in course_elements[0].getchildren():
-        if element.tag == "a" and "name" in element.keys():
+        if element.tag == "a" and "name" in list(element.keys()):
             subject_id = element.get("name")
             course_ids.append(subject_id)
             courses.append([])
@@ -105,7 +105,7 @@ def load_course_elements(url):
 
 def get_inner_html(node):
     """Gets the inner HTML of a node, including tags."""
-    children = ''.join(etree.tostring(e).decode('utf-8') for e in node)
+    children = ''.join(etree.tostring(e, encoding="unicode") for e in node)
     if node.text is None:
         return children
     return node.text + children
@@ -119,10 +119,10 @@ def recursively_extract_info(node):
     contents = get_inner_html(node)
 
     if node.tag == "img":
-        if "title" in node.keys() and len(node.get("title")):
+        if "title" in list(node.keys()) and len(node.get("title")):
             info_items.append(node.get("title"))
     elif node.tag == "a":
-        if "name" in node.keys():
+        if "name" in list(node.keys()):
             return (info_items, True)
         text = node.text_content().strip()
         if len(text):
@@ -410,7 +410,7 @@ def merge_duplicates(courses):
 
         if len(course_dict[subject_id]) > 1:
             total_course = {}
-            keys = set().union(*(other.keys() for other in course_dict[subject_id]))
+            keys = set().union(*(list(other.keys()) for other in course_dict[subject_id]))
             for key in keys:
                 vals = [other.get(key, '') for other in course_dict[subject_id]]
 
@@ -478,7 +478,7 @@ def courses_from_dept_code(dept_code, **options):
                 schedules = {other_id: schedules[""] for other_id in subject_ids}
 
             for other_id in subject_ids:
-                copied_course = {key: val for key, val in attribs.items()}
+                copied_course = {key: val for key, val in list(attribs.items())}
                 copied_course[CourseAttribute.subjectID] = other_id
                 if other_id in schedules:
                     copied_course[CourseAttribute.schedule] = schedules[other_id]
@@ -511,7 +511,7 @@ def writing_description_for_attribute(course, attribute):
         return ""
 
     item = course[attribute]
-    if isinstance(item, basestring):
+    if isinstance(item, str):
         return '"' + item.replace('"', "'").replace('\n', '\\n') + '"'
     elif isinstance(item, bool):
         return "Y" if item == True else "N"
@@ -524,7 +524,7 @@ def writing_description_for_attribute(course, attribute):
     elif isinstance(item, list):
         return '"' + ",".join(item) + '"'
     else:
-        print("Don't have a way to represent attribute {}: {} ({})".format(attribute, item, type(item)))
+        print(("Don't have a way to represent attribute {}: {} ({})".format(attribute, item, type(item))))
         return str(item)
 
 def write_courses(courses, filepath, attributes):
@@ -536,10 +536,7 @@ def write_courses(courses, filepath, attributes):
         csv_comps.append([writing_description_for_attribute(course, attrib) for attrib in attributes])
 
     with open(filepath, 'w') as file:
-        if sys.version_info > (3, 0):
-            file.write("\n".join(",".join(item) for item in csv_comps))
-        else:
-            file.write("\n".join(",".join(item) for item in csv_comps).encode('utf-8'))
+        file.write("\n".join(",".join(item) for item in csv_comps))
 
 ### Main method
 
@@ -583,7 +580,7 @@ def parse(output_dir, equivalences_path=None, write_related=True,
             if len(addl_courses) == 0:
                 continue
 
-            print("======", total_code)
+            print(("======", total_code))
             dept_courses += addl_courses
             if original_html is None:
                 original_html = LAST_PAGE_HTML

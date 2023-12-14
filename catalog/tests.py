@@ -88,23 +88,23 @@ class CourseCatalogTest(TestCase):
         course = Course.objects.get(subject_id="21M.030")
         result = course.to_json_object(full=False)
         expected = {
-            CourseFields.subject_id:            u"21M.030",
-            CourseFields.title:                 u"World Music",
+            CourseFields.subject_id:            "21M.030",
+            CourseFields.title:                 "World Music",
             CourseFields.total_units:           12,
             CourseFields.offered_fall:          True,
             CourseFields.offered_IAP:           False,
             CourseFields.offered_spring:        True,
             CourseFields.offered_summer:        False,
             CourseFields.public:                True,
-            CourseFields.level:                 u"U",
-            CourseFields.joint_subjects:        [u"21M.830", u"21M.290"],
-            CourseFields.equivalent_subjects:   [u"21M.031"],
-            CourseFields.quarter_information:   u"1,march 1",
-            CourseFields.not_offered_year:      u"2019-2020",
-            CourseFields.instructors:           [u"E. Zimmer", u"C. Smith"],
-            CourseFields.communication_requirement: u"CI-H",
-            CourseFields.hass_attribute:        u"HASS-A",
-            CourseFields.gir_attribute:         u"REST",
+            CourseFields.level:                 "U",
+            CourseFields.joint_subjects:        ["21M.830", "21M.290"],
+            CourseFields.equivalent_subjects:   ["21M.031"],
+            CourseFields.quarter_information:   "1,march 1",
+            CourseFields.not_offered_year:      "2019-2020",
+            CourseFields.instructors:           ["E. Zimmer", "C. Smith"],
+            CourseFields.communication_requirement: "CI-H",
+            CourseFields.hass_attribute:        "HASS-A",
+            CourseFields.gir_attribute:         "REST",
         }
         self.maxDiff = None
         self.assertDictEqual(expected, result)
@@ -113,23 +113,23 @@ class CourseCatalogTest(TestCase):
         course = Course.objects.get(subject_id="21M.030")
         result = course.to_json_object()
         expected = {
-            CourseFields.subject_id:            u"21M.030",
-            CourseFields.title:                 u"World Music",
+            CourseFields.subject_id:            "21M.030",
+            CourseFields.title:                 "World Music",
             CourseFields.total_units:           12,
             CourseFields.offered_fall:          True,
             CourseFields.offered_IAP:           False,
             CourseFields.offered_spring:        True,
             CourseFields.offered_summer:        False,
             CourseFields.public:                True,
-            CourseFields.level:                 u"U",
-            CourseFields.joint_subjects:        [u"21M.830", u"21M.290"],
-            CourseFields.equivalent_subjects:   [u"21M.031"],
-            CourseFields.quarter_information:   u"1,march 1",
-            CourseFields.not_offered_year:      u"2019-2020",
-            CourseFields.instructors:           [u"E. Zimmer", u"C. Smith"],
-            CourseFields.communication_requirement: u"CI-H",
-            CourseFields.hass_attribute:        u"HASS-A",
-            CourseFields.gir_attribute:         u"REST",
+            CourseFields.level:                 "U",
+            CourseFields.joint_subjects:        ["21M.830", "21M.290"],
+            CourseFields.equivalent_subjects:   ["21M.031"],
+            CourseFields.quarter_information:   "1,march 1",
+            CourseFields.not_offered_year:      "2019-2020",
+            CourseFields.instructors:           ["E. Zimmer", "C. Smith"],
+            CourseFields.communication_requirement: "CI-H",
+            CourseFields.hass_attribute:        "HASS-A",
+            CourseFields.gir_attribute:         "REST",
             CourseFields.lecture_units:         5,
             CourseFields.lab_units:             0,
             CourseFields.design_units:          0,
@@ -138,11 +138,11 @@ class CourseCatalogTest(TestCase):
             CourseFields.is_half_class:         False,
             CourseFields.pdf_option:            False,
             CourseFields.has_final:             False,
-            CourseFields.description: u"Test description of 21M.030",
-            CourseFields.prerequisites: u"21M.051/''permission of instructor''",
-            CourseFields.schedule: u"Lecture,4-364/MW/0/9.30-11,4-364/MW/0/11-12.30",
-            CourseFields.url: u"http://student.mit.edu/catalog/m21Ma.html#21M.030",
-            CourseFields.related_subjects: [u"21M.011", u"21M.031"],
+            CourseFields.description: "Test description of 21M.030",
+            CourseFields.prerequisites: "21M.051/''permission of instructor''",
+            CourseFields.schedule: "Lecture,4-364/MW/0/9.30-11,4-364/MW/0/11-12.30",
+            CourseFields.url: "http://student.mit.edu/catalog/m21Ma.html#21M.030",
+            CourseFields.related_subjects: ["21M.011", "21M.031"],
             CourseFields.rating:                5.0,
             CourseFields.enrollment_number:     45.0,
             CourseFields.in_class_hours:        3.0,
@@ -194,8 +194,8 @@ class CourseCatalogTest(TestCase):
         response = views.lookup(request, subject_id="2.001")
         self.assertEqual(200, response.status_code)
         self.assertDictContainsSubset({
-            CourseFields.subject_id: u"2.001",
-            CourseFields.title: u"Foo"
+            CourseFields.subject_id: "2.001",
+            CourseFields.title: "Foo"
         }, json.loads(response.content))
 
     def test_lookup_subject_not_existing(self):

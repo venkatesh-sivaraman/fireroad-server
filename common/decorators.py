@@ -28,7 +28,7 @@ def view_or_basicauth(view, request, test_func, realm = "", *args, **kwargs):
     and returning the view if all goes well, otherwise responding with a 401.
     """
 
-    if request.user is None or not request.user.is_authenticated() or not user_has_student(request.user) or ALWAYS_LOGIN:
+    if request.user is None or not request.user.is_authenticated or not user_has_student(request.user) or ALWAYS_LOGIN:
         key = 'HTTP_AUTHORIZATION'
         if key not in request.META:
             key = 'REDIRECT_HTTP_AUTHORIZATION'
@@ -101,7 +101,7 @@ def logged_in_or_basicauth(func, realm = ""):
         if request.method == 'OPTIONS':
             return HttpResponse()
         return view_or_basicauth(func, request,
-                                 lambda u: u.is_authenticated(),
+                                 lambda u: u.is_authenticated,
                                  realm, *args, **kwargs)
     return wrapper
 
@@ -146,7 +146,7 @@ def require_token_permissions(*permission_names):
                     if not getattr(permissions, p_name):
                         raise PermissionDenied
                 except AttributeError:
-                    print("Attribute not found: " + p_name)
+                    print(("Attribute not found: " + p_name))
                     raise PermissionDenied
             return view_func(request, *args, **kwargs)
         return wrapper

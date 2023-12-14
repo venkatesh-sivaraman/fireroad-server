@@ -1,10 +1,10 @@
-from django.conf.urls import url
+from django.urls import re_path
 
 from . import views
 
 from django.views.generic import TemplateView
 
 urlpatterns = [
-    url('rate/', views.rate, name='rate'),
-    url('get/', views.get, name='get')
+    re_path('rate/', views.rate, name='rate'),
+    re_path('get/', views.get, name='get')
 ]

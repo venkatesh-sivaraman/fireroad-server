@@ -52,7 +52,7 @@ def update_progress(progress, message):
 def get_corrections():
     """Gets the corrections from the CatalogCorrection table and formats them
     appropriately."""
-    raw_corrections = CatalogCorrection.objects.all().values()
+    raw_corrections = list(CatalogCorrection.objects.all().values())
     corrections = []
     def format(value):
         if isinstance(value, bool):
@@ -61,7 +61,7 @@ def get_corrections():
 
     for corr in raw_corrections:
         new_corr = {}
-        for k, v in corr.items():
+        for k, v in list(corr.items()):
             if k in FIELD_TO_CSV and k != "offered_this_year" and format(v):
                 new_corr[FIELD_TO_CSV[k]] = format(v)
         corrections.append(new_corr)
@@ -81,8 +81,8 @@ def write_diff(old_path, new_path, diff_path):
     old_file = open(old_path, 'r')
     new_file = open(new_path, 'r')
 
-    old_contents = old_file.read().decode('utf-8')
-    new_contents = new_file.read().decode('utf-8')
+    old_contents = old_file.read()
+    new_contents = new_file.read()
 
     old_lines = old_contents.split('\n')
     new_lines = new_contents.split('\n')
@@ -97,15 +97,15 @@ def write_diff(old_path, new_path, diff_path):
     wrote_to_file = False
     for i, id in enumerate(ids):
         if i % 100 == 0:
-            print(i, "of", len(ids))
+            print((i, "of", len(ids)))
         old_course = old_courses.get(id, "")
         new_course = new_courses.get(id, "")
 
         if old_course != new_course:
             if abs(len(new_course) - len(old_course)) >= 40:
-                diff = delete_insert_diff_line(old_course.encode('utf-8'), new_course.encode('utf-8'))
+                diff = delete_insert_diff_line(old_course, new_course)
             else:
-                diff = build_diff_line(old_course, new_course, max_delta=40).encode('utf-8')
+                diff = build_diff_line(old_course, new_course, max_delta=40)
             diff_file.write(diff)
             wrote_to_file = True
 
