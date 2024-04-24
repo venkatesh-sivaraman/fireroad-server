@@ -260,7 +260,7 @@ def process_info_item(item, attributes, write_virtual_status=False):
         def_not_desc = True
 
     # Old subject ID
-    elif re.match(r'\(\d{1,2}.[A-Z0-9]{1,4}\)$', item):
+    elif re.match(r'\(' + subject_id_regex + '\)$', item):
         attributes[CourseAttribute.oldID] = item[1:-1]
         def_not_desc = True
 
