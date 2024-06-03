@@ -99,8 +99,8 @@ def term_frequencies(description):
 
 def tf_idf(tf_list, all_term_frequencies):
     scores = {}
-    for word, frequency in tf_list.items():
-        idf = math.log(len(all_term_frequencies) / sum(1 for x in all_term_frequencies.values() if word in x))
+    for word, frequency in list(tf_list.items()):
+        idf = math.log(len(all_term_frequencies) / sum(1 for x in list(all_term_frequencies.values()) if word in x))
         scores[word] = frequency * idf
     return scores
 
@@ -136,9 +136,9 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
     keywords_by_subject = {}
     subjects_by_keyword = {}
     max_generated_keywords = max_keywords * 3
-    for dept, courses in courses_by_dept.items():
+    for dept, courses in list(courses_by_dept.items()):
         print(dept)
-        for id, course in courses.items():
+        for id, course in list(courses.items()):
             if id not in tf_lists: continue
             tfidf = tf_idf(tf_lists[id], tf_lists)
             sorted_items = sorted(tfidf, key=tfidf.get, reverse=True)
@@ -153,8 +153,8 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
     # Find the minimum number of keywords that capture the entire course database
     sorted_keywords = sorted(subjects_by_keyword, key=lambda x: (len(subjects_by_keyword[x]), len(x)), reverse=True)
     sorted_keywords = sorted_keywords[int(len(sorted_keywords) * KEYWORD_COVERAGE_TRIM):]
-    print("Total: {} keywords. Top 100:".format(len(sorted_keywords)))
-    print(sorted_keywords[:100])
+    print(("Total: {} keywords. Top 100:".format(len(sorted_keywords))))
+    print((sorted_keywords[:100]))
 
     covered_subjects = set()
     partially_covered_subjects = set()
@@ -171,12 +171,12 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
                     partially_covered_subjects.add(subject)
         if len(covered_subjects) == len(keywords_by_subject):
             break
-    print("Needed {} keywords to cover dataset: {}".format(len(necessary_keywords), necessary_keywords))
+    print(("Needed {} keywords to cover dataset: {}".format(len(necessary_keywords), necessary_keywords)))
     with open(outpath, 'w') as file:
-        for dept, courses in courses_by_dept.items():
+        for dept, courses in list(courses_by_dept.items()):
             for id in courses:
                 if id not in keywords_by_subject:
-                    print("No keywords for {}".format(id))
+                    print(("No keywords for {}".format(id)))
                     continue
                 keywords = keywords_by_subject[id]
                 allowed_keywords = [kw for kw in keywords if kw in necessary_keywords]
@@ -194,7 +194,7 @@ def write_course_features(courses_by_dept, tf_lists, related_matrix, outpath, ma
                     for other_course in courses[id].get(equiv_key, []):
                         if '.' not in other_course: continue
                         depts.add(other_course[:other_course.find('.')])
-                file.write((",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n").encode('utf-8'))
+                file.write((",".join([id] + list(depts) + level_list + allowed_keywords + region_indexes) + "\n"))
 
 def find_related_regions(related_matrix, min_count=5, threshold=0.2):
     """
@@ -203,7 +203,7 @@ def find_related_regions(related_matrix, min_count=5, threshold=0.2):
     """
     filtered_matrix = {}
     for subject in related_matrix:
-        filtered_matrix[subject] = {subject_2: relation for subject_2, relation in related_matrix[subject].items() if relation >= threshold}
+        filtered_matrix[subject] = {subject_2: relation for subject_2, relation in list(related_matrix[subject].items()) if relation >= threshold}
 
     sets = []
     discovered_subjects = set()
@@ -245,8 +245,8 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
         progress_callback(start + 0.1 * (100.0 - start), "Computing term frequencies...")
     print("Computing term frequencies...")
 
-    for dept, courses in courses_by_dept.items():
-        for id, course in courses.items():
+    for dept, courses in list(courses_by_dept.items()):
+        for id, course in list(courses.items()):
             tf_lists[id] = term_frequencies(course.get(CourseAttribute.description, "") + "\n" + course.get(CourseAttribute.title, ""))
 
     if progress_callback is not None:
@@ -256,10 +256,10 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
 
     # First determine which departments are closely related to each other
     dept_lists = {}
-    for dept, courses in courses_by_dept.items():
-        for id, course in courses.items():
+    for dept, courses in list(courses_by_dept.items()):
+        for id, course in list(courses.items()):
             if dept not in dept_lists: dept_lists[dept] = {}
-            for term, freq in tf_lists[id].items():
+            for term, freq in list(tf_lists[id].items()):
                 if term in dept_lists[dept]:
                     dept_lists[dept][term] += freq
                 else:
@@ -284,12 +284,12 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
     max_relation = -1e20
 
     with open(os.path.join(dest, "related.txt"), "w") as file:
-        for dept, courses in courses_by_dept.items():
-            for id, course in courses.items():
+        for dept, courses in list(courses_by_dept.items()):
+            for id, course in list(courses.items()):
 
                 related_matrix[id] = {}
                 ranks = [("", 0) for i in range(k)]
-                for other_id, tf in tf_lists.items():
+                for other_id, tf in list(tf_lists.items()):
                     if is_equivalent(id, course, other_id):
                         related_matrix[id][other_id] = related_max
                         continue
@@ -320,11 +320,11 @@ def write_related_and_features(courses_by_dept, dest, progress_callback=None, pr
                 if progress_callback is not None:
                     start = progress_start if progress_start is not None else 0.0
                     progress_callback(start + (0.2 + progress_stepwise / 17.0) * (100.0 - start), "Writing related courses ({}%)...".format(progress_stepwise * 10))
-                print("{}% complete...".format(progress_stepwise * 10))
+                print(("{}% complete...".format(progress_stepwise * 10)))
 
     # Divide every element in the relation matrix by the maximum attained value
     for subject in related_matrix:
-        related_matrix[subject] = {subject_2: min(value / max_relation, 1.0) for subject_2, value in related_matrix[subject].items()}
+        related_matrix[subject] = {subject_2: min(value / max_relation, 1.0) for subject_2, value in list(related_matrix[subject].items())}
 
     if progress_callback is not None:
         start = progress_start if progress_start is not None else 0.0

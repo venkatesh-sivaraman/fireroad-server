@@ -8,6 +8,7 @@ longer identifiable.
 """
 
 from .models import *
+from django.utils.deprecation import MiddlewareMixin
 
 EXCLUDE_PATH_PREFIXES = [
     "/favicon.ico",
@@ -24,7 +25,7 @@ EXCLUDE_USER_AGENTS = [
     "spider"
 ]
 
-class RequestCounterMiddleware(object):
+class RequestCounterMiddleware(MiddlewareMixin):
     """A middleware that saves a RequestCount object each time a page is requested."""
 
     def process_response(self, request, response):
@@ -42,7 +43,7 @@ class RequestCounterMiddleware(object):
         if len(user_agent) > 150:
             user_agent = user_agent[:150]
         tally.user_agent = user_agent
-        if hasattr(request, "user") and request.user and request.user.is_authenticated():
+        if hasattr(request, "user") and request.user and request.user.is_authenticated:
             tally.is_authenticated = True
             try:
                 student = request.user.student

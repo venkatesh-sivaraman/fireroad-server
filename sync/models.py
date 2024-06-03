@@ -23,7 +23,7 @@ class Road(models.Model):
     last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return "{}: {}, last modified {}".format(self.user.username, self.name.encode('utf-8'), self.modified_date)
+        return "{}: {}, last modified {}".format(self.user.username, self.name, self.modified_date)
 
     @staticmethod
     def compress(road_text):
@@ -54,9 +54,9 @@ class RoadBackup(models.Model):
     contents = models.TextField()
 
     def __str__(self):
-        return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
+        return "Backup of {}, saved {} by {}".format(self.document.name if self.document else "<null>",
                                                      self.timestamp,
-                                                     self.last_agent.encode("utf-8") if self.last_agent else "<empty>")
+                                                     self.last_agent if self.last_agent else "<empty>")
 
 class Schedule(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
@@ -66,7 +66,7 @@ class Schedule(models.Model):
     last_agent = models.CharField(max_length=50, default="")
 
     def __str__(self):
-        return "{}: {}, last modified {}".format(self.user.username, self.name.encode('utf-8'), self.modified_date)
+        return "{}: {}, last modified {}".format(self.user.username, self.name, self.modified_date)
 
     @staticmethod
     def compress(schedule_text):
@@ -92,7 +92,7 @@ class ScheduleBackup(models.Model):
     contents = models.TextField()
 
     def __str__(self):
-        return "Backup of {}, saved {} by {}".format(self.document.name.encode("utf-8") if self.document else "<null>",
+        return "Backup of {}, saved {} by {}".format(self.document.name if self.document else "<null>",
                                                      self.timestamp,
-                                                     self.last_agent.encode("utf-8") if self.last_agent else "<empty>")
+                                                     self.last_agent if self.last_agent else "<empty>")
 

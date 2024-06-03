@@ -1,0 +1,8 @@
+django
+pandas
+nltk
+lxml
+scipy
+scikit-learn
+requests
+pyjwt

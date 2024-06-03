@@ -16,6 +16,8 @@ CATALOG_BASE_DIR = "data/catalogs"
 # Use the Django default login page for local debugging
 LOGIN_URL = "/dev_login"
 
+LOGOUT_REDIRECT_URL = "/"
+
 # Security settings
 
 # If True, login redirects will be required to be registered as a RedirectURL
@@ -52,7 +54,7 @@ INSTALLED_APPS = [
     'analytics'
 ]
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     # Cors middleware should only be on local development (not settings_dev or settings_prod)
     'middleware.cors.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -175,3 +177,5 @@ LOGGING = {
         }
     },
 }
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"

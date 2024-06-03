@@ -60,7 +60,7 @@ def parse_evaluations(evals, courses):
                     value = term_data[key]
                     averaging_data.setdefault(key, []).append(value)
 
-        for eval_key, course_key in KEYS_TO_AVERAGE.items():
+        for eval_key, course_key in list(KEYS_TO_AVERAGE.items()):
             if eval_key not in averaging_data: continue
             n = len(averaging_data[eval_key])
             value = sum(averaging_data[eval_key]) / float(n)

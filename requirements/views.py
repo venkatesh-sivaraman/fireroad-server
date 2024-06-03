@@ -11,7 +11,7 @@ import requests
 from courseupdater.views import *
 from sync.models import Road
 import re
-from progress import RequirementsProgress
+from .progress import RequirementsProgress
 from catalog.models import Course, Attribute, HASSAttribute, GIRAttribute, CommunicationAttribute
 import logging
 
@@ -52,7 +52,7 @@ def compute_progress(request, list_id, course_list, progress_overrides, progress
                 course_objs.append(Course.make_generic(subject_id,unique_generic_id))
                 unique_generic_id += 1
             except ValueError:
-                print("Warning: course {} does not exist in the catalog".format(subject_id))
+                print(("Warning: course {} does not exist in the catalog".format(subject_id)))
 
 
     # Create a progress object for the requirements list

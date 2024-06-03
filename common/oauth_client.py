@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 import requests
 import os
 import base64
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from .models import OAuthCache
 import random
 from django.utils import timezone
@@ -47,8 +47,8 @@ def oauth_code_url(request, after_redirect=None):
         AUTH_CODE_URL,
         AUTH_RESPONSE_TYPE,
         get_client_info()[0],
-        urllib.quote(REDIRECT_URI),
-        urllib.quote(' '.join(AUTH_SCOPES)),
+        urllib.parse.quote(REDIRECT_URI),
+        urllib.parse.quote(' '.join(AUTH_SCOPES)),
         cache.state,
         cache.nonce)
 
@@ -67,7 +67,7 @@ def get_user_info(request):
     result, status = get_user_info_with_token(request, acc_token)
     if result is not None:
         if "refresh_token" in all_json:
-            result[u'refresh_token'] = all_json["refresh_token"]
+            result['refresh_token'] = all_json["refresh_token"]
     return result, status, info
 
 def get_oauth_id_token(request, code, state, refresh=False):

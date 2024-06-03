@@ -15,8 +15,8 @@ def best_diff_sequence(old, new, allow_subs=True, max_delta=None):
     parent_pointers[:,-1] = -1
     parent_pointers[-1,-1] = 0
 
-    for i in reversed(range(len(old) + 1)):
-        for j in reversed(range(len(new) + 1)):
+    for i in reversed(list(range(len(old) + 1))):
+        for j in reversed(list(range(len(new) + 1))):
             if i == len(old) and j == len(new): continue
             if max_delta is not None:
                 if i - j >= max_delta:

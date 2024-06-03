@@ -33,8 +33,8 @@ def unwrapped_component(component):
     and unwrapped out of any parenthesis pairs."""
     unwrapping = component.strip(" \t\n\r")
     while unwrapping[0] == "(" and unwrapping[-1] == ")":
-	# Make sure these parentheses are not closed within the string
-	indent_level = 0
+        # Make sure these parentheses are not closed within the string
+        indent_level = 0
         stop_unwrapping = False
         for i in range(len(unwrapping)):
             if unwrapping[i] == "(":
@@ -46,7 +46,7 @@ def unwrapped_component(component):
                     break
         if stop_unwrapping:
             break
-	unwrapping = unwrapping[1:-1]
+        unwrapping = unwrapping[1:-1]
 
     return unwrapping
 
@@ -352,7 +352,7 @@ class RequirementsStatement(models.Model):
         try:
             cutoff = int(number_string)
         except ValueError:
-            print("Couldn't get number out of modifier string {}".format(modifier))
+            print(("Couldn't get number out of modifier string {}".format(modifier)))
 
         return (threshold_type, cutoff, criterion)
 
@@ -362,7 +362,7 @@ class RequirementsStatement(models.Model):
         if "|" in modifier:
             comps = modifier.split("|")
             if len(comps) != 2:
-                print("Unsupported number of components in modifier string: {}".format(modifier))
+                print(("Unsupported number of components in modifier string: {}".format(modifier)))
                 return
 
             if len(comps[0]) > 0:
