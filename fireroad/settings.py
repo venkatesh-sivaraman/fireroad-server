@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'requirements',
     'courseupdater',
     'catalog',
-    'analytics'
+    'analytics',
+    'syllabus'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -175,3 +176,7 @@ LOGGING = {
         }
     },
 }
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

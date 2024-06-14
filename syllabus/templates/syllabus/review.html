@@ -1,0 +1,32 @@
+{% extends "syllabus/base.html" %}
+{% block title %}
+<title>Review {{ syllabus_submission.subject_id }} Syllabus</title>
+{% endblock %}
+{% block content %}
+<div class="row syllabus-head">
+  <div class="col s8 red-text text-darken-4">
+    <h4>Review {{ syllabus_submission.subject_id }} Syllabus</h4>
+  </div>
+  <a id="edit-button" class="waves-effect waves-light mbtn grey right" href="{% url 'syllabus_create' %}?like={{ syllabus_submission.pk }}">Edit</a>
+</div>
+<div class="row">
+  <object data = "{{ syllabus_submission.file.url }}" type = "application/pdf" width = "100%" height = "400px">
+    <p>Your browser does not have a PDF plugin</p>
+    <a href = "{{ syllabus_submission.file.url }}" target = "_blank" role = "button" class = "btn btn-primary">Download</a>
+  </object>
+</div>
+<div class="row">
+  <div class="col s12 m6">
+    <p>{{ syllabus_submission.subject_id }} {{ syllabus_submission.semester }} {{ syllabus_submission.year }}</p>
+    <p>Submitted by <strong>{{ syllabus_submission.email_address|urlize }}</strong> on <strong>{{ syllabus_submission.timestamp|date:'M d Y' }}</strong>.</p>
+  </div>
+  <div class="col s12 m6">
+    {% if syllabus_submission.committed %}
+    <a id="commit-button" class="waves-effect waves-light mbtn red right" href="/syllabus/uncommit/{{ syllabus_submission.pk }}" style="float: right;">Uncommit</a>
+    {% else %}
+    <a id="commit-button" class="waves-effect waves-light mbtn red right" href="/syllabus/commit/{{ syllabus_submission.pk }}" style="float: right;">Commit</a>
+    {% endif %}
+    <a id="ignore-button" class="waves-effect waves-light mbtn grey right" href="/syllabus/ignore_edit/{{ syllabus_submission.pk }}" style="float: right;">Cancel</a>
+  </div>
+</div>
+{% endblock %}

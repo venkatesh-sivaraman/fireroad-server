@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from common.models import Student
 from catalog_parse.utils.catalog_constants import *
+from syllabus.models import Syllabus
 
 class Attribute:
     """
@@ -126,6 +127,7 @@ class CourseFields:
     parent = "parent"
     children = "children"
     is_half_class = "is_half_class"
+    syllabi = "syllabi"
 
 # Tools to convert from strings to Course field values
 def string_converter(value):
@@ -466,6 +468,10 @@ class Course(models.Model):
             data[CourseFields.in_class_hours] = self.in_class_hours
         if self.out_of_class_hours != 0.0:
             data[CourseFields.out_of_class_hours] = self.out_of_class_hours
+
+        syllabi = Syllabus.objects.filter(subject_id=self.subject_id)
+        if syllabi.count() > 0:
+            data[CourseFields.syllabi] = [s.to_json_object() for s in syllabi]
 
         return data
 

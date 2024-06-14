@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf.urls import url, include
+from django.conf.urls.static import static
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.base import RedirectView
 from django.contrib import admin
@@ -31,8 +32,9 @@ urlpatterns = [
     url(r'sync/', include('sync.urls')),
     url(r'analytics/', include('analytics.urls')),
     url(r'requirements/', include('requirements.urls')),
-    url(r'', include('common.urls')),
-]
+    url(r'syllabus/', include('syllabus.urls')),
+    url(r'', include('common.urls'))
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Redirect to the appropriate login page if one is specified in the settings module
 if settings.LOGIN_URL:
@@ -47,5 +49,3 @@ if settings.LOGIN_URL:
         urlpatterns.insert(0, url(r'^login/$', RedirectView.as_view(url=settings.LOGIN_URL,
                                                                     permanent=True,
                                                                     query_string=True)))
-
-

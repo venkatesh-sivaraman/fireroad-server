@@ -1,0 +1,52 @@
+{% extends "common/base.html" %}
+{% load static %}
+{% block title %}
+<title>Syllabus</title>
+{% endblock %}
+
+{% block pagebody %}
+<div class="nav-side-menu">
+  {% block nav %}
+  <div class="brand">Class Syllabi</div>
+  <i class="fa fa-angle-double-down fa-2x toggle-btn" data-toggle="collapse" data-target="#menu-content"></i>
+
+  <div class="menu-list">
+
+    <ul id="menu-content" class="menu-content collapse out">
+      <li class="{% if active_id == "index" %}active{% endif %}">
+        <a href="{% url 'syllabus_index' %}">Overview</a>
+      </li>
+
+      <li class="{% if active_id == "viewer" %}active{% endif %}">
+        <a href="{% url 'syllabus_viewer' %}">Syllabi Viewer</a>
+      </li>
+
+      <li class="{% if active_id == "new_doc" %}active{% endif %}">
+        <a href="{% url 'syllabus_create' %}">Add syllabus...</a>
+      </li>
+
+      {% if is_staff %}
+      <li class="{% if active_id == "review_all" %}active{% endif %}">
+        <a href="{% url 'syllabus_review_all' %}">Review Syllabi Submissions</a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
+{% endblock %}
+<div class="content">
+{% block content %} {% endblock %}
+</div>
+{% endblock %}
+
+{% block pagescripts %}
+  <script type="text/javascript">
+  $(document).ready(function () {
+  // Handler for .ready() called.
+  $('.nav-side-menu').animate({
+      scrollTop: $('.scroll-to-me').offset().top - 64
+  }, 'fast');
+  });
+  </script>
+  {% block scripts %}{% endblock %}
+{% endblock %}

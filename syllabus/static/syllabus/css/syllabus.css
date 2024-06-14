@@ -1,0 +1,54 @@
+@media (min-width: 767px) {
+  .syllabus-head {
+    margin-top: 12px;
+  }
+  .content {
+    margin-top: -64px;
+    padding-top: 64px;
+  }
+  .content-full-screen {
+    margin-top: -64px;
+    padding-top: 64px;
+  }
+}
+
+.syllabus-sub-list-row {
+  display: flex;
+  flex-direction: row;
+   overflow: hidden;
+}
+
+.syllabus-sub-list-left {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  margin-right: 12px;
+}
+
+.syllabus-sub-list-right {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+
+.syllabus-sub-list {
+  overflow-y: scroll !important;
+}
+
+.syllabus-sub-list > .collection-item:hover {
+    background-color: #eeeeee;
+    -webkit-transition: background-color 250ms linear;
+    -ms-transition: background-color 2500ms linear;
+    transition: background-color 250ms linear;
+}
+
+
+.searchbar.input-field input[type=search] {
+  padding-left: 30px;
+  width: calc(100% - 30px);
+}
+
+.searchbar.input-field input[type=search]:focus:not(.browser-default) {
+  background-color: inherit;
+  border-bottom: 1px solid rgb(224, 20, 20);
+}
