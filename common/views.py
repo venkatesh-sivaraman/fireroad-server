@@ -39,6 +39,7 @@ def login_oauth(request):
     # Save the user's profile, check if there are any other accounts
     email = result.get(u'email', None)
     sub = result.get(u'sub', None)
+    student_name = result.get(u'name', 'Anonymous')
     if sub is None:
         return login_error_response(request, 'Please try again and allow FireRoad to access your OpenID information.')
 
@@ -50,13 +51,14 @@ def login_oauth(request):
 
         if email is None:
             email = "user{}@fireroad.mit.edu".format(user.username)
-        student = Student(user=user, unique_id=sub, academic_id=email, name=result.get(u'name', 'Anonymous'))
+        student = Student(user=user, unique_id=sub, academic_id=email, name=student_name)
         student.current_semester = info.get('sem', '0')
         student.save()
     else:
         # Only set the current semester if there's a real new value
         if len(info.get('sem', '')) > 0 and int(info['sem']) != 0:
             student.current_semester = info['sem']
+        student.name = student_name
         if student.user is None:
             user = make_new_user()
             user.save()
@@ -106,6 +108,7 @@ def login_touchstone(request):
         # Only set the current semester if there's a real new value
         if request.GET.get('sem', '') and int(request.GET['sem']) != 0:
             student.current_semester = request.GET['sem']
+        student.name = student_name
         if student.user is None:
             user = make_new_user()
             user.save()
